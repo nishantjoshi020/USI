@@ -17,10 +17,8 @@ import {
   Utensils,
   PanelLeftClose,
   PanelLeftOpen,
-  X,
 } from 'lucide-react';
 import { NavItemId, UserRole } from '../../types/usi';
-import { ViewportMode } from './TopContextBar';
 
 interface SidebarProps {
   activeNav: NavItemId;
@@ -28,9 +26,6 @@ interface SidebarProps {
   attentionCount: number;
   activeInjuryCount: number;
   selectedRole?: UserRole;
-  viewportMode?: ViewportMode;
-  isMobileDrawerOpen?: boolean;
-  onCloseMobileDrawer?: () => void;
 }
 
 interface NavGroup {
@@ -53,9 +48,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   attentionCount,
   activeInjuryCount,
   selectedRole = 'Performance Director',
-  viewportMode = 'desktop',
-  isMobileDrawerOpen = false,
-  onCloseMobileDrawer,
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     athletes: false,
@@ -67,23 +59,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     'analytics-bi': false,
   });
   const [isCompact, setIsCompact] = useState(false);
-
-  React.useEffect(() => {
-    if (viewportMode === 'tablet') {
-      setIsCompact(!isMobileDrawerOpen);
-    } else if (viewportMode === 'mobile') {
-      setIsCompact(false);
-    } else {
-      setIsCompact(false);
-    }
-  }, [viewportMode, isMobileDrawerOpen]);
-
-  const handleNavClick = (nav: NavItemId) => {
-    onSelectNav(nav);
-    if (viewportMode === 'mobile' && onCloseMobileDrawer) {
-      onCloseMobileDrawer();
-    }
-  };
 
   const toggleSection = (id: string) => {
     setCollapsedSections((prev) => ({
@@ -593,24 +568,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navGroups = getNavGroupsForRole();
 
-  if (viewportMode === 'mobile' && !isMobileDrawerOpen) {
-    return null;
-  }
-
-  const sidebarContent = (
+  return (
     <aside
       className={`${
-        viewportMode === 'mobile'
-          ? 'w-72 fixed inset-y-0 left-0 z-50 shadow-2xl'
-          : isCompact
-            ? 'w-16 sticky top-0 z-30'
-            : 'w-64 sticky top-0 z-30'
-      } shrink-0 bg-[#090D16] border-r border-slate-800/90 flex flex-col h-screen select-none transition-all duration-150`}
+        isCompact ? 'w-16' : 'w-64'
+      } shrink-0 bg-[#090D16] border-r border-slate-800/90 flex flex-col h-screen sticky top-0 select-none transition-all duration-150 z-30`}
     >
       {/* Brand Lockup */}
-      <div className="h-14 px-4 border-b border-slate-800/90 flex items-center justify-between">
+      <div className="h-16 px-4 border-b border-slate-800/90 flex items-center justify-between">
         <button
-          onClick={() => handleNavClick('command-center')}
+          onClick={() => onSelectNav('command-center')}
           className="flex items-center gap-3 text-left group focus:outline-none"
         >
           <div className="w-8 h-8 rounded-md bg-sky-500/15 border border-sky-500/40 flex items-center justify-center shrink-0">
@@ -628,27 +595,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        {viewportMode === 'mobile' ? (
-          <button
-            onClick={onCloseMobileDrawer}
-            title="Close navigation"
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={() => setIsCompact(!isCompact)}
-            title={isCompact ? 'Expand navigation' : 'Collapse navigation'}
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-          >
-            {isCompact ? (
-              <PanelLeftOpen className="w-4 h-4" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4" />
-            )}
-          </button>
-        )}
+        <button
+          onClick={() => setIsCompact(!isCompact)}
+          title={isCompact ? 'Expand navigation' : 'Collapse navigation'}
+          className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
+        >
+          {isCompact ? (
+            <PanelLeftOpen className="w-4 h-4" />
+          ) : (
+            <PanelLeftClose className="w-4 h-4" />
+          )}
+        </button>
       </div>
 
       {/* Navigation Scroll Area */}
@@ -665,7 +622,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <div key={group.id} className={isCommandCenter ? 'pb-2 mb-2 border-b border-slate-800/80' : ''}>
                 <button
-                  onClick={() => handleNavClick(group.navId!)}
+                  onClick={() => onSelectNav(group.navId!)}
                   title={isCompact ? group.label : undefined}
                   className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
                     isDirectActive
@@ -713,10 +670,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => {
                   if (group.navId) {
-                    handleNavClick(group.navId);
+                    onSelectNav(group.navId);
                     setCollapsedSections((prev) => ({ ...prev, [group.id]: false }));
                   } else if (isCompact && group.children?.[0]) {
-                    handleNavClick(group.children[0].id);
+                    onSelectNav(group.children[0].id);
                   } else {
                     toggleSection(group.id);
                   }
@@ -768,7 +725,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     return (
                       <button
                         key={child.id}
-                        onClick={() => handleNavClick(child.id)}
+                        onClick={() => onSelectNav(child.id)}
                         className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors ${
                           active
                             ? 'bg-sky-500/15 text-sky-300 font-semibold'
@@ -792,18 +749,4 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
     </aside>
   );
-
-  if (viewportMode === 'mobile') {
-    return (
-      <>
-        <div
-          onClick={onCloseMobileDrawer}
-          className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-40"
-        />
-        {sidebarContent}
-      </>
-    );
-  }
-
-  return sidebarContent;
 };

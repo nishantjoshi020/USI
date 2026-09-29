@@ -108,6 +108,9 @@ export const InteractiveBodyMap: React.FC<InteractiveBodyMapProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'split' | 'front' | 'back'>('split');
   const [hoveredRegion, setHoveredRegion] = useState<BodyRegionId | null>(null);
+  const [activeOverlay, setActiveOverlay] = useState<'pathology' | 'strain' | 'rehab'>('pathology');
+  const [severityFilter, setSeverityFilter] = useState<'all' | 'Severe' | 'Moderate' | 'Minor' | 'Healthy'>('all');
+  const [localRehabCompliance, setLocalRehabCompliance] = useState<Record<string, number>>({});
 
   const getRegionInjuries = (regionId: BodyRegionId): Injury[] => {
     return injuries.filter((inj) => inj.bodyRegion === regionId);
@@ -383,8 +386,55 @@ export const InteractiveBodyMap: React.FC<InteractiveBodyMapProps> = ({
         </div>
       </div>
 
+      {/* Interactive Overlays & Severity Filter Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 py-2.5 px-3 bg-[#0B101B] border-b border-slate-800/80 text-[11px]">
+        {/* Anatomical Overlays */}
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-semibold">Active Overlay:</span>
+          <div className="flex items-center gap-1 bg-[#090D16] p-1 rounded border border-slate-800">
+            {(
+              [
+                { id: 'pathology', label: 'Pathology (OSICS)' },
+                { id: 'strain', label: 'Strain Heatmap' },
+                { id: 'rehab', label: 'Active Rehab Protocols' },
+              ] as const
+            ).map((ov) => (
+              <button
+                key={ov.id}
+                onClick={() => setActiveOverlay(ov.id)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                  activeOverlay === ov.id
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 font-semibold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {ov.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Severity Filter */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-400 font-semibold">Filter:</span>
+          {(['all', 'Severe', 'Moderate', 'Minor', 'Healthy'] as const).map((sev) => (
+            <button
+              key={sev}
+              onClick={() => setSeverityFilter(sev)}
+              className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                severityFilter === sev
+                  ? 'bg-slate-700 text-slate-100 font-bold border border-slate-600'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {sev === 'all' ? 'All (30)' : sev}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Non-Color-Only Severity Legend */}
-      <div className="flex flex-wrap items-center justify-between gap-2 py-2.5 px-3 bg-[#0B101B] border-b border-slate-800/80 text-[11px] text-slate-300">
+      <div className="flex flex-wrap items-center justify-between gap-2 py-2 px-3 bg-[#090D16] border-b border-slate-800/80 text-[11px] text-slate-300">
         <div className="flex flex-wrap items-center gap-4">
           <span className="inline-flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-[#131C2E] border border-slate-600 inline-block" />
@@ -626,11 +676,31 @@ export const InteractiveBodyMap: React.FC<InteractiveBodyMapProps> = ({
                     </div>
 
                     <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">
-                        Rehab Progress
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 block text-[10px]">
+                          Rehab Progress
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cur =
+                              localRehabCompliance[primaryInjury.id] ??
+                              primaryInjury.rehabProgressPct;
+                            const next = Math.min(100, cur + 5);
+                            setLocalRehabCompliance((prev) => ({
+                              ...prev,
+                              [primaryInjury.id]: next,
+                            }));
+                          }}
+                          className="text-[10px] text-sky-400 hover:text-sky-300 font-mono underline"
+                          title="Log daily physiotherapy & eccentric session completion"
+                        >
+                          +5% Session
+                        </button>
+                      </div>
                       <strong className="text-emerald-400 font-mono mt-0.5 block tabular-nums">
-                        {primaryInjury.rehabProgressPct}%
+                        {localRehabCompliance[primaryInjury.id] ??
+                          primaryInjury.rehabProgressPct}%
                       </strong>
                     </div>
 
