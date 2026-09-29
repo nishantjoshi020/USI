@@ -747,19 +747,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </nav>
-
-      {/* Operational Hierarchy Footer */}
-      {!isCompact && (
-        <div className="p-3 border-t border-slate-800/90 bg-[#0B101B]">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Role Lens:</span>
-            <span className="font-mono text-sky-400 font-semibold">{selectedRole}</span>
-          </div>
-          <div className="mt-1 text-[10px] text-slate-500 truncate">
-            Restricted to role-specific scope
-          </div>
-        </div>
-      )}
     </aside>
   );
 };
