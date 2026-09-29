@@ -26,6 +26,11 @@ import {
   Users,
   X,
   Zap,
+  Radio,
+  Video,
+  ShieldCheck,
+  PlayCircle,
+  Eye,
 } from 'lucide-react';
 import {
   Athlete,
@@ -44,7 +49,8 @@ export type TrainingSubTab =
   | 'builder'
   | 'attendance-rpe'
   | 'exercises'
-  | 'workload';
+  | 'workload'
+  | 'live-pitchside';
 
 interface ExerciseItem {
   id: string;
@@ -275,6 +281,30 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [exerciseCategoryFilter, setExerciseCategoryFilter] = useState('All');
 
+  // Live Pitchside Swaps State
+  const [pitchsideRoster, setPitchsideRoster] = useState<{ [athleteId: string]: 'pitch' | 'off-feet' | 'rehab' }>({
+    'ath-arjun-mehta': 'off-feet',
+    'ath-kabir-rao': 'pitch',
+    'ath-vikram-malhotra': 'pitch',
+    'ath-rohan-kapoor': 'pitch',
+  });
+  const [selectedDrillClip, setSelectedDrillClip] = useState<{
+    title: string;
+    duration: string;
+    diagram: string;
+    focus: string;
+  } | null>(null);
+
+  const handleSwapZone = (athleteId: string, athleteName: string, newZone: 'pitch' | 'off-feet' | 'rehab') => {
+    setPitchsideRoster(prev => ({ ...prev, [athleteId]: newZone }));
+    const zoneLabels = {
+      'pitch': 'Full Pitch Drill Grid (100% Load)',
+      'off-feet': 'Off-Feet Conditioning (-40% Mechanical Load)',
+      'rehab': 'Dugout Observation / Ice Hydration (-85% Load)'
+    };
+    onTriggerToast(`Pitchside Swap: ${athleteName} moved to ${zoneLabels[newZone]} ✓ Load model updated`);
+  };
+
   // Handle Session Builder Submit
   const handleBuildSession = (e: React.FormEvent) => {
     e.preventDefault();
@@ -394,6 +424,7 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
             [
               { id: 'periodisation', label: 'Macro/Meso/Micro Cycles', icon: Calendar },
               { id: 'sessions', label: 'Operational Sessions', icon: Dumbbell },
+              { id: 'live-pitchside', label: '⚡ Live Pitchside Swaps', icon: Radio },
               { id: 'builder', label: 'Session Builder', icon: Plus },
               { id: 'attendance-rpe', label: 'Coach Attendance & sRPE Log', icon: UserCheck },
               { id: 'exercises', label: 'Exercise & Drill Library', icon: Layers },
@@ -1171,6 +1202,254 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 8. SUBTAB: LIVE PITCHSIDE SWAPS & TACTICAL BLUEPRINTS */}
+      {activeSubTab === 'live-pitchside' && (
+        <div className="space-y-5">
+          {/* Active Pitchside Live Session Banner */}
+          <div className="bg-[#0b111e]/90 border border-emerald-500/30 rounded-xl p-5 backdrop-blur-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/40">
+                      LIVE IN PROGRESS — MINUTE 38 / 75
+                    </span>
+                    <span className="text-xs font-mono text-slate-400">Natural Grass Pitch 1 (Zone A)</span>
+                  </div>
+                  <h2 className="text-base font-bold text-white mt-1">
+                    {sessions[0]?.title || 'Matchday -2 High-Intensity Tactical Pressing & Transition Grids'}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSelectedDrillClip({
+                    title: '4v4+3 High-Press Rest-Defence Schematic',
+                    duration: '18 min block',
+                    diagram: 'Pitch Zone A: 32m x 28m grid with 4 neutral playmakers and rapid counter-press cues.',
+                    focus: 'Forces sub-2.5s regains. Max velocity bursts capped at 24 km/h for modified athletes.'
+                  })}
+                  className="px-3 py-1.5 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-xs font-semibold text-sky-300 flex items-center gap-1.5"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>Preview Tactical Video Blueprint</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3-Zone Live Pitchside Drag & Swap Board */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Zone 1: Main Pitch Drill */}
+              <div className="bg-[#090D16] border border-slate-800 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                    <h3 className="text-xs font-bold text-slate-200 uppercase">
+                      1. Main Pitch Drill Grid (Full Load)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                    {athletes.filter(a => (pitchsideRoster[a.id] || 'pitch') === 'pitch').length} Active
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Full mechanical contact, high-speed sprints, 100% intended sRPE stress.
+                </p>
+
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {athletes.filter(a => (pitchsideRoster[a.id] || 'pitch') === 'pitch').slice(0, 6).map((ath) => (
+                    <div key={ath.id} className="p-2.5 rounded bg-[#0F1623] border border-slate-800 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-semibold text-white">{ath.name}</div>
+                        <div className="text-[10px] font-mono text-slate-400">{ath.position} · Load: {ath.trainingLoad}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleSwapZone(ath.id, ath.name, 'off-feet')}
+                          className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-semibold text-amber-300"
+                          title="Swap to stationary bike / upper body ergometer"
+                        >
+                          → Off-Feet
+                        </button>
+                        <button
+                          onClick={() => handleSwapZone(ath.id, ath.name, 'rehab')}
+                          className="px-2 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[10px] font-semibold text-rose-300"
+                          title="Pull to dugout for physio check"
+                        >
+                          → Dugout
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Zone 2: Off-Feet Conditioning Station */}
+              <div className="bg-[#090D16] border border-slate-800 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                    <h3 className="text-xs font-bold text-slate-200 uppercase">
+                      2. Off-Feet Conditioning (-40% Load)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-amber-400 font-bold">
+                    {athletes.filter(a => pitchsideRoster[a.id] === 'off-feet').length} Modified
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Stationary WattBike, skiergometer, and non-impact aerobic capacity maintenance.
+                </p>
+
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {athletes.filter(a => pitchsideRoster[a.id] === 'off-feet').map((ath) => (
+                    <div key={ath.id} className="p-2.5 rounded bg-amber-950/20 border border-amber-500/30 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-semibold text-amber-200">{ath.name}</div>
+                        <div className="text-[10px] font-mono text-amber-400">WattBike Zone 3 · Load Capped</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleSwapZone(ath.id, ath.name, 'pitch')}
+                          className="px-2 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-semibold text-emerald-300"
+                        >
+                          → Pitch
+                        </button>
+                        <button
+                          onClick={() => handleSwapZone(ath.id, ath.name, 'rehab')}
+                          className="px-2 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[10px] font-semibold text-rose-300"
+                        >
+                          → Dugout
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {athletes.filter(a => pitchsideRoster[a.id] === 'off-feet').length === 0 && (
+                    <div className="p-4 text-center text-slate-500 text-xs">
+                      No athletes currently swapped to off-feet conditioning.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Zone 3: Dugout Rehab & Hydration */}
+              <div className="bg-[#090D16] border border-slate-800 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                    <h3 className="text-xs font-bold text-slate-200 uppercase">
+                      3. Dugout / Physio Check (-85% Load)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-rose-400 font-bold">
+                    {athletes.filter(a => pitchsideRoster[a.id] === 'rehab').length} Resting
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Ice bath rotation, manual therapy check, or immediate hydration reload station.
+                </p>
+
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {athletes.filter(a => pitchsideRoster[a.id] === 'rehab').map((ath) => (
+                    <div key={ath.id} className="p-2.5 rounded bg-rose-950/20 border border-rose-500/30 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-semibold text-rose-200">{ath.name}</div>
+                        <div className="text-[10px] font-mono text-rose-400">Under Physio Review</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleSwapZone(ath.id, ath.name, 'pitch')}
+                          className="px-2 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-semibold text-emerald-300"
+                        >
+                          → Pitch
+                        </button>
+                        <button
+                          onClick={() => handleSwapZone(ath.id, ath.name, 'off-feet')}
+                          className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-semibold text-amber-300"
+                        >
+                          → Off-Feet
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {athletes.filter(a => pitchsideRoster[a.id] === 'rehab').length === 0 && (
+                    <div className="p-4 text-center text-slate-500 text-xs">
+                      Zero athletes currently in dugout recovery.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tactical Video Blueprint Preview Modal */}
+          {selectedDrillClip && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-[#0b111e] border border-sky-500/40 rounded-xl max-w-xl w-full p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Video className="w-5 h-5 text-sky-400" />
+                    <div>
+                      <h3 className="text-sm font-bold text-white">{selectedDrillClip.title}</h3>
+                      <span className="text-[11px] font-mono text-sky-400">{selectedDrillClip.duration}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedDrillClip(null)}
+                    className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Animated Pitch Tactical Grid Blueprint */}
+                <div className="aspect-video rounded-lg bg-emerald-950/40 border border-emerald-500/30 p-4 relative overflow-hidden flex flex-col justify-between">
+                  <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] bg-[size:2rem_2rem]" />
+                  <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-emerald-300">
+                    <span>ZONE A: HIGH PRESSING TRAP</span>
+                    <span>32m x 28m</span>
+                  </div>
+
+                  <div className="relative z-10 my-auto text-center space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-sky-500/30 border border-sky-400 mx-auto flex items-center justify-center text-sky-300">
+                      <PlayCircle className="w-7 h-7" />
+                    </div>
+                    <div className="text-xs font-semibold text-slate-200">
+                      Simulated 4v4+3 Possession & Counter-Press Sequence
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      Tactical Video Blueprint Feed #TC-8819
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                    <span>Target: Sub-3.0s Transition</span>
+                    <span>Cones: 8 Neon + 4 Poles</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 text-xs space-y-1">
+                  <span className="font-semibold text-slate-200">Tactical Constraints & Objectives:</span>
+                  <p className="text-[11px] text-slate-400">{selectedDrillClip.diagram}</p>
+                  <p className="text-[11px] text-amber-300">{selectedDrillClip.focus}</p>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setSelectedDrillClip(null)}
+                    className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs"
+                  >
+                    Done Pitchside Review
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

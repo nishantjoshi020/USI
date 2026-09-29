@@ -150,6 +150,51 @@ export const SessionAssignmentModal: React.FC<SessionAssignmentModalProps> = ({
               </div>
             </div>
 
+            {/* Tactical Unit Batch Selectors */}
+            <div className="p-2.5 rounded bg-[#090D16] border border-slate-800 mb-3 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-sky-400" />
+                  Tactical Unit Batch Allocators
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">1-Click Full Squad / Positional Splits</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: '⚡ Starting XI', filter: (a: Athlete) => a.squad.includes('Senior') && a.status === 'Ready' },
+                  { label: '🛡️ Defensive Unit', filter: (a: Athlete) => a.position.toLowerCase().includes('defender') || a.position.toLowerCase().includes('back') },
+                  { label: '⚙️ Midfield Engine', filter: (a: Athlete) => a.position.toLowerCase().includes('midfield') },
+                  { label: '⚡ Attacking Line', filter: (a: Athlete) => a.position.toLowerCase().includes('forward') || a.position.toLowerCase().includes('striker') || a.position.toLowerCase().includes('winger') },
+                  { label: '🔄 All Available Squad', filter: (a: Athlete) => a.trainingStatus === 'ACTIVE' },
+                ].map((unit) => (
+                  <button
+                    key={unit.label}
+                    onClick={() => {
+                      const matching = eligibleAthletes.filter(unit.filter);
+                      const newSet = new Set(assignedAthletes);
+                      matching.forEach((ath) => {
+                        newSet.add(ath.id);
+                        onAssignAthlete(selectedSessionId, ath.id, ath.name);
+                      });
+                      setAssignedAthletes(newSet);
+                      onTriggerToast(`Batch allocated ${matching.length} athletes to ${unit.label}`);
+                    }}
+                    className="px-2.5 py-1 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-700 hover:border-sky-500/50 text-[11px] text-slate-200 font-medium transition-colors"
+                  >
+                    {unit.label}
+                  </button>
+                ))}
+                {assignedAthletes.size > 0 && (
+                  <button
+                    onClick={() => setAssignedAthletes(new Set())}
+                    className="px-2 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-[11px] text-rose-300"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Column Headers */}
             <div className="grid grid-cols-12 text-[10px] text-slate-500 uppercase pb-1.5 border-b border-slate-800 mb-2">
               <div className="col-span-5">Athlete</div>

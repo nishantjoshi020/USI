@@ -33,8 +33,21 @@ import {
   Users,
   Utensils,
   Wrench,
+  UserPlus,
+  Radio,
+  Zap,
+  Gauge,
+  Info,
+  ChevronRight,
 } from 'lucide-react';
-import { Athlete, Injury, TrainingSession, UserRole } from '../../types/usi';
+import {
+  Athlete,
+  Injury,
+  TrainingSession,
+  UserRole,
+  WearableTelemetry,
+  PersonalDrillOrder,
+} from '../../types/usi';
 
 interface PersonaSpecializedSectionsProps {
   selectedRole: UserRole;
@@ -81,6 +94,7 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
   const [fatigueLevel, setFatigueLevel] = useState(3);
   const [stressLevel, setStressLevel] = useState(2);
   const [sleepScore, setSleepScore] = useState(88);
+  const [wellnessEntryMode, setWellnessEntryMode] = useState<'3tap' | 'sliders'>('3tap');
 
   // Operations Work Orders State
   const [workOrders, setWorkOrders] = useState([
@@ -190,7 +204,122 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
             </button>
           </div>
         )}
-        {/* Personal Schedule & Wellness Logging Grid */}
+
+        {/* 1. Personal Drill Focus Orders & Constraints Card */}
+        <div className="bg-[#0b111e]/90 border border-slate-800 rounded-xl p-4.5 backdrop-blur-sm space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                My Personalized Drill Focus Orders & GPS Speed Ceilings
+              </h3>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono text-amber-300 font-semibold">
+              Coach & Physio Synchronized
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+              <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                <span>Speed Cap (GPS Vmax)</span>
+                <Gauge className="w-3.5 h-3.5 text-sky-400" />
+              </div>
+              <div className="text-sm font-bold font-mono text-sky-300">
+                {currentAth?.trainingStatus === 'RESTRICTED' || (athInjuries.length > 0 && athInjuries[0].rtpStage < 5)
+                  ? '≤ 80% Vmax (24.0 km/h)'
+                  : '≤ 92% Vmax (29.5 km/h)'}
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Controlled acceleration corridor; avoid maximal deceleration shocks
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+              <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                <span>Prescribed Hydration Target</span>
+                <Droplets className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <div className="text-sm font-bold font-mono text-emerald-300">
+                500ml Isotonic Electrolyte + 150mg Na+
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Consume at minute 45 interval; based on morning USG profile
+              </p>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+              <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                <span>Tactical Mechanical Directive</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+              </div>
+              <div className="text-xs font-semibold text-slate-200">
+                {athInjuries.length > 0
+                  ? `Protect ${athInjuries[0].bodyRegionDisplay}: zero slide-tackles`
+                  : 'Focus on explosive low-angle turning transitions'}
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Coach note: Assigned to Unit 2 (Midfield Phase II pressing grid)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. IoT Wearable Telemetry & Discordance Detector */}
+        <div className="bg-[#0b111e]/90 border border-slate-800 rounded-xl p-4.5 backdrop-blur-sm space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Radio className="w-4 h-4 text-sky-400" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                Automated Wearable IoT Feed (Oura / Whoop Telemetry)
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-[10px] text-slate-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live Synced at 06:15 IST (BLE Cloud Push)</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+            <div className="p-2.5 rounded bg-[#101827] border border-slate-800">
+              <span className="text-[10px] text-slate-400 block">NIGHTLY HRV (rMSSD)</span>
+              <div className="text-base font-bold text-rose-400 mt-0.5">44 ms</div>
+              <span className="text-[10px] text-rose-300">-22% vs 30d Baseline</span>
+            </div>
+            <div className="p-2.5 rounded bg-[#101827] border border-slate-800">
+              <span className="text-[10px] text-slate-400 block">RESTING HEART RATE</span>
+              <div className="text-base font-bold text-sky-300 mt-0.5">52 bpm</div>
+              <span className="text-[10px] text-slate-400">+3 bpm elevation</span>
+            </div>
+            <div className="p-2.5 rounded bg-[#101827] border border-slate-800">
+              <span className="text-[10px] text-slate-400 block">DEEP SLEEP DURATION</span>
+              <div className="text-base font-bold text-emerald-300 mt-0.5">1h 18m</div>
+              <span className="text-[10px] text-emerald-400">18.4% of total sleep</span>
+            </div>
+            <div className="p-2.5 rounded bg-[#101827] border border-slate-800">
+              <span className="text-[10px] text-slate-400 block">SLEEP EFFICIENCY</span>
+              <div className="text-base font-bold text-slate-200 mt-0.5">82%</div>
+              <span className="text-[10px] text-slate-400">7h 24m in bed</span>
+            </div>
+          </div>
+
+          {/* Autonomic-Subjective Divergence Detector */}
+          {sorenessLevel <= 2 && (
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-amber-300 font-semibold block">
+                  ⚠️ Autonomic-Subjective Discordance Detected
+                </strong>
+                <span>
+                  You self-reported feeling <strong>"Fresh" ({sorenessLevel}/10 soreness)</strong>, but overnight autonomic telemetry shows a <strong>-22% HRV depression</strong> (44ms vs 58ms baseline). The Sports Science unit has been notified to monitor your high-speed exposures during training.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Personal Schedule & Wellness Logging Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Today's Personal Schedule (7 Cols) */}
           <div className="lg:col-span-7 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4">
@@ -251,105 +380,196 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                 <div className="flex items-center gap-2">
                   <Smile className="w-4 h-4 text-emerald-400" />
                   <h3 className="text-sm font-bold text-white tracking-wide">
-                    My Daily Wellness & Soreness Check-in
+                    Daily Wellness Check-in
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">
-                  {wellnessLogged ? 'Status: Recorded' : 'Pending Morning Log'}
-                </span>
+                {/* 3-Tap vs Sliders Toggle */}
+                <div className="flex items-center gap-1 bg-[#101827] p-0.5 rounded-lg border border-slate-800 text-[10px]">
+                  <button
+                    onClick={() => setWellnessEntryMode('3tap')}
+                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                      wellnessEntryMode === '3tap'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    ⚡ 3-Tap Mode
+                  </button>
+                  <button
+                    onClick={() => setWellnessEntryMode('sliders')}
+                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                      wellnessEntryMode === 'sliders'
+                        ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    🎛️ Sliders
+                  </button>
+                </div>
               </div>
 
-              {/* Sliders / Inputs */}
-              <div className="space-y-3 pt-1">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300">Muscle Soreness (0 = None, 10 = Severe)</span>
-                    <span className="font-mono font-bold text-emerald-400">{sorenessLevel} / 10</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    value={sorenessLevel}
-                    onChange={(e) => setSorenessLevel(Number(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                    <span>Fresh & Light</span>
-                    <span>Moderate Fatigue</span>
-                    <span>Severe Pain</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300">Sleep Recovery Score</span>
-                    <span className="font-mono font-bold text-sky-400">{sleepScore}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="100"
-                    value={sleepScore}
-                    onChange={(e) => setSleepScore(Number(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                    <span>Restless</span>
-                    <span>Adequate</span>
-                    <span>Deep Restored</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+              {/* 3-Tap Segmented Entry Mode */}
+              {wellnessEntryMode === '3tap' ? (
+                <div className="space-y-3 pt-1">
                   <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-slate-300">Perceived Fatigue</span>
-                      <span className="font-mono font-bold text-amber-400">{fatigueLevel}/10</span>
+                    <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex justify-between">
+                      <span>Sleep Quality (Last Night)</span>
+                      <span className="font-mono text-sky-400 font-bold">{sleepScore}%</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { label: '😫 Restless', val: 65 },
+                        { label: '😐 Adequate', val: 80 },
+                        { label: '⚡ Restored', val: 95 },
+                      ].map((item) => (
+                        <button
+                          key={item.val}
+                          type="button"
+                          onClick={() => setSleepScore(item.val)}
+                          className={`py-2 px-1 text-xs rounded-md border font-semibold text-center transition-all ${
+                            sleepScore === item.val
+                              ? 'bg-sky-500/20 border-sky-500 text-sky-200 ring-1 ring-sky-500/30'
+                              : 'bg-[#101827] border-slate-800 text-slate-400 hover:border-slate-700'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex justify-between">
+                      <span>Muscle Soreness</span>
+                      <span className="font-mono text-emerald-400 font-bold">{sorenessLevel}/10</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { label: '🟢 Fresh', val: 1 },
+                        { label: '🟡 Normal', val: 3 },
+                        { label: '🟠 Sore', val: 6 },
+                        { label: '🔴 Severe', val: 9 },
+                      ].map((item) => (
+                        <button
+                          key={item.val}
+                          type="button"
+                          onClick={() => setSorenessLevel(item.val)}
+                          className={`py-2 px-1 text-xs rounded-md border font-semibold text-center transition-all ${
+                            sorenessLevel === item.val
+                              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-200 ring-1 ring-emerald-500/30'
+                              : 'bg-[#101827] border-slate-800 text-slate-400 hover:border-slate-700'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex justify-between">
+                      <span>Perceived Fatigue / Energy</span>
+                      <span className="font-mono text-amber-400 font-bold">{fatigueLevel}/10</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { label: '🔋 Energized', val: 2 },
+                        { label: '⚖️ Moderate', val: 5 },
+                        { label: '🪫 Exhausted', val: 8 },
+                      ].map((item) => (
+                        <button
+                          key={item.val}
+                          type="button"
+                          onClick={() => setFatigueLevel(item.val)}
+                          className={`py-2 px-1 text-xs rounded-md border font-semibold text-center transition-all ${
+                            fatigueLevel === item.val
+                              ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/30'
+                              : 'bg-[#101827] border-slate-800 text-slate-400 hover:border-slate-700'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Detailed Sliders Mode */
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300">Muscle Soreness (0 = None, 10 = Severe)</span>
+                      <span className="font-mono font-bold text-emerald-400">{sorenessLevel} / 10</span>
                     </div>
                     <input
                       type="range"
-                      min="1"
+                      min="0"
                       max="10"
-                      value={fatigueLevel}
-                      onChange={(e) => setFatigueLevel(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      value={sorenessLevel}
+                      onChange={(e) => setSorenessLevel(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                     />
+                    <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                      <span>Fresh & Light</span>
+                      <span>Moderate Fatigue</span>
+                      <span>Severe Pain</span>
+                    </div>
                   </div>
+
                   <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-slate-300">Mental Stress</span>
-                      <span className="font-mono font-bold text-indigo-400">{stressLevel}/10</span>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300">Sleep Recovery Score</span>
+                      <span className="font-mono font-bold text-sky-400">{sleepScore}%</span>
                     </div>
                     <input
                       type="range"
-                      min="1"
-                      max="10"
-                      value={stressLevel}
-                      onChange={(e) => setStressLevel(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                      min="50"
+                      max="100"
+                      value={sleepScore}
+                      onChange={(e) => setSleepScore(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
                     />
                   </div>
-                </div>
 
-                {/* Computed Hooper-Mackinnon Readiness Preview */}
-                <div className="p-2.5 rounded bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between">
-                  <span className="text-[11px] text-emerald-300 font-medium">Computed Readiness Index</span>
-                  <span className="font-mono font-bold text-xs text-emerald-400">
-                    {Math.min(100, Math.max(35, Math.round((sleepScore * 0.4) + ((10 - sorenessLevel) * 3) + ((10 - fatigueLevel) * 2) + 10)))}%
-                  </span>
-                </div>
-
-                {/* Subjective Status Feedback */}
-                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800/80 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Physio Clearance Active</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex justify-between text-[11px] mb-1">
+                        <span className="text-slate-300">Fatigue</span>
+                        <span className="font-mono font-bold text-amber-400">{fatigueLevel}/10</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        value={fatigueLevel}
+                        onChange={(e) => setFatigueLevel(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-[11px] mb-1">
+                        <span className="text-slate-300">Stress</span>
+                        <span className="font-mono font-bold text-indigo-400">{stressLevel}/10</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        value={stressLevel}
+                        onChange={(e) => setStressLevel(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                      />
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400">
-                    Dr. Raghavan cleared your right adductor for maximum sprinting. High-speed running capped at 400m today.
-                  </p>
                 </div>
+              )}
+
+              {/* Computed Hooper-Mackinnon Readiness Preview */}
+              <div className="p-2.5 rounded bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between">
+                <span className="text-[11px] text-emerald-300 font-medium">Computed Hooper-Mackinnon Readiness</span>
+                <span className="font-mono font-bold text-xs text-emerald-400">
+                  {Math.min(100, Math.max(35, Math.round((sleepScore * 0.4) + ((10 - sorenessLevel) * 3) + ((10 - fatigueLevel) * 2) + 10)))}%
+                </span>
               </div>
             </div>
 
@@ -366,10 +586,10 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                 });
                 onTriggerToast(`Morning wellness check-in logged ✓ Synced to Coach & Sport Science console (Readiness: ${computedReadiness}%)`);
               }}
-              className="w-full py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-200 transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-200 transition-all flex items-center justify-center gap-2 mt-3"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>{wellnessLogged ? 'Update Logged Wellness Survey' : 'Submit Morning Wellness Survey'}</span>
+              <span>{wellnessLogged ? 'Update Logged Wellness Survey' : 'Submit Morning Wellness Check-in'}</span>
             </button>
           </div>
         </div>
@@ -635,55 +855,111 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
               </div>
             </div>
 
-            {/* Pending Applicants Alert & Review Queue */}
+            {/* 4-Tier Institutional Clearance Pipeline */}
             {allAthletes.filter((a) => a.verificationStatus === 'Pending').length > 0 && (
-              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2.5">
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2 text-amber-300 font-bold">
                     <ShieldAlert className="w-4 h-4 text-amber-400" />
                     <span>
-                      {allAthletes.filter((a) => a.verificationStatus === 'Pending').length} Candidate(s) Awaiting Federation Verification
+                      4-Tier Institutional Clearance Pipeline ({allAthletes.filter((a) => a.verificationStatus === 'Pending').length} Pending)
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-amber-400">Action Required</span>
+                  <span className="text-[10px] font-mono text-amber-400 font-semibold">Federation Governance Gate</span>
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-3">
                   {allAthletes
                     .filter((a) => a.verificationStatus === 'Pending')
                     .map((ath) => (
                       <div
                         key={ath.id}
-                        className="p-2.5 rounded bg-[#090D16] border border-amber-500/20 flex flex-wrap items-center justify-between gap-2 text-xs"
+                        className="p-3.5 rounded-lg bg-[#090D16] border border-amber-500/20 space-y-3 text-xs"
                       >
-                        <div>
-                          <div className="font-bold text-slate-100">{ath.name} ({ath.athleteId})</div>
-                          <div className="text-[11px] text-slate-400">
-                            {ath.sport} · {ath.position} · {ath.squad} · Coach: {ath.coach || 'Unassigned'}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <div className="font-bold text-slate-100">{ath.name} ({ath.athleteId})</div>
+                            <div className="text-[11px] text-slate-400">
+                              {ath.sport} · {ath.position} · {ath.squad} · Coach: {ath.coach || 'Unassigned'}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {onOpenApproval && (
+                              <button
+                                onClick={() => onOpenApproval(ath)}
+                                className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors"
+                              >
+                                Review Documents
+                              </button>
+                            )}
+                            {onOpenCoachAssignment && !ath.coach && (
+                              <button
+                                onClick={() => onOpenCoachAssignment(ath)}
+                                className="px-2 py-1 rounded bg-violet-500/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold"
+                              >
+                                Assign Coach
+                              </button>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          {onOpenApproval && (
-                            <button
-                              onClick={() => onOpenApproval(ath)}
-                              className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors"
-                            >
-                              Review Application
-                            </button>
-                          )}
-                          {onOpenCoachAssignment && !ath.coach && (
-                            <button
-                              onClick={() => onOpenCoachAssignment(ath)}
-                              className="px-2 py-1 rounded bg-violet-500/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold"
-                            >
-                              Assign Coach
-                            </button>
-                          )}
+
+                        {/* 4-Stage Progressive Sign-off Badges */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800 text-[10px] font-mono">
+                          <div className="p-2 rounded bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+                            <span className="text-slate-400 block text-[9px]">STAGE 1: STATE NOC</span>
+                            <strong>✓ NOC Issued (MH)</strong>
+                          </div>
+                          <div className="p-2 rounded bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+                            <span className="text-slate-400 block text-[9px]">STAGE 2: TECHNICAL</span>
+                            <strong>✓ Age & Quota Cleared</strong>
+                          </div>
+                          <div className="p-2 rounded bg-amber-950/30 border border-amber-500/30 text-amber-300">
+                            <span className="text-slate-400 block text-[9px]">STAGE 3: MEDICAL BD</span>
+                            <strong>⏳ TUE Review Active</strong>
+                          </div>
+                          <div className="p-2 rounded bg-slate-900 border border-slate-800 text-slate-500">
+                            <span className="text-slate-500 block text-[9px]">STAGE 4: FED SEAL</span>
+                            <span>Pending Stage 3</span>
+                          </div>
                         </div>
                       </div>
                     ))}
                 </div>
               </div>
             )}
+
+            {/* Passport Expiry & International Travel Watchdog Card */}
+            <div className="p-3.5 rounded-xl bg-[#090D16] border border-cyan-500/30 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-cyan-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                  Passport Expiry & Travel Visa Watchdog
+                </span>
+                <span className="text-[10px] font-mono text-slate-400">Next International Tour: 12 Oct 2026</span>
+              </div>
+              <div className="space-y-1.5 text-xs">
+                <div className="p-2.5 rounded bg-rose-950/20 border border-rose-500/30 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-rose-200">Arjun Mehta (Senior Men's Squad)</span>
+                    <div className="text-[10px] text-rose-300 font-mono">
+                      Passport expires in 48 days (28 Nov 2026) — Violates 180-day European travel entry requirement!
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onTriggerToast('Dispatched urgent Tatkal passport renewal notice to athlete & ministry liaison ✓')}
+                    className="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-[10px] shrink-0"
+                  >
+                    Flag Urgent Renewal
+                  </button>
+                </div>
+
+                <div className="p-2 rounded bg-[#101827] border border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
+                  <span>Sneha Deshmukh · Badminton</span>
+                  <span className="font-mono text-emerald-400">✓ Valid (3.8 years remaining)</span>
+                </div>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>

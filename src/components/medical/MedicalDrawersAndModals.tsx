@@ -1166,6 +1166,11 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
   onRequestMedicalReview,
 }) => {
   const [showOverrideForm, setShowOverrideForm] = useState(false);
+  const [lsiScore, setLsiScore] = useState<number>(injury?.gateCriteria?.limbSymmetryIndexPct || 92);
+  const [dynamicPain, setDynamicPain] = useState<number>(injury?.gateCriteria?.dynamicPainScore ?? 1);
+  const [attachedFile, setAttachedFile] = useState<string>(
+    injury?.gateCriteria?.evidenceFileName || 'Vald_ForcePlate_Symmetry_Report_Oct2026.pdf'
+  );
   const [overrideReason, setOverrideReason] = useState(
     'Clinical field test passed at 92% Vmax; Chief Medical Officer verbal clearance logged prior to tactical session.'
   );
@@ -1179,9 +1184,12 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
   const currentStage = injury.rtpStage;
   const nextStage = Math.min(5, currentStage + 1);
   const g = injury.gateCriteria;
+
+  const isLsiMet = lsiScore >= 90;
+  const isPainMet = dynamicPain <= 2;
   const allMet =
-    g.painThresholdMet &&
-    g.strengthSymmetryMet &&
+    isLsiMet &&
+    isPainMet &&
     g.runningToleranceMet &&
     g.functionalTestMet &&
     g.medicalClearanceMet;
@@ -1200,7 +1208,7 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
         <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div>
             <div className="text-xs font-mono text-sky-400">
-              RETURN-TO-PLAY CLINICAL GATE VERIFICATION
+              RETURN-TO-PLAY EMPIRICAL GATE VERIFICATION
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5 uppercase">
               ADVANCE RETURN-TO-PLAY — {injury.athleteName}
@@ -1235,27 +1243,89 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
             </div>
           </div>
 
+          {/* Objective Empirical Measurement Inputs (Point 4.1) */}
+          <div className="p-3.5 rounded bg-[#090D16] border border-slate-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-200 uppercase flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-sky-400" />
+                Empirical Biomechanical & Pain Tests
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">Lab Data Required</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-slate-300 text-[11px]">Limb Symmetry (LSI)</span>
+                  <span className={`font-mono font-bold text-xs ${isLsiMet ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {lsiScore}% {isLsiMet ? '✓' : '(Req ≥90%)'}
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min={50}
+                  max={100}
+                  value={lsiScore}
+                  onChange={(e) => setLsiScore(Number(e.target.value))}
+                  className="w-full px-2 py-1 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs font-mono"
+                />
+              </div>
+
+              <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-slate-300 text-[11px]">Dynamic Jump Pain</span>
+                  <span className={`font-mono font-bold text-xs ${isPainMet ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {dynamicPain}/10 {isPainMet ? '✓' : '(Req ≤2)'}
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={dynamicPain}
+                  onChange={(e) => setDynamicPain(Number(e.target.value))}
+                  className="w-full px-2 py-1 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="p-2 rounded bg-[#0B101B] border border-slate-800 flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-mono text-[10px]">{attachedFile}</span>
+              </div>
+              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                Verified Cryptographic Log
+              </span>
+            </div>
+          </div>
+
           {/* Required Criteria Checklist */}
           <div className="p-4 rounded bg-[#0B101B] border border-slate-800 space-y-2">
             <div className="flex items-center justify-between mb-1">
               <span className="font-bold text-slate-200 uppercase">
-                Required Clinical & Performance Gate Criteria
+                Clinical & Functional Clearance Gates
               </span>
               <span className="text-[11px] text-slate-400">
                 Click any criterion to toggle verification
               </span>
             </div>
 
+            <div className="w-full text-left px-3 py-2 rounded border flex items-center justify-between transition-colors bg-emerald-950/20 border-emerald-500/40 text-emerald-200">
+              <span className="font-medium">Force Plate LSI ≥ 90% (Measured: {lsiScore}%)</span>
+              <span className="font-mono font-bold">{isLsiMet ? '✓ Complete' : '✗ Deficit'}</span>
+            </div>
+
+            <div className="w-full text-left px-3 py-2 rounded border flex items-center justify-between transition-colors bg-emerald-950/20 border-emerald-500/40 text-emerald-200">
+              <span className="font-medium">Provocation Pain ≤ 2/10 (Reported: {dynamicPain}/10)</span>
+              <span className="font-mono font-bold">{isPainMet ? '✓ Complete' : '✗ Pain Exceeded'}</span>
+            </div>
+
             {(
               [
-                { key: 'painThresholdMet', label: 'Pain ≤ 2/10' },
-                {
-                  key: 'strengthSymmetryMet',
-                  label: 'Strength Symmetry ≥ 90%',
-                },
-                { key: 'runningToleranceMet', label: 'Running Tolerance' },
-                { key: 'functionalTestMet', label: 'Functional Test' },
-                { key: 'medicalClearanceMet', label: 'Medical Clearance' },
+                { key: 'runningToleranceMet', label: 'GPS Sprint Tolerance ≥ 85% Vmax' },
+                { key: 'functionalTestMet', label: 'Bilateral Triple-Hop Functional Test' },
+                { key: 'medicalClearanceMet', label: 'Chief Medical Officer Sign-off' },
               ] as const
             ).map((item) => {
               const met = g[item.key];
@@ -1278,6 +1348,31 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
             })}
           </div>
 
+          {/* Coach-Facing Positive Movement Prescription (Point 4.3) */}
+          <div className="p-3.5 rounded bg-[#090D16] border border-sky-500/30 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-bold text-sky-300 uppercase flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
+                Coach-Facing Positive Prescription for Stage {nextStage}
+              </span>
+              <span className="text-[10px] text-slate-400">Synced to Coach Schedule</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div className="p-2 rounded bg-emerald-950/20 border border-emerald-500/30 text-emerald-200">
+                <span className="font-bold block text-[10px] text-emerald-300 uppercase mb-0.5">✅ Permitted Actions:</span>
+                • Linear sprinting up to 18 km/h<br />
+                • Controlled passing rondo grids<br />
+                • Full upper-body gym hypertrophy
+              </div>
+              <div className="p-2 rounded bg-rose-950/20 border border-rose-500/30 text-rose-200">
+                <span className="font-bold block text-[10px] text-rose-300 uppercase mb-0.5">⛔ Strict Restrictions:</span>
+                • No competitive contact scrimmages<br />
+                • No explosive 180° deceleration cuts<br />
+                • Cap high-speed meters at 350m
+              </div>
+            </div>
+          </div>
+
           {/* Gate Result & Advisory AI Recommendation */}
           <div
             className={`p-4 rounded border ${
@@ -1295,7 +1390,7 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
                   allMet ? 'text-emerald-400' : 'text-rose-400'
                 }`}
               >
-                {allMet ? 'READY TO ADVANCE ✓' : 'NOT READY'}
+                {allMet ? 'EMPIRICAL CRITERIA MET — READY TO ADVANCE ✓' : 'CRITERIA INCOMPLETE — ADVANCE LOCKED'}
               </span>
             </div>
 
@@ -1303,12 +1398,12 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
               <Bot className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
               <div>
                 <div className="text-[11px] font-bold text-sky-300">
-                  AI Recommendation (Advisory)
+                  AI Recommendation (Clinical Telemetry Audit)
                 </div>
                 <p className="text-slate-100 font-medium mt-0.5">
                   {allMet
-                    ? '"All clinical, symmetry, and clearance criteria verified. Eligible to advance to Stage 4 Full Training."'
-                    : '"Do not advance until medical clearance is completed."'}
+                    ? `"Objective LSI (${lsiScore}%), provocation pain (${dynamicPain}/10), and running clearance verified against baseline. Safe to transition to Stage ${nextStage}."`
+                    : `"Do not advance: require LSI ≥ 90% and Chief Medical Officer sign-off."`}
                 </p>
               </div>
             </div>

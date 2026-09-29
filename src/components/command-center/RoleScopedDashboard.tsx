@@ -1313,6 +1313,92 @@ export const RoleScopedDashboard: React.FC<RoleScopedDashboardProps> = ({
        * --------------------------------------------------------------------- */}
       {selectedRole === 'Performance Director' && (
         <div className="space-y-5">
+          {/* Executive Departmental Protocol Breach & Non-Compliance Monitor */}
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/40 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rose-500/30 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />
+                <div>
+                  <h3 className="text-xs font-bold text-rose-200 uppercase tracking-wider">
+                    Executive Governance & Departmental Protocol Breach Monitor
+                  </h3>
+                  <span className="text-[11px] text-rose-300 font-mono">
+                    1 Active High-Severity Cross-Department Violation Detected
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onTriggerToast('Summoned urgent Joint Clinical & Coaching Executive Review for Karanveer Singh ✓')}
+                  className="px-3 py-1.5 rounded bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs transition-colors"
+                >
+                  Summon Joint Review
+                </button>
+                <button
+                  onClick={() => onTriggerToast('Executive Training Override logged in audit trail: Player stood down from pitch session ✓')}
+                  className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-rose-200 border border-rose-500/40 font-semibold text-xs transition-colors"
+                >
+                  Issue Executive Stop-Order
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-[#090D16] border border-rose-500/20 text-xs text-slate-300 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-rose-300">
+                  Breach Incident #GOV-882: Clinical Restriction Velocity Exceeded
+                </span>
+                <span className="font-mono text-[10px] text-slate-400">Occurred: 10:45 IST Today</span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Player <strong className="text-white">Karanveer Singh (Defender)</strong> clocked <strong className="text-rose-300 font-mono">28.4 km/h</strong> in High-Speed Running during Senior Pitch Tactical Block, directly violating Dr. Raghavan's signed medical restriction (<strong className="text-amber-300 font-mono">Capped at 22.0 km/h</strong>).
+              </p>
+            </div>
+          </div>
+
+          {/* Squad Availability Depreciation & Olympic Cycle Projection */}
+          <div className="bg-[#0F1623] border border-slate-800 rounded-xl p-5 space-y-3 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <div>
+                  <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                    Macro Squad Availability Depreciation & Olympic Cycle Roster Depth
+                  </h3>
+                  <span className="text-[11px] text-slate-400">
+                    180-Day Historical Trend vs 90-Day Tournament Peaking Projection
+                  </span>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono text-[11px] font-bold">
+                Projected Available Core: 82.4% (Target: ≥85%)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 rounded-lg bg-[#090D16] border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">CURRENT SQUAD AVAILABILITY</span>
+                <div className="text-xl font-mono font-bold text-emerald-400 mt-0.5">86.2%</div>
+                <span className="text-[10px] text-slate-500">162 / 184 National Pool</span>
+              </div>
+              <div className="p-3 rounded-lg bg-[#090D16] border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">PROJECTED TOURNAMENT DEPRECIATION</span>
+                <div className="text-xl font-mono font-bold text-amber-400 mt-0.5">-3.8%</div>
+                <span className="text-[10px] text-slate-500">Based on 3-match weekly density</span>
+              </div>
+              <div className="p-3 rounded-lg bg-[#090D16] border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">PRIMARY INJURY EXPOSURE</span>
+                <div className="text-xl font-mono font-bold text-rose-400 mt-0.5">Hamstrings (62%)</div>
+                <span className="text-[10px] text-slate-500">Deceleration & HSR fatigue cascade</span>
+              </div>
+              <div className="p-3 rounded-lg bg-[#090D16] border border-slate-800">
+                <span className="text-[10px] text-slate-400 block">OLYMPIC QUALIFICATION READINESS</span>
+                <div className="text-xl font-mono font-bold text-sky-400 mt-0.5">TIER-1 READY</div>
+                <span className="text-[10px] text-slate-500">Backup depth verified in 9 positions</span>
+              </div>
+            </div>
+          </div>
+
           <KpiGrid activeKpi={activeKpi} onSelectKpi={onSelectKpi} />
 
           <ReadinessAndAlertSection

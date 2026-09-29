@@ -245,9 +245,15 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
   const [campLocation, setCampLocation] = useState('Ooty / Nilgiris High Altitude Complex');
   const [campVenue, setCampVenue] = useState('SAI High Altitude Training Center');
   const [campDates, setCampDates] = useState('15 Nov – 30 Nov 2026');
-  const [campHeadcount, setCampHeadcount] = useState(28);
-  const [campBudget, setCampBudget] = useState('₹32,50,000');
   const [campCoordinator, setCampCoordinator] = useState('Kavita Rao');
+
+  // Causal Facility Maintenance Cascade State
+  const [pitch1Maintenance, setPitch1Maintenance] = useState(false);
+  const [reallocatedVenue, setReallocatedVenue] = useState(false);
+
+  // Flight Delay Recovery Cascade State
+  const [flightDelayed, setFlightDelayed] = useState(false);
+  const [flightLoadDeducted, setFlightLoadDeducted] = useState(false);
 
   const handleCreateCamp = (e: React.FormEvent) => {
     e.preventDefault();
@@ -509,7 +515,61 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
                 </div>
               ))}
             </div>
+
+            {/* Flight Delay & Physiological Recovery Cascade */}
+          <div className="p-4 rounded-lg bg-[#070D18] border border-amber-500/30 space-y-3 mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                <Plane className="w-4 h-4 text-amber-400" />
+                <span className="font-bold text-slate-100 uppercase tracking-wider">
+                  Charter & International Flight Transit Watchdog
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setFlightDelayed(prev => !prev);
+                  if (!flightDelayed) {
+                    onTriggerToast('Flight delay logged: Air India AI-121 (+4.5 hours). Transit fatigue alert dispatched.');
+                  }
+                }}
+                className={`px-2.5 py-1 rounded font-mono text-[10px] font-semibold border transition-colors ${
+                  flightDelayed
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}
+              >
+                {flightDelayed ? 'Flight Status: ⚠️ DELAYED (+4.5 hrs)' : 'Flight Status: On Schedule'}
+              </button>
+            </div>
+
+            {flightDelayed && (
+              <div className="p-3 rounded bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-amber-300">
+                    ⚠️ Physiological Travel Fatigue Cascade Triggered
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    4.5h delay on Munich-Delhi connection causes circadian disruption. Sports Science guidelines mandate reducing tomorrow morning's pitch workload by 30%.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setFlightLoadDeducted(true);
+                    onTriggerToast('Tomorrow morning training session volume reduced by 30% AU ✓ Coaches and Athletes notified.');
+                  }}
+                  disabled={flightLoadDeducted}
+                  className={`px-3 py-1.5 rounded font-bold text-xs shrink-0 ${
+                    flightLoadDeducted
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                  }`}
+                >
+                  {flightLoadDeducted ? '✓ 30% Volume Reduction Applied' : 'Auto-Reduce Morning Load (-30% AU)'}
+                </button>
+              </div>
+            )}
           </div>
+        </div>
         </div>
       )}
 
@@ -583,9 +643,63 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
             <span className="text-xs font-mono text-emerald-400">Zero Venue Conflicts Detected</span>
           </div>
 
+          {/* Causal Pitch Maintenance & Venue Re-allocation Cascade */}
+          <div className="p-4 rounded-lg bg-[#070D18] border border-indigo-500/30 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-indigo-400" />
+                <span className="font-bold text-slate-100 uppercase tracking-wider">
+                  Causal Turf Maintenance & Venue Re-allocation Engine
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setPitch1Maintenance(prev => !prev);
+                  if (!pitch1Maintenance) {
+                    onTriggerToast('Pitch 1 marked UNDER MAINTENANCE. Conflict detected with 10:00 AM Senior Session!');
+                  }
+                }}
+                className={`px-2.5 py-1 rounded font-mono text-[10px] font-semibold border transition-colors ${
+                  pitch1Maintenance
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}
+              >
+                {pitch1Maintenance ? '⚠️ Pitch 1: UNDER MAINTENANCE' : 'Pitch 1: Operational (Healthy)'}
+              </button>
+            </div>
+
+            {pitch1Maintenance && (
+              <div className="p-3 rounded bg-rose-500/10 border border-rose-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="space-y-0.5">
+                  <div className="font-bold text-rose-300">
+                    🚨 Operational Conflict: Sprinkler Calibration in Progress on Pitch 1
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    Senior Squad Tactical Pressing (10:00 AM) is booked on Pitch 1. Re-allocation required to prevent schedule disruption.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setReallocatedVenue(true);
+                    onTriggerToast('Session re-allocated to Pitch 2 (Hybrid Turf) ✓ Coaching staff alerted.');
+                  }}
+                  disabled={reallocatedVenue}
+                  className={`px-3 py-1.5 rounded font-bold text-xs shrink-0 ${
+                    reallocatedVenue
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+                  }`}
+                >
+                  {reallocatedVenue ? '✓ Reallocated to Pitch 2' : 'Re-allocate to Pitch 2 (Hybrid Turf)'}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-3 text-xs">
             {[
-              { time: '08:00 – 10:00', venue: 'Pitch 1 (Grass)', squad: 'Senior Squad Tactical Session', status: 'Booked & Inspected' },
+              { time: '08:00 – 10:00', venue: reallocatedVenue ? 'Pitch 2 (Hybrid Turf — Reallocated)' : 'Pitch 1 (Grass)', squad: 'Senior Squad Tactical Session', status: pitch1Maintenance && !reallocatedVenue ? 'Conflict Flagged' : 'Booked & Inspected' },
               { time: '10:15 – 11:45', venue: 'Olympic High Performance Gym', squad: 'Senior Squad S&C Block', status: 'Booked' },
               { time: '12:00 – 13:30', venue: 'Hydrotherapy Recovery Center', squad: 'Squad Contrast CWI Flush', status: 'Active (10°C Ready)' },
               { time: '15:30 – 17:30', venue: 'Pitch 2 (Hybrid Turf)', squad: 'U-23 National Camp Session', status: 'Booked' },
@@ -599,7 +713,11 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
                     <span className="text-slate-400 text-[11px]">{f.squad}</span>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] font-semibold">
+                <span className={`px-2.5 py-1 rounded font-mono text-[10px] font-semibold border ${
+                  f.status === 'Conflict Flagged'
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                }`}>
                   {f.status}
                 </span>
               </div>

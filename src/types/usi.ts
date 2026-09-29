@@ -162,12 +162,44 @@ export interface RehabPlanRecord {
   sessions: RehabSessionRecord[];
 }
 
+export interface WearableTelemetry {
+  nightlyHrvMs: number;
+  hrvBaselineMs: number;
+  restingHeartRateBpm: number;
+  sleepEfficiencyPct: number;
+  deepSleepMinutes: number;
+  lastSyncTime: string;
+  source: 'Oura Ring Gen3' | 'Whoop 4.0' | 'Catapult Vector' | 'Apple Watch Ultra';
+}
+
+export interface PersonalDrillOrder {
+  id: string;
+  drillTitle: string;
+  sprintSpeedCapPct: number; // e.g. 80% Vmax
+  prescribedHydrationMl: number; // e.g. 500
+  coachTacticalConstraint: string;
+  physioPrecaution: string;
+}
+
+export interface PositiveMovementPrescription {
+  athleteId: string;
+  permittedActivities: string[];
+  prohibitedActivities: string[];
+  maxVelocityKmh: number;
+  contactAllowed: boolean;
+  lastUpdatedBy: string;
+  effectiveDate: string;
+}
+
 export interface RTPGateCriteriaState {
   painThresholdMet: boolean; // Pain <= 2/10 or <= 3/10 controlled
   strengthSymmetryMet: boolean; // >= 90%
   runningToleranceMet: boolean;
   functionalTestMet: boolean;
   medicalClearanceMet: boolean;
+  limbSymmetryIndexPct?: number; // e.g. 88%
+  dynamicPainScore?: number; // e.g. 1/10
+  evidenceFileName?: string; // e.g. ForcePlate_Report.pdf
 }
 
 export interface MedicalRiskAlertItem {
@@ -428,6 +460,9 @@ export interface Athlete {
       grantingBody: string;
     };
   };
+  wearableTelemetry?: WearableTelemetry;
+  personalDrillOrders?: PersonalDrillOrder[];
+  positivePrescription?: PositiveMovementPrescription;
 }
 
 export interface Squad {
@@ -474,6 +509,16 @@ export interface TrainingSession {
     modification: string;
   }[];
   notes: string;
+  attendedAthletes?: string[];
+  tacticalUnit?: 'Starting XI' | 'Defensive Unit' | 'Midfield Engine' | 'Attacking Line' | 'Rehab Group' | 'Full Squad';
+  livePitchsideSubstitutions?: {
+    athleteId: string;
+    athleteName: string;
+    fromDrill: string;
+    toModification: string;
+    timestamp: string;
+  }[];
+  drillClipUrl?: string;
 }
 
 export interface Injury {
@@ -516,6 +561,7 @@ export interface Injury {
     timestamp: string;
   };
   medicalNotes: MedicalNoteRecord[];
+  positivePrescription?: PositiveMovementPrescription;
 }
 
 export interface ReadinessTierDistribution {

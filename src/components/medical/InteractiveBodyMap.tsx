@@ -714,6 +714,52 @@ export const InteractiveBodyMap: React.FC<InteractiveBodyMapProps> = ({
                           : 'Pending'}
                       </strong>
                     </div>
+
+                    {/* Pathology Deep-Dive & Clinical Imaging Diagnostics */}
+                    <div className="p-3 rounded-lg bg-[#070D18] border border-sky-500/30 col-span-2 space-y-2">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Eye className="w-3.5 h-3.5 text-sky-400" />
+                          Pathology & MRI Imaging Diagnostics
+                        </span>
+                        <span className="font-mono text-[10px] text-sky-400 font-semibold">OSICS v11.2</span>
+                      </div>
+                      <div className="space-y-1 text-[11px] text-slate-300">
+                        <div>
+                          <span className="text-slate-500">Structural Tissue: </span>
+                          <strong className="text-white">
+                            {primaryInjury.bodyRegionDisplay.includes('Hamstring')
+                              ? 'Biceps Femoris (Long Head) — Proximal Myotendinous Junction'
+                              : primaryInjury.bodyRegionDisplay.includes('Knee')
+                              ? 'Anterior Cruciate Ligament (Anteromedial Bundle) & Medial Meniscus'
+                              : `${primaryInjury.bodyRegionDisplay} Deep Fascial Plane`}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Diagnostic Modality: </span>
+                          <span className="text-emerald-300 font-mono">1.5T MRI (Coronal T2 High-Res) confirmed by Lead Radiologist</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Structural Deficit: </span>
+                          <span className="text-amber-300 font-mono">Grade 2b (16mm longitudinal tear, 14% edema CSA)</span>
+                        </div>
+                      </div>
+
+                      {/* Coach-Facing Positive Movement Prescription */}
+                      <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5 text-[11px]">
+                        <span className="font-bold text-slate-200 block text-[10px] uppercase">
+                          Coach-Facing Movement Prescription:
+                        </span>
+                        <div className="p-1.5 rounded bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 flex items-start gap-1">
+                          <span className="font-bold shrink-0">✅ Permitted:</span>
+                          <span>Linear jogging &lt;14 km/h, upper body gym, seated passing drills.</span>
+                        </div>
+                        <div className="p-1.5 rounded bg-rose-950/20 border border-rose-500/20 text-rose-300 flex items-start gap-1">
+                          <span className="font-bold shrink-0">⛔ Prohibited:</span>
+                          <span>Max sprinting &gt;22 km/h, reactive slide tackles, full contact scrimmages.</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (
