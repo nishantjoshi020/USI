@@ -10,6 +10,15 @@ import {
   ShieldCheck,
   Sparkles,
   X,
+  Monitor,
+  Tablet,
+  Smartphone,
+  LayoutDashboard,
+  Users,
+  Dumbbell,
+  Activity,
+  Bot,
+  Menu,
 } from 'lucide-react';
 import {
   AIActionCentreItem,
@@ -70,7 +79,7 @@ import {
   INITIAL_REHAB_PLANS,
 } from './data/medicalMockData';
 import { Sidebar } from './components/navigation/Sidebar';
-import { TopContextBar } from './components/navigation/TopContextBar';
+import { TopContextBar, ViewportMode } from './components/navigation/TopContextBar';
 import { KpiFilterKey, KpiGrid } from './components/command-center/KpiGrid';
 import { RoleDashboardBanner } from './components/command-center/RoleDashboardBanner';
 import { RoleSpecificAnalyticsView } from './components/command-center/RoleSpecificAnalyticsView';
@@ -171,6 +180,8 @@ export default function App() {
   const [activeNav, setActiveNav] = useState<NavItemId>('command-center');
   const [context, setContext] = useState<HierarchyContext>(INITIAL_CONTEXT);
   const [selectedRole, setSelectedRole] = useState<UserRole>('Performance Director');
+  const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Iteration 5: AI Copilot & AI-Native Operations Shared State
   const [aiMessages, setAiMessages] = useState<AICopilotMessage[]>(
@@ -1160,36 +1171,128 @@ export default function App() {
     activeNav === 'analytics-reports';
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-[#F8FAFC] flex">
-      {/* Persistent Left Sidebar */}
-      <Sidebar
-        activeNav={
-          activeNav === 'athlete-360' ? 'athlete-registry' : activeNav
-        }
-        onSelectNav={handleSelectNav}
-        attentionCount={18}
-        activeInjuryCount={injuries.length}
-        selectedRole={selectedRole}
-      />
+    <div
+      className={`min-h-screen ${
+        viewportMode === 'desktop'
+          ? 'bg-[#090D16]'
+          : 'bg-[#04070D] py-3 px-2 sm:px-4 flex flex-col items-center'
+      } text-[#F8FAFC]`}
+    >
+      {/* Active Viewport Mode Indicator Banner when in Tablet or Mobile View */}
+      {viewportMode !== 'desktop' && (
+        <div
+          className={`w-full ${
+            viewportMode === 'tablet' ? 'max-w-[854px]' : 'max-w-[430px]'
+          } mb-2 px-3 py-1.5 rounded-lg bg-[#0F1623] border border-slate-800 flex items-center justify-between text-[11px]`}
+        >
+          <div className="flex items-center gap-2 text-slate-300">
+            {viewportMode === 'tablet' ? (
+              <Tablet className="w-3.5 h-3.5 text-sky-400" />
+            ) : (
+              <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+            )}
+            <span className="font-semibold text-slate-100">
+              {viewportMode === 'tablet'
+                ? 'Tablet View (834px Slate)'
+                : 'Mobile View (430px Handheld)'}
+            </span>
+            <span className="hidden sm:inline text-slate-500">·</span>
+            <span className="hidden sm:inline text-slate-400 font-mono text-[10px]">
+              100% Feature Parity
+            </span>
+          </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Persistent Top Global Hierarchy Context Bar */}
-        <TopContextBar
-          context={context}
-          onUpdateContext={handleUpdateContext}
-          selectedRole={selectedRole}
-          onSelectRole={handleSelectRole}
-          unreadNotificationsCount={unreadNotificationsCount}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onToggleNotifications={() =>
-            setIsNotificationsOpen((prev) => !prev)
+          <div className="flex items-center gap-1">
+            {(
+              [
+                { id: 'desktop' as const, label: 'Desktop', icon: Monitor },
+                { id: 'tablet' as const, label: 'Tablet', icon: Tablet },
+                { id: 'mobile' as const, label: 'Mobile', icon: Smartphone },
+              ] as const
+            ).map((m) => {
+              const Icon = m.icon;
+              const active = viewportMode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    setViewportMode(m.id);
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                    active
+                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span>{m.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Viewport Frame Container */}
+      <div
+        className={`w-full flex flex-1 ${
+          viewportMode === 'tablet'
+            ? 'viewport-tablet max-w-[854px] bg-[#090D16] border border-slate-800 rounded-xl shadow-2xl overflow-x-hidden relative'
+            : viewportMode === 'mobile'
+              ? 'viewport-mobile max-w-[430px] bg-[#090D16] border border-slate-800 rounded-2xl shadow-2xl overflow-x-hidden relative pb-14'
+              : 'bg-[#090D16]'
+        }`}
+      >
+        {/* Persistent Left Sidebar (or Slide-Over Drawer in Mobile) */}
+        <Sidebar
+          activeNav={
+            activeNav === 'athlete-360' ? 'athlete-registry' : activeNav
           }
-          onOpenHelpModal={() => setIsHelpModalOpen(true)}
-          onOpenAICopilot={() => setIsGlobalCopilotOpen(true)}
-          pendingAIActionsCount={pendingAIActionsCount}
-          onResetDemoState={handleResetDemoState}
+          onSelectNav={handleSelectNav}
+          attentionCount={18}
+          activeInjuryCount={injuries.length}
+          selectedRole={selectedRole}
+          viewportMode={viewportMode}
+          isMobileDrawerOpen={isMobileDrawerOpen}
+          onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
         />
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Persistent Top Global Hierarchy Context Bar */}
+          <TopContextBar
+            context={context}
+            onUpdateContext={handleUpdateContext}
+            selectedRole={selectedRole}
+            onSelectRole={handleSelectRole}
+            unreadNotificationsCount={unreadNotificationsCount}
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onToggleNotifications={() =>
+              setIsNotificationsOpen((prev) => !prev)
+            }
+            onOpenHelpModal={() => setIsHelpModalOpen(true)}
+            onOpenAICopilot={() => setIsGlobalCopilotOpen(true)}
+            pendingAIActionsCount={pendingAIActionsCount}
+            onResetDemoState={handleResetDemoState}
+            viewportMode={viewportMode}
+            onChangeViewportMode={(mode) => {
+              setViewportMode(mode);
+              setIsMobileDrawerOpen(false);
+              triggerToast(
+                `Switched to ${
+                  mode === 'desktop'
+                    ? 'Desktop (Full Width)'
+                    : mode === 'tablet'
+                      ? 'Tablet (834px Slate)'
+                      : 'Mobile (430px Handheld)'
+                } view`
+              );
+            }}
+            onToggleMobileSidebar={() =>
+              setIsMobileDrawerOpen((prev) => !prev)
+            }
+          />
 
         {/* Workspace Viewport */}
         <main className="flex-1 p-5 lg:p-6 max-w-[1600px] w-full mx-auto space-y-5">
@@ -1680,6 +1783,66 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Mobile Bottom Tactical Navigation Bar (when in Mobile View) */}
+        {viewportMode === 'mobile' && (
+          <nav className="sticky bottom-0 inset-x-0 h-14 bg-[#090D16]/95 backdrop-blur-md border-t border-slate-800 px-2 flex items-center justify-around z-30">
+            {[
+              {
+                id: 'command-center' as NavItemId,
+                label: 'Command',
+                icon: LayoutDashboard,
+              },
+              {
+                id: 'athlete-registry' as NavItemId,
+                label: selectedRole === 'Athlete' ? 'Profile' : 'Athletes',
+                icon: Users,
+              },
+              {
+                id: 'sessions' as NavItemId,
+                label: 'Training',
+                icon: Dumbbell,
+              },
+              {
+                id: 'readiness' as NavItemId,
+                label: 'Science',
+                icon: Activity,
+              },
+              {
+                id: 'ai-copilot' as NavItemId,
+                label: 'Copilot',
+                icon: Bot,
+              },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive =
+                activeNav === tab.id ||
+                (tab.id === 'athlete-registry' && activeNav === 'athlete-360');
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleSelectNav(tab.id)}
+                  className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-md transition-colors ${
+                    isActive
+                      ? 'text-sky-400 font-semibold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-[10px] leading-none">{tab.label}</span>
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-md text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              <Menu className="w-4 h-4 text-sky-400" />
+              <span className="text-[10px] leading-none">Modules</span>
+            </button>
+          </nav>
+        )}
+        </div>
       </div>
 
       {/* Athlete Detail Drawer (With [Open Full Profile] navigation to Athlete 360) */}

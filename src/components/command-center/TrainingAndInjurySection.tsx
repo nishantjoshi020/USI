@@ -11,6 +11,8 @@ import { Injury, TrainingSession } from '../../types/usi';
 import { LoadBadge, StatusBadge } from '../ui/Badges';
 
 interface TrainingAndInjurySectionProps {
+  sessions?: TrainingSession[];
+  injuries?: Injury[];
   onSelectSession: (session: TrainingSession) => void;
   onSelectInjuryAthlete: (athleteId: string) => void;
   onViewInjuryIntelligence: () => void;
