@@ -26,6 +26,77 @@ interface SidebarProps {
   selectedRole?: UserRole;
 }
 
+const ROLE_ALLOWED_NAV_GROUPS: Record<UserRole, string[]> = {
+  'Performance Director': [
+    'command-center',
+    'athletes',
+    'training',
+    'medical',
+    'sports-science',
+    'nutrition',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+    'settings',
+  ],
+  Coach: [
+    'command-center',
+    'athletes',
+    'training',
+    'sports-science',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+  ],
+  'Sports Scientist': [
+    'command-center',
+    'athletes',
+    'training',
+    'sports-science',
+    'nutrition',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+  ],
+  Physiotherapist: [
+    'command-center',
+    'athletes',
+    'medical',
+    'sports-science',
+    'assessments-tid',
+    'ai-copilot',
+  ],
+  Nutritionist: [
+    'command-center',
+    'athletes',
+    'nutrition',
+    'sports-science',
+    'analytics-bi',
+    'ai-copilot',
+  ],
+  'Federation Admin': [
+    'command-center',
+    'athletes',
+    'analytics-bi',
+    'ai-copilot',
+    'settings',
+  ],
+  Athlete: [
+    'command-center',
+    'training',
+    'nutrition',
+    'sports-science',
+    'ai-copilot',
+  ],
+  'Operations Team': [
+    'command-center',
+    'training',
+    'analytics-bi',
+    'ai-copilot',
+    'settings',
+  ],
+};
+
 interface NavGroup {
   id: string;
   label: string;
@@ -47,77 +118,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeInjuryCount,
   selectedRole = 'Performance Director',
 }) => {
-  const ROLE_NAV_PERMISSIONS: Record<UserRole, string[]> = {
-    'Performance Director': [
-      'command-center',
-      'athletes',
-      'training',
-      'medical',
-      'sports-science',
-      'nutrition',
-      'assessments-tid',
-      'analytics-bi',
-      'ai-copilot',
-      'settings',
-    ],
-    Coach: [
-      'command-center',
-      'athletes',
-      'training',
-      'sports-science',
-      'assessments-tid',
-      'analytics-bi',
-      'ai-copilot',
-    ],
-    'Sports Scientist': [
-      'command-center',
-      'athletes',
-      'training',
-      'sports-science',
-      'nutrition',
-      'assessments-tid',
-      'analytics-bi',
-      'ai-copilot',
-    ],
-    Physiotherapist: [
-      'command-center',
-      'athletes',
-      'medical',
-      'sports-science',
-      'assessments-tid',
-      'ai-copilot',
-    ],
-    Nutritionist: [
-      'command-center',
-      'athletes',
-      'nutrition',
-      'sports-science',
-      'analytics-bi',
-      'ai-copilot',
-    ],
-    'Federation Admin': [
-      'command-center',
-      'athletes',
-      'analytics-bi',
-      'ai-copilot',
-      'settings',
-    ],
-    Athlete: [
-      'command-center',
-      'training',
-      'nutrition',
-      'sports-science',
-      'ai-copilot',
-    ],
-    'Operations Team': [
-      'command-center',
-      'training',
-      'analytics-bi',
-      'ai-copilot',
-      'settings',
-    ],
-  };
-
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     athletes: false,
     training: false,
@@ -297,88 +297,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-1">
         {navGroups
           .filter((group) =>
-            selectedRole && ROLE_NAV_PERMISSIONS[selectedRole]
-              ? ROLE_NAV_PERMISSIONS[selectedRole].includes(group.id)
-              : true
+            (
+              ROLE_ALLOWED_NAV_GROUPS[selectedRole] ||
+              ROLE_ALLOWED_NAV_GROUPS['Performance Director']
+            ).includes(group.id)
           )
           .map((group) => {
-          const Icon = group.icon;
-          const hasChildren = Boolean(group.children && group.children.length > 0);
-          const isChildActive = group.children?.some((c) => c.id === activeNav);
-          const isDirectActive = group.navId === activeNav;
-          const isExpanded = !collapsedSections[group.id];
+            const Icon = group.icon;
+            const hasChildren = Boolean(group.children && group.children.length > 0);
+            const isChildActive = group.children?.some((c) => c.id === activeNav);
+            const isDirectActive = group.navId === activeNav;
+            const isExpanded = !collapsedSections[group.id];
 
-          if (!hasChildren && group.navId) {
-            const isCommandCenter = group.navId === 'command-center';
-            return (
-              <div key={group.id} className={isCommandCenter ? 'pb-2 mb-2 border-b border-slate-800/80' : ''}>
-                <button
-                  onClick={() => onSelectNav(group.navId!)}
-                  title={isCompact ? group.label : undefined}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
-                    isDirectActive
-                      ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold'
-                      : 'text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon
-                      className={`w-4 h-4 shrink-0 ${
-                        isDirectActive ? 'text-sky-400' : 'text-slate-400'
-                      }`}
-                    />
-                    {!isCompact && (
-                      <span
-                        className={`truncate ${
-                          isCommandCenter ? 'tracking-wider font-semibold text-[11px]' : ''
-                        }`}
-                      >
-                        {group.label}
-                      </span>
-                    )}
-                  </div>
-                  {!isCompact && group.badgeCount !== undefined && (
-                    <span className="font-mono text-[11px] text-sky-400 tabular-nums">
-                      {group.badgeCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            );
-          }
-
-          return (
-            <div key={group.id} className="space-y-0.5">
-              <button
-                onClick={() => {
-                  if (group.navId) {
-                    onSelectNav(group.navId);
-                    setCollapsedSections((prev) => ({ ...prev, [group.id]: false }));
-                  } else if (isCompact && group.children?.[0]) {
-                    onSelectNav(group.children[0].id);
-                  } else {
-                    toggleSection(group.id);
-                  }
-                }}
-                title={isCompact ? group.label : undefined}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
-                  isChildActive
-                    ? 'text-slate-100 bg-slate-800/40'
-                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-slate-100'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon
-                    className={`w-4 h-4 shrink-0 ${
-                      isChildActive ? 'text-sky-400' : 'text-slate-400'
+            if (!hasChildren && group.navId) {
+              const isCommandCenter = group.navId === 'command-center';
+              return (
+                <div key={group.id} className={isCommandCenter ? 'pb-2 mb-2 border-b border-slate-800/80' : ''}>
+                  <button
+                    onClick={() => onSelectNav(group.navId!)}
+                    title={isCompact ? group.label : undefined}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
+                      isDirectActive
+                        ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30 font-semibold'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 border border-transparent'
                     }`}
-                  />
-                  {!isCompact && <span className="truncate font-medium">{group.label}</span>}
-                </div>
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${
+                          isDirectActive ? 'text-sky-400' : 'text-slate-400'
+                        }`}
+                      />
+                      {!isCompact && (
+                        <span
+                          className={`truncate ${
+                            isCommandCenter ? 'tracking-wider font-semibold text-[11px]' : ''
+                          }`}
+                        >
+                          {group.label}
+                        </span>
+                      )}
+                    </div>
 
-                {!isCompact && (
-                  <div className="flex items-center gap-1.5">
-                    {group.badgeCount !== undefined && (
+                    {!isCompact && group.badgeCount !== undefined && (
                       <span
                         className={`font-mono text-[11px] tabular-nums ${
                           group.badgeTone === 'rose'
@@ -391,43 +352,92 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         {group.badgeCount}
                       </span>
                     )}
-                    {isExpanded ? (
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-                    ) : (
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-                    )}
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div key={group.id} className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    if (group.navId) {
+                      onSelectNav(group.navId);
+                      setCollapsedSections((prev) => ({ ...prev, [group.id]: false }));
+                    } else if (isCompact && group.children?.[0]) {
+                      onSelectNav(group.children[0].id);
+                    } else {
+                      toggleSection(group.id);
+                    }
+                  }}
+                  title={isCompact ? group.label : undefined}
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
+                    isChildActive
+                      ? 'text-slate-100 bg-slate-800/40'
+                      : 'text-slate-300 hover:bg-slate-800/50 hover:text-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon
+                      className={`w-4 h-4 shrink-0 ${
+                        isChildActive ? 'text-sky-400' : 'text-slate-400'
+                      }`}
+                    />
+                    {!isCompact && <span className="truncate font-medium">{group.label}</span>}
+                  </div>
+
+                  {!isCompact && (
+                    <div className="flex items-center gap-1.5">
+                      {group.badgeCount !== undefined && (
+                        <span
+                          className={`font-mono text-[11px] tabular-nums ${
+                            group.badgeTone === 'rose'
+                              ? 'text-rose-400'
+                              : group.badgeTone === 'amber'
+                                ? 'text-amber-400'
+                                : 'text-sky-400'
+                          }`}
+                        >
+                          {group.badgeCount}
+                        </span>
+                      )}
+                      {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                      )}
+                    </div>
+                  )}
+                </button>
+
+                {!isCompact && isExpanded && group.children && (
+                  <div className="pl-6 pr-1 py-0.5 space-y-0.5 border-l border-slate-800/80 ml-4">
+                    {group.children.map((child) => {
+                      const active = activeNav === child.id;
+                      return (
+                        <button
+                          key={child.id}
+                          onClick={() => onSelectNav(child.id)}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors ${
+                            active
+                              ? 'bg-sky-500/15 text-sky-300 font-semibold'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                          }`}
+                        >
+                          <span className="truncate">{child.label}</span>
+                          {child.badge !== undefined && (
+                            <span className="font-mono text-[10px] text-slate-400 tabular-nums">
+                              {child.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
-              </button>
-
-              {!isCompact && isExpanded && group.children && (
-                <div className="pl-6 pr-1 py-0.5 space-y-0.5 border-l border-slate-800/80 ml-4">
-                  {group.children.map((child) => {
-                    const active = activeNav === child.id;
-                    return (
-                      <button
-                        key={child.id}
-                        onClick={() => onSelectNav(child.id)}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors ${
-                          active
-                            ? 'bg-sky-500/15 text-sky-300 font-semibold'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                        }`}
-                      >
-                        <span className="truncate">{child.label}</span>
-                        {child.badge !== undefined && (
-                          <span className="font-mono text-[10px] text-slate-400 tabular-nums">
-                            {child.badge}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
       </nav>
 
       {/* Operational Hierarchy Footer */}

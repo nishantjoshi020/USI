@@ -55,7 +55,7 @@ export const SessionDetailDrawer: React.FC<SessionDetailDrawerProps> = ({
               </span>
               <span>·</span>
               <span className="inline-flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                 {session.pitchOrVenue}
               </span>
             </div>
