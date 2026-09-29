@@ -1570,4 +1570,12 @@ export const ROLE_DESCRIPTIONS: Record<string, { focus: string; clearance: strin
     focus: 'National program governance, Athlete registry verification, Cross-sport compliance',
     clearance: 'Federation Level 5 · Institutional Governance',
   },
+  Athlete: {
+    focus: 'Personal readiness index, recovery biometric logs, daily training schedule & wellness feedback',
+    clearance: 'Athlete Portal · Personal Telemetry & Feedback',
+  },
+  'Operations Team': {
+    focus: 'Facility scheduling, pitch readiness, logistics/travel tracking & equipment telemetry',
+    clearance: 'Operations Level 4 · Facility & Logistics Management',
+  },
 };
