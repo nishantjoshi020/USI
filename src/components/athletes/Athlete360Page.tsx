@@ -140,16 +140,44 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
   const [showAssessmentDetailModal, setShowAssessmentDetailModal] =
     useState(false);
 
-  const tabs: Athlete360TabId[] = [
-    'Overview',
-    'Performance',
-    'Training',
-    'Medical',
-    'Sports Science',
-    'Nutrition',
-    'Assessments',
-    'Documents',
-  ];
+  const getTabsForRole = (role: UserRole): Athlete360TabId[] => {
+    switch (role) {
+      case 'Athlete':
+        return ['Overview', 'Performance', 'Training', 'Sports Science', 'Nutrition', 'Documents'];
+      case 'Coach':
+        return ['Overview', 'Performance', 'Training', 'Sports Science', 'Assessments', 'Documents'];
+      case 'Physiotherapist':
+        return ['Overview', 'Medical', 'Training', 'Sports Science', 'Assessments', 'Documents'];
+      case 'Nutritionist':
+        return ['Overview', 'Nutrition', 'Performance', 'Sports Science', 'Documents'];
+      case 'Operations Team':
+        return ['Overview', 'Training', 'Documents'];
+      case 'Federation Admin':
+        return ['Overview', 'Documents', 'Assessments', 'Performance'];
+      case 'Sports Scientist':
+        return ['Overview', 'Sports Science', 'Performance', 'Training', 'Nutrition', 'Assessments'];
+      case 'Performance Director':
+      default:
+        return [
+          'Overview',
+          'Performance',
+          'Training',
+          'Medical',
+          'Sports Science',
+          'Nutrition',
+          'Assessments',
+          'Documents',
+        ];
+    }
+  };
+
+  const tabs: Athlete360TabId[] = getTabsForRole(selectedRole);
+
+  React.useEffect(() => {
+    if (!tabs.includes(activeTab)) {
+      setActiveTab(tabs[0] || 'Overview');
+    }
+  }, [selectedRole, tabs, activeTab]);
 
   const handleGenerateUpdatedAiSummary = () => {
     const updatedText = `${athlete.name}'s composite readiness is ${athlete.readiness}/100 (updated 28 Sep 2026). Acute workload (${athlete.acuteLoadAu} AU, ACWR ${athlete.acwr.toFixed(2)}), morning HRV (${athlete.hrvMs} ms), and sleep consistency (${athlete.sleepFormatted}) have been cross-checked against ${athlete.medicalStatus.toLowerCase()} medical status. Review high-speed running exposure prior to next pitch block.`;
@@ -234,31 +262,33 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
             className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
-            <span>Athlete Registry</span>
+            <span>{selectedRole === 'Athlete' ? 'Personal Portal' : 'Athlete Registry'}</span>
           </button>
           <span className="text-slate-600">/</span>
           <span className="font-mono text-sky-400">
-            /athletes/{athlete.athleteId}
+            {selectedRole === 'Athlete' ? '/my-profile' : `/athletes/${athlete.athleteId}`}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-400">Switch Athlete:</span>
-          <select
-            value={athlete.id}
-            onChange={(e) => {
-              const target = allAthletes.find((a) => a.id === e.target.value);
-              if (target) onSwitchAthlete(target);
-            }}
-            className="px-2.5 py-1 bg-[#0F1623] border border-slate-800 rounded text-xs text-slate-100 focus:outline-none focus:border-sky-500"
-          >
-            {allAthletes.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name} ({a.athleteId} · {a.position})
-              </option>
-            ))}
-          </select>
-        </div>
+        {selectedRole !== 'Athlete' && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-400">Switch Athlete:</span>
+            <select
+              value={athlete.id}
+              onChange={(e) => {
+                const target = allAthletes.find((a) => a.id === e.target.value);
+                if (target) onSwitchAthlete(target);
+              }}
+              className="px-2.5 py-1 bg-[#0F1623] border border-slate-800 rounded text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+            >
+              {allAthletes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.athleteId} · {a.position})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* 4. ATHLETE 360 HEADER */}
@@ -301,10 +331,11 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
             </div>
           </div>
 
-          {/* Header Actions: [Edit Profile] [Assign Coach] [Medical] [Training] [Generate AI Summary] */}
+          {/* Header Actions: Role-scoped actions */}
           <div className="flex flex-wrap items-center gap-2">
             {(athlete.verificationStatus === 'Pending' ||
-              athlete.verificationStatus === 'Changes Requested') && (
+              athlete.verificationStatus === 'Changes Requested') &&
+              ['Federation Admin', 'Performance Director'].includes(selectedRole) && (
               <button
                 onClick={() => onOpenReviewApplication(athlete)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-colors whitespace-nowrap"
@@ -319,32 +350,38 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
             >
               <Edit3 className="w-3.5 h-3.5 text-slate-400" />
-              <span>Edit Profile</span>
+              <span>{selectedRole === 'Athlete' ? 'Edit My Details' : 'Edit Profile'}</span>
             </button>
 
-            <button
-              onClick={() => onOpenAssignCoach(athlete)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-sky-400" />
-              <span>Assign Coach</span>
-            </button>
+            {['Coach', 'Federation Admin', 'Performance Director'].includes(selectedRole) && (
+              <button
+                onClick={() => onOpenAssignCoach(athlete)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-sky-400" />
+                <span>Assign Coach</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setActiveTab('Medical')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-            >
-              <HeartPulse className="w-3.5 h-3.5 text-rose-400" />
-              <span>Medical</span>
-            </button>
+            {tabs.includes('Medical') && (
+              <button
+                onClick={() => setActiveTab('Medical')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              >
+                <HeartPulse className="w-3.5 h-3.5 text-rose-400" />
+                <span>Medical</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setActiveTab('Training')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-            >
-              <Dumbbell className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Training</span>
-            </button>
+            {tabs.includes('Training') && (
+              <button
+                onClick={() => setActiveTab('Training')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              >
+                <Dumbbell className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Training</span>
+              </button>
+            )}
 
             <button
               onClick={() => onOpenAiAssistance('summary')}

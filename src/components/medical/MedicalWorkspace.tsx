@@ -150,7 +150,17 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
 
   // Filtered Injuries for Landscape & Register
   const filteredInjuries = useMemo(() => {
-    return injuries.filter((inj) => {
+    let sourceInjuries = injuries;
+    if (selectedRole === 'Athlete') {
+      sourceInjuries = injuries.filter(
+        (inj) =>
+          inj.athleteId === 'ath-1042' ||
+          inj.athleteName.toLowerCase().includes('arjun') ||
+          inj.athleteId === athletes[0]?.id
+      );
+    }
+
+    return sourceInjuries.filter((inj) => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const match =

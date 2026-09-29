@@ -1314,6 +1314,7 @@ export default function App() {
           ) : activeNav === 'athlete-registry' ? (
             <AthleteRegistryPage
               athletes={athletes}
+              selectedRole={selectedRole}
               onOpenAthlete360={handleOpenFullAthlete360}
               onOpenQuickDrawer={(ath) => setDrawerAthleteId(ath.id)}
               onOpenAddAthleteModal={() => setIsOnboardingOpen(true)}
@@ -1685,6 +1686,7 @@ export default function App() {
           ) : (
             <ConnectedModuleView
               activeNav={activeNav}
+              selectedRole={selectedRole}
               onReturnToCommandCenter={() => setActiveNav('command-center')}
               athletes={athletes}
               sessions={sessions}

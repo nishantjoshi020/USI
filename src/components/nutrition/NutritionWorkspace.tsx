@@ -135,7 +135,18 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
 
   // Filtered Nutrition Plans Table
   const filteredPlans = useMemo(() => {
-    return plans.filter((p) => {
+    let sourcePlans = plans;
+    if (selectedRole === 'Athlete') {
+      sourcePlans = plans.filter(
+        (p) =>
+          p.athleteId === 'ath-1042' ||
+          p.athleteName.toLowerCase().includes('arjun') ||
+          p.athleteId === athletes[0]?.id
+      );
+      if (sourcePlans.length === 0 && plans.length > 0) sourcePlans = [plans[0]];
+    }
+
+    return sourcePlans.filter((p) => {
       if (
         searchQuery.trim() &&
         !p.athleteName.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -158,6 +169,8 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
     });
   }, [
     plans,
+    selectedRole,
+    athletes,
     searchQuery,
     sportFilter,
     squadFilter,
@@ -244,13 +257,15 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             <span className="px-3 py-1.5 rounded bg-[#090D16] border border-slate-800 text-xs font-mono text-slate-300">
               Role Lens: <strong className="text-sky-400">{selectedRole}</strong>
             </span>
-            <button
-              onClick={() => setIsCreatePlanOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Nutrition Plan</span>
-            </button>
+            {['Nutritionist', 'Sports Scientist', 'Performance Director'].includes(selectedRole) && (
+              <button
+                onClick={() => setIsCreatePlanOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Nutrition Plan</span>
+              </button>
+            )}
             <button
               onClick={() => setIsAddHydrationOpen(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-sky-300 font-semibold text-xs transition-colors"

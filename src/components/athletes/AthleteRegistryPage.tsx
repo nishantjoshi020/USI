@@ -18,6 +18,7 @@ import {
   Athlete,
   AthleteTrainingStatus,
   MedicalClearanceStatus,
+  UserRole,
   VerificationStatus,
 } from '../../types/usi';
 import {
@@ -43,6 +44,7 @@ interface AthleteRegistryPageProps {
     actionDescription: string
   ) => void;
   onTriggerToast: (msg: string) => void;
+  selectedRole?: UserRole;
 }
 
 export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
@@ -54,6 +56,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
   onOpenReviewApplicationModal,
   onBulkUpdateAthletes,
   onTriggerToast,
+  selectedRole = 'Performance Director',
 }) => {
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,6 +107,11 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
   );
 
   const filteredAthletes = useMemo(() => {
+    // Athlete persona only sees their own individual registration record
+    if (selectedRole === 'Athlete') {
+      return athletes.slice(0, 1);
+    }
+
     return athletes.filter((a) => {
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
@@ -155,6 +163,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
     verificationFilter,
     medicalFilter,
     incompleteOnly,
+    selectedRole,
   ]);
 
   const resetAllFilters = () => {
@@ -216,105 +225,138 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-3 border-b border-slate-800/90">
         <div>
           <div className="flex items-center gap-2 text-xs text-sky-400 font-medium">
-            <span>Athletes</span>
+            <span>{selectedRole === 'Athlete' ? 'Personal Portal' : 'Athletes'}</span>
             <span className="text-slate-600">/</span>
-            <span className="text-slate-300">Athlete Registry</span>
+            <span className="text-slate-300">
+              {selectedRole === 'Athlete' ? 'My Profile' : 'Athlete Registry'}
+            </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 mt-1">
-            ATHLETE REGISTRY
+            {selectedRole === 'Athlete'
+              ? 'MY ATHLETE PROFILE & REGISTRATION'
+              : selectedRole === 'Coach'
+              ? 'SQUAD ATHLETE SELECTION ROSTER'
+              : selectedRole === 'Physiotherapist'
+              ? 'CLINICAL CLEARANCE & REHABILITATION ROSTER'
+              : selectedRole === 'Nutritionist'
+              ? 'NUTRITION & HYDRATION ATHLETE ROSTER'
+              : selectedRole === 'Operations Team'
+              ? 'SQUAD LOGISTICS & TRAVEL READINESS'
+              : selectedRole === 'Federation Admin'
+              ? 'NATIONAL ATHLETE REGISTRY & LICENSING'
+              : 'ATHLETE REGISTRY'}
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Manage athlete profiles, eligibility, readiness, assignments and operational status.
+            {selectedRole === 'Athlete'
+              ? 'Personal verification status, assigned coach, medical clearance, and operational status.'
+              : selectedRole === 'Coach'
+              ? 'Manage squad tactical availability, readiness tiers, attendance, and player workload caps.'
+              : selectedRole === 'Physiotherapist'
+              ? 'Track active clinical cases, musculoskeletal screening compliance, and return-to-play gate status.'
+              : selectedRole === 'Nutritionist'
+              ? 'Monitor pre-session hydration status (USG), caloric intake compliance, and DEXA body composition.'
+              : selectedRole === 'Operations Team'
+              ? 'Review travel manifest eligibility, biometric identification, and kit/tech sizing readiness.'
+              : selectedRole === 'Federation Admin'
+              ? 'National federation database, biometric passport verification, and institutional licensing.'
+              : 'Manage athlete profiles, eligibility, readiness, assignments and operational status.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => handleExportCsv()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span>Export</span>
-          </button>
-
-          <button
-            onClick={onOpenAddAthleteModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors whitespace-nowrap"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>+ Add Athlete</span>
-          </button>
-        </div>
-      </div>
-
-      {/* SUMMARY KPIs (5 Clickable Cards) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {[
-          {
-            id: 'total',
-            label: 'Total Athletes',
-            value: 184 + Math.max(0, athletes.length - 10),
-            sub: `${athletes.length} active cohort loaded`,
-            tone: 'text-slate-100',
-          },
-          {
-            id: 'active',
-            label: 'Active',
-            value: 162 + athletes.filter((a) => a.trainingStatus === 'ACTIVE').length - 4,
-            sub: 'Cleared for squad operations',
-            tone: 'text-emerald-400',
-          },
-          {
-            id: 'pending-verification',
-            label: 'Pending Verification',
-            value: pendingVerificationCount,
-            sub: `${athletes.filter((a) => a.verificationStatus === 'Pending').length} in current view`,
-            tone: 'text-amber-400',
-          },
-          {
-            id: 'incomplete',
-            label: 'Incomplete Profiles',
-            value: incompleteProfilesCount,
-            sub: 'Missing doc or clearance',
-            tone: 'text-amber-300',
-          },
-          {
-            id: 'medical-pending',
-            label: 'Medical Clearance Pending',
-            value: medicalPendingCount,
-            sub: 'Requires clinician sign-off',
-            tone: 'text-rose-400',
-          },
-        ].map((kpi) => {
-          const isSelected = activeSummaryKpi === kpi.id;
-          return (
+        {selectedRole !== 'Athlete' && (
+          <div className="flex items-center gap-2.5">
             <button
-              key={kpi.id}
-              onClick={() => handleSummaryKpiClick(kpi.id)}
-              className={`text-left p-3.5 rounded-lg bg-[#0F1623] hover:bg-[#151E2E] border transition-colors ${
-                isSelected
-                  ? 'border-sky-500 bg-[#131C2E]'
-                  : 'border-slate-800/90'
-              }`}
+              onClick={() => handleExportCsv()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
             >
-              <div className="text-xs font-medium text-slate-400">
-                {kpi.label}
-              </div>
-              <div
-                className={`text-2xl font-mono font-bold mt-1 tabular-nums ${kpi.tone}`}
-              >
-                {kpi.value}
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1 truncate">
-                {kpi.sub}
-              </div>
+              <Download className="w-3.5 h-3.5 text-slate-400" />
+              <span>Export</span>
             </button>
-          );
-        })}
+
+            {['Federation Admin', 'Performance Director'].includes(selectedRole) && (
+              <button
+                onClick={onOpenAddAthleteModal}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors whitespace-nowrap"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>+ Add Athlete</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* FILTER / ACTION TOOLBAR */}
-      <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-4 space-y-3">
+      {/* SUMMARY KPIs (5 Clickable Cards) - Hidden for Athlete */}
+      {selectedRole !== 'Athlete' && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[
+            {
+              id: 'total',
+              label: 'Total Athletes',
+              value: 184 + Math.max(0, athletes.length - 10),
+              sub: `${athletes.length} active cohort loaded`,
+              tone: 'text-slate-100',
+            },
+            {
+              id: 'active',
+              label: 'Active',
+              value: 162 + athletes.filter((a) => a.trainingStatus === 'ACTIVE').length - 4,
+              sub: 'Cleared for squad operations',
+              tone: 'text-emerald-400',
+            },
+            {
+              id: 'pending-verification',
+              label: 'Pending Verification',
+              value: pendingVerificationCount,
+              sub: `${athletes.filter((a) => a.verificationStatus === 'Pending').length} in current view`,
+              tone: 'text-amber-400',
+            },
+            {
+              id: 'incomplete',
+              label: 'Incomplete Profiles',
+              value: incompleteProfilesCount,
+              sub: 'Missing doc or clearance',
+              tone: 'text-amber-300',
+            },
+            {
+              id: 'medical-pending',
+              label: 'Medical Clearance Pending',
+              value: medicalPendingCount,
+              sub: 'Requires clinician sign-off',
+              tone: 'text-rose-400',
+            },
+          ].map((kpi) => {
+            const isSelected = activeSummaryKpi === kpi.id;
+            return (
+              <button
+                key={kpi.id}
+                onClick={() => handleSummaryKpiClick(kpi.id)}
+                className={`text-left p-3.5 rounded-lg bg-[#0F1623] hover:bg-[#151E2E] border transition-colors ${
+                  isSelected
+                    ? 'border-sky-500 bg-[#131C2E]'
+                    : 'border-slate-800/90'
+                }`}
+              >
+                <div className="text-xs font-medium text-slate-400">
+                  {kpi.label}
+                </div>
+                <div
+                  className={`text-2xl font-mono font-bold mt-1 tabular-nums ${kpi.tone}`}
+                >
+                  {kpi.value}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1 truncate">
+                  {kpi.sub}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* FILTER / ACTION TOOLBAR (Hidden for Athlete) */}
+      {selectedRole !== 'Athlete' && (
+        <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {/* [Search athletes] */}
           <div className="relative flex-1 min-w-[210px]">
@@ -476,9 +518,10 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
           </div>
         )}
       </div>
+      )}
 
-      {/* 15. BULK OPERATIONS TOOLBAR (Visible when 1+ rows selected) */}
-      {selectedIds.length > 0 && (
+      {/* 15. BULK OPERATIONS TOOLBAR (Visible when 1+ rows selected and not Athlete) */}
+      {selectedRole !== 'Athlete' && selectedIds.length > 0 && (
         <div className="px-4 py-3 rounded-lg bg-[#131C2E] border border-sky-500/50 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 text-xs">
             <span className="px-2 py-0.5 rounded bg-sky-500 text-slate-950 font-mono font-bold tabular-nums">
@@ -563,21 +606,23 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-800 bg-[#0B101B] text-[11px] font-semibold text-slate-400">
-                <th className="py-3 pl-4 pr-2 w-9">
-                  <button
-                    onClick={toggleSelectAll}
-                    aria-label="Select all athletes"
-                    className="text-slate-400 hover:text-slate-200 flex items-center"
-                  >
-                    {selectedIds.length > 0 &&
-                    selectedIds.length === filteredAthletes.length ? (
-                      <CheckSquare className="w-4 h-4 text-sky-400" />
-                    ) : (
-                      <Square className="w-4 h-4" />
-                    )}
-                  </button>
-                </th>
-                <th className="py-3 px-3">Athlete</th>
+                {selectedRole !== 'Athlete' && (
+                  <th className="py-3 pl-4 pr-2 w-9">
+                    <button
+                      onClick={toggleSelectAll}
+                      aria-label="Select all athletes"
+                      className="text-slate-400 hover:text-slate-200 flex items-center"
+                    >
+                      {selectedIds.length > 0 &&
+                      selectedIds.length === filteredAthletes.length ? (
+                        <CheckSquare className="w-4 h-4 text-sky-400" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                  </th>
+                )}
+                <th className={`py-3 ${selectedRole === 'Athlete' ? 'pl-4' : ''} px-3`}>Athlete</th>
                 <th className="py-3 px-3">Athlete ID</th>
                 <th className="py-3 px-3">Sport</th>
                 <th className="py-3 px-3">Position</th>
@@ -594,7 +639,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             <tbody className="divide-y divide-slate-800/60 text-xs">
               {filteredAthletes.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="py-10 text-center text-slate-400">
+                  <td colSpan={selectedRole === 'Athlete' ? 12 : 13} className="py-10 text-center text-slate-400">
                     <div className="flex flex-col items-center gap-2">
                       <Users className="w-6 h-6 text-slate-500" />
                       <span>No athlete records match your active filters.</span>
@@ -620,25 +665,27 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                           : 'hover:bg-[#151E2E]'
                       }`}
                     >
-                      <td
-                        className="py-3 pl-4 pr-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleSelectRow(athlete.id);
-                        }}
-                      >
-                        <button
-                          aria-label={`Select ${athlete.name}`}
-                          className="text-slate-400 hover:text-slate-200 flex items-center"
+                      {selectedRole !== 'Athlete' && (
+                        <td
+                          className="py-3 pl-4 pr-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelectRow(athlete.id);
+                          }}
                         >
-                          {isChecked ? (
-                            <CheckSquare className="w-4 h-4 text-sky-400" />
-                          ) : (
-                            <Square className="w-4 h-4" />
-                          )}
-                        </button>
-                      </td>
-                      <td className="py-3 px-3">
+                          <button
+                            aria-label={`Select ${athlete.name}`}
+                            className="text-slate-400 hover:text-slate-200 flex items-center"
+                          >
+                            {isChecked ? (
+                              <CheckSquare className="w-4 h-4 text-sky-400" />
+                            ) : (
+                              <Square className="w-4 h-4" />
+                            )}
+                          </button>
+                        </td>
+                      )}
+                      <td className={`py-3 ${selectedRole === 'Athlete' ? 'pl-4' : ''} px-3`}>
                         <div className="flex items-center gap-2.5">
                           <AthleteAvatar
                             name={athlete.name}
@@ -696,20 +743,21 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="inline-flex items-center gap-1.5">
-                          {athlete.verificationStatus === 'Pending' && (
-                            <button
-                              onClick={() =>
-                                onOpenReviewApplicationModal(athlete)
-                              }
-                              className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-[11px] font-semibold transition-colors"
-                            >
-                              Review Application
-                            </button>
-                          )}
+                          {athlete.verificationStatus === 'Pending' &&
+                            ['Federation Admin', 'Performance Director'].includes(selectedRole) && (
+                              <button
+                                onClick={() =>
+                                  onOpenReviewApplicationModal(athlete)
+                                }
+                                className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-[11px] font-semibold transition-colors"
+                              >
+                                Review Application
+                              </button>
+                            )}
 
                           <button
                             onClick={() => onOpenQuickDrawer(athlete)}
-                            title="Quick Drawer Preview"
+                            title={selectedRole === 'Athlete' ? 'My Biometric Summary' : 'Quick Drawer Preview'}
                             className="p-1.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
                           >
                             <PanelRightOpen className="w-3.5 h-3.5" />
@@ -719,7 +767,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                             onClick={() => onOpenAthlete360(athlete)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-semibold transition-colors"
                           >
-                            <span>Athlete 360</span>
+                            <span>{selectedRole === 'Athlete' ? 'View My Full 360' : 'Athlete 360'}</span>
                             <ExternalLink className="w-3 h-3" />
                           </button>
                         </div>
@@ -734,12 +782,26 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
 
         {/* Table Footer */}
         <div className="px-4 py-3 border-t border-slate-800 bg-[#0B101B] flex items-center justify-between text-xs text-slate-400">
-          <span>
-            Displaying <strong className="font-mono text-slate-200">{filteredAthletes.length}</strong> operational records (of 184 federation total)
-          </span>
-          <span className="text-[11px]">
-            Click any row to launch full <strong className="text-sky-400">Athlete 360</strong> profile
-          </span>
+          {selectedRole === 'Athlete' ? (
+            <>
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Displaying personal verified record · <strong className="text-emerald-400">Athlete Portal Active</strong></span>
+              </span>
+              <span className="text-[11px]">
+                Click row or button to view your comprehensive biometric &amp; training profile
+              </span>
+            </>
+          ) : (
+            <>
+              <span>
+                Displaying <strong className="font-mono text-slate-200">{filteredAthletes.length}</strong> operational records (of 184 federation total)
+              </span>
+              <span className="text-[11px]">
+                Click any row to launch full <strong className="text-sky-400">Athlete 360</strong> profile
+              </span>
+            </>
+          )}
         </div>
       </div>
 

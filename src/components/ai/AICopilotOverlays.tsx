@@ -33,7 +33,6 @@ import {
   NavItemId,
   UserRole,
 } from '../../types/usi';
-import { LiveVoiceCopilotPanel } from './LiveVoiceCopilotPanel';
 
 /* =========================================================
  * 1. AI EVIDENCE DRAWER (SECTION 22: "Why am I seeing this?" / "View Evidence")
@@ -511,7 +510,6 @@ interface GlobalAICopilotSlideOverProps {
   onExecuteAction: (action: AICopilotActionButton) => void;
   onOpenEvidence: (bundle: AIEvidenceBundle) => void;
   onExpandFullWorkspace: () => void;
-  onVoiceTurnCompleted?: (userTranscript: string, aiTranscript: string) => void;
 }
 
 export const GlobalAICopilotSlideOver: React.FC<
@@ -528,7 +526,6 @@ export const GlobalAICopilotSlideOver: React.FC<
   onExecuteAction,
   onOpenEvidence,
   onExpandFullWorkspace,
-  onVoiceTurnCompleted,
 }) => {
   const [inputVal, setInputVal] = useState('');
 
@@ -632,16 +629,6 @@ export const GlobalAICopilotSlideOver: React.FC<
           >
             Ask: "{contextualPrompt}"
           </button>
-        </div>
-
-        {/* Real-Time Gemini 3.8 Live Voice Bar */}
-        <div className="px-4 py-2.5 bg-[#090D16] border-b border-slate-800">
-          <LiveVoiceCopilotPanel
-            role={selectedRole}
-            hierarchy={context}
-            onVoiceTurnCompleted={onVoiceTurnCompleted}
-            compact
-          />
         </div>
 
         {/* Conversation Feed */}

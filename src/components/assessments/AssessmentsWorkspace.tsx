@@ -186,27 +186,29 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => {
-                onSelectSubTab('assessments-field-testing');
-                onTriggerToast(
-                  'Field Testing Active — Ready to enter & validate results'
-                );
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
-            >
-              <Play className="w-3.5 h-3.5" />
-              <span>Start Testing</span>
-            </button>
-            <button
-              onClick={() => setIsCreateProgramOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Create Assessment Program</span>
-            </button>
-          </div>
+          {['Coach', 'Sports Scientist', 'Performance Director'].includes(selectedRole) && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => {
+                  onSelectSubTab('assessments-field-testing');
+                  onTriggerToast(
+                    'Field Testing Active — Ready to enter & validate results'
+                  );
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
+              >
+                <Play className="w-3.5 h-3.5" />
+                <span>Start Testing</span>
+              </button>
+              <button
+                onClick={() => setIsCreateProgramOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Create Assessment Program</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Sub-Routes Bar */}
@@ -216,7 +218,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
               [
                 {
                   id: 'assessments-tid',
-                  label: 'Assessment Command Center',
+                  label: selectedRole === 'Athlete' ? 'My Assessment Overview' : 'Assessment Command Center',
                   route: '/assessments',
                 },
                 {
@@ -224,28 +226,36 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                   label: 'Test Library',
                   route: '/assessments/tests',
                 },
-                {
-                  id: 'assessments-field-testing',
-                  label: 'Field Testing & Result Entry',
-                  route: '/assessments/field-testing',
-                },
+                ...(selectedRole !== 'Athlete'
+                  ? [
+                      {
+                        id: 'assessments-field-testing',
+                        label: 'Field Testing & Result Entry',
+                        route: '/assessments/field-testing',
+                      },
+                    ]
+                  : []),
                 {
                   id: 'assessments-benchmarks',
-                  label: 'Benchmarking & Progression',
+                  label: selectedRole === 'Athlete' ? 'My Benchmarks & Progression' : 'Benchmarking & Progression',
                   route: '/assessments/benchmarks',
                 },
-                {
-                  id: 'assessments-talent',
-                  label: 'Talent Identification (TID)',
-                  route: '/assessments/talent',
-                },
+                ...(selectedRole !== 'Athlete'
+                  ? [
+                      {
+                        id: 'assessments-talent',
+                        label: 'Talent Identification (TID)',
+                        route: '/assessments/talent',
+                      },
+                    ]
+                  : []),
               ] as const
             ).map((tab) => {
               const active = activeSubTab === tab.id;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onSelectSubTab(tab.id)}
+                  onClick={() => onSelectSubTab(tab.id as AssessmentsSubTab)}
                   className={`px-3.5 py-2 rounded-md text-xs font-semibold transition-colors ${
                     active
                       ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'

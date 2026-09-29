@@ -18,6 +18,7 @@ import {
   Injury,
   NavItemId,
   TrainingSession,
+  UserRole,
 } from '../../types/usi';
 import {
   AthleteAvatar,
@@ -35,6 +36,7 @@ interface ConnectedModuleViewProps {
   injuries: Injury[];
   assessments: AssessmentRecord[];
   analyticsSeries: DailyAnalyticsPoint[];
+  selectedRole?: UserRole;
   onSelectAthlete: (athlete: Athlete) => void;
   onSelectSession: (session: TrainingSession) => void;
 }
@@ -164,9 +166,23 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
   sessions,
   injuries,
   assessments,
+  analyticsSeries,
+  selectedRole = 'Performance Director',
   onSelectAthlete,
   onSelectSession,
 }) => {
+  const isAthlete = selectedRole === 'Athlete';
+  const visibleAthletes = isAthlete ? athletes.slice(0, 1) : athletes;
+  const visibleSessions = isAthlete ? sessions.slice(0, 2) : sessions;
+  const visibleInjuries = isAthlete
+    ? injuries.filter(
+        (inj) =>
+          inj.athleteId === 'ath-1042' ||
+          inj.athleteName.toLowerCase().includes('arjun') ||
+          inj.athleteId === athletes[0]?.id
+      )
+    : injuries;
+
   const meta = MODULE_META[activeNav] ||
     MODULE_META['athlete-registry'] || {
       title: 'Athlete Registry',
@@ -211,11 +227,13 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-sky-400" />
               <h2 className="text-sm font-bold text-slate-100">
-                SENIOR NATIONAL SQUAD — CONNECTED ATHLETE COHORT
+                {isAthlete
+                  ? 'MY ATHLETE BIOMETRIC & TELEMETRY STREAM'
+                  : 'SENIOR NATIONAL SQUAD — CONNECTED ATHLETE COHORT'}
               </h2>
             </div>
             <span className="text-xs font-mono text-slate-400">
-              Click any athlete to open detail drawer
+              {isAthlete ? 'Verified Personal Athlete Stream' : 'Click any athlete to open detail drawer'}
             </span>
           </div>
 
@@ -233,7 +251,7 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {athletes.map((ath) => (
+                {visibleAthletes.map((ath) => (
                   <tr
                     key={ath.id}
                     onClick={() => onSelectAthlete(ath)}
@@ -298,7 +316,7 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
             </div>
           </div>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {sessions.map((sess) => (
+            {visibleSessions.map((sess) => (
               <div
                 key={sess.id}
                 onClick={() => onSelectSession(sess)}
@@ -339,7 +357,7 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
             </div>
           </div>
           <div className="mt-3 space-y-2.5">
-            {injuries.map((inj) => {
+            {visibleInjuries.map((inj) => {
               const ath = athletes.find((a) => a.id === inj.athleteId);
               return (
                 <div

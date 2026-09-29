@@ -4,7 +4,6 @@ import {
   Clock,
   Dumbbell,
   HeartPulse,
-  MapPin,
   UserCheck,
 } from 'lucide-react';
 import { ACTIVE_INJURIES, TRAINING_SESSIONS } from '../../data/mockData';
@@ -12,23 +11,19 @@ import { Injury, TrainingSession } from '../../types/usi';
 import { LoadBadge, StatusBadge } from '../ui/Badges';
 
 interface TrainingAndInjurySectionProps {
-  sessions?: TrainingSession[];
-  injuries?: Injury[];
   onSelectSession: (session: TrainingSession) => void;
   onSelectInjuryAthlete: (athleteId: string) => void;
   onViewInjuryIntelligence: () => void;
 }
 
 export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> = ({
-  sessions = TRAINING_SESSIONS,
-  injuries = ACTIVE_INJURIES,
   onSelectSession,
   onSelectInjuryAthlete,
   onViewInjuryIntelligence,
 }) => {
   const [sessionFilter, setSessionFilter] = useState<'All' | 'Completed' | 'Upcoming'>('All');
 
-  const filteredSessions = sessions.filter((s) =>
+  const filteredSessions = TRAINING_SESSIONS.filter((s) =>
     sessionFilter === 'All' ? true : s.status === sessionFilter
   );
 
@@ -66,22 +61,20 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
             </div>
 
             {/* Interactive Filter Control */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 p-1 bg-[#090D16] border border-slate-800 rounded-md">
-                {(['All', 'Completed', 'Upcoming'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setSessionFilter(tab)}
-                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                      sessionFilter === tab
-                        ? 'bg-slate-800 text-slate-100'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-1 p-1 bg-[#090D16] border border-slate-800 rounded-md">
+              {(['All', 'Completed', 'Upcoming'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setSessionFilter(tab)}
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                    sessionFilter === tab
+                      ? 'bg-slate-800 text-slate-100'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -244,7 +237,7 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
 
           {/* Active Injury Cases List */}
           <div className="mt-3.5 space-y-1.5">
-            {injuries.map((inj: Injury) => (
+            {ACTIVE_INJURIES.map((inj: Injury) => (
               <button
                 key={inj.id}
                 onClick={() => onSelectInjuryAthlete(inj.athleteId)}
