@@ -17,6 +17,7 @@ import {
   Utensils,
   PanelLeftClose,
   PanelLeftOpen,
+  Plane,
 } from 'lucide-react';
 import { NavItemId, UserRole } from '../../types/usi';
 
@@ -412,11 +413,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             navId: 'command-center',
           },
           {
-            id: 'training',
-            label: 'Facility Scheduling',
-            icon: Building2,
+            id: 'operations',
+            label: 'Team Logistics & Camps',
+            icon: Plane,
+            navId: 'camps',
             children: [
-              { id: 'sessions', label: 'Pitch & Court Bookings', badge: '5 Bookings' },
+              { id: 'camps', label: 'Training Camps & Travel', badge: 'Active' },
+              { id: 'manifests', label: 'Flight Manifests & Rooming' },
+              { id: 'cargo', label: 'ATA Carnet & Equipment' },
+              { id: 'facilities', label: 'Facility Master Schedule', badge: '5 Bookings' },
             ],
           },
           {
@@ -525,6 +530,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               { id: 'assessments-field-testing', label: 'Field Testing' },
               { id: 'assessments-benchmarks', label: 'Benchmarks' },
               { id: 'assessments-talent', label: 'Talent Identification' },
+            ],
+          },
+          {
+            id: 'operations',
+            label: 'Camp Operations & Logistics',
+            icon: Plane,
+            children: [
+              { id: 'camps', label: 'Camps & Expeditions' },
+              { id: 'manifests', label: 'Flight Manifests & Rooming' },
+              { id: 'cargo', label: 'ATA Carnet & Cargo' },
+              { id: 'facilities', label: 'Facility Master Schedule' },
             ],
           },
           {

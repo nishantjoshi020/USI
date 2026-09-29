@@ -253,7 +253,12 @@ export type NavItemId =
   | 'ai-risk-centre'
   | 'ai-automation'
   | 'ai-audit'
-  | 'settings';
+  | 'settings'
+  | 'camps'
+  | 'manifests'
+  | 'cargo'
+  | 'facilities'
+  | 'operations';
 
 export interface HierarchyContext {
   federation: string;
@@ -406,6 +411,22 @@ export interface Athlete {
     highSpeedMeters: number;
   }[];
   medicalNote: string;
+  wadaWhereabouts?: {
+    poolTier: 'International RTP' | 'National RTP' | 'General Testing Pool';
+    filingQuarter: string;
+    filingStatus: 'Compliant' | 'Pending Review' | 'Deadline Overdue';
+    dailyWindowTime: string;
+    dailyLocation: string;
+    nextDeadline: string;
+    missedTestsCount12m: number;
+    tueActive: boolean;
+    tueCertificate?: {
+      certificateNumber: string;
+      substance: string;
+      approvedUntil: string;
+      grantingBody: string;
+    };
+  };
 }
 
 export interface Squad {

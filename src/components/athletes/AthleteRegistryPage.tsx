@@ -68,6 +68,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
   const [injuryRiskFilter, setInjuryRiskFilter] = useState('All');
   const [verificationFilter, setVerificationFilter] = useState('All');
   const [medicalFilter, setMedicalFilter] = useState('All');
+  const [wadaFilter, setWadaFilter] = useState('All');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
@@ -147,6 +148,10 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
         return false;
       if (medicalFilter !== 'All' && a.medicalStatus !== medicalFilter)
         return false;
+      if (wadaFilter === 'Compliant' && a.wadaWhereabouts?.filingStatus !== 'Compliant')
+        return false;
+      if (wadaFilter === 'TUE Active' && !a.wadaWhereabouts?.tueActive)
+        return false;
       if (incompleteOnly && a.profileCompletion >= 95) return false;
 
       return true;
@@ -162,6 +167,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
     injuryRiskFilter,
     verificationFilter,
     medicalFilter,
+    wadaFilter,
     incompleteOnly,
     selectedRole,
   ]);
@@ -176,6 +182,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
     setInjuryRiskFilter('All');
     setVerificationFilter('All');
     setMedicalFilter('All');
+    setWadaFilter('All');
     setIncompleteOnly(false);
     setActiveSummaryKpi(null);
   };
@@ -498,6 +505,19 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                 </select>
               </div>
 
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">WADA Whereabouts:</span>
+                <select
+                  value={wadaFilter}
+                  onChange={(e) => setWadaFilter(e.target.value)}
+                  className="px-2.5 py-1 bg-[#090D16] border border-slate-800 rounded text-xs text-slate-200"
+                >
+                  <option value="All">All WADA States</option>
+                  <option value="Compliant">RTP Compliant</option>
+                  <option value="TUE Active">TUE Active</option>
+                </select>
+              </div>
+
               <label className="inline-flex items-center gap-2 text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
@@ -632,6 +652,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                 <th className="py-3 px-3">Training Status</th>
                 <th className="py-3 px-3">Verification</th>
                 <th className="py-3 px-3">Medical Clearance</th>
+                <th className="py-3 px-3">WADA Whereabouts</th>
                 <th className="py-3 px-3">Last Updated</th>
                 <th className="py-3 pl-3 pr-4 text-right">Actions</th>
               </tr>
@@ -639,7 +660,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             <tbody className="divide-y divide-slate-800/60 text-xs">
               {filteredAthletes.length === 0 ? (
                 <tr>
-                  <td colSpan={selectedRole === 'Athlete' ? 12 : 13} className="py-10 text-center text-slate-400">
+                  <td colSpan={selectedRole === 'Athlete' ? 13 : 14} className="py-10 text-center text-slate-400">
                     <div className="flex flex-col items-center gap-2">
                       <Users className="w-6 h-6 text-slate-500" />
                       <span>No athlete records match your active filters.</span>
@@ -734,6 +755,21 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                       </td>
                       <td className="py-3 px-3">
                         <MedicalStatusBadge status={athlete.medicalStatus} />
+                      </td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                            athlete.wadaWhereabouts?.tueActive
+                              ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                              : athlete.wadaWhereabouts?.filingStatus === 'Compliant'
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                          }`}
+                        >
+                          {athlete.wadaWhereabouts?.tueActive
+                            ? 'TUE Active'
+                            : athlete.wadaWhereabouts?.filingStatus || 'RTP Clean'}
+                        </span>
                       </td>
                       <td className="py-3 px-3 font-mono text-[11px] text-slate-400 whitespace-nowrap">
                         {athlete.lastUpdated}

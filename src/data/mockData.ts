@@ -215,6 +215,22 @@ export const ATHLETES: Athlete[] = [
     ],
     medicalNote:
       'Reported localized right posterior thigh discomfort (4/10 pain) on 24 Sep. Medical clearance renewal pending isometric symmetry verification (<10% threshold).',
+    wadaWhereabouts: {
+      poolTier: 'International RTP',
+      filingQuarter: 'Q4 2026',
+      filingStatus: 'Compliant',
+      dailyWindowTime: '06:00 - 07:00 AM',
+      dailyLocation: 'National High Performance Centre, Hostel Wing B, Room 302',
+      nextDeadline: '15 Dec 2026',
+      missedTestsCount12m: 0,
+      tueActive: true,
+      tueCertificate: {
+        certificateNumber: 'WADA-TUE-2026-0482',
+        substance: 'Formoterol (Inhaled) · Max 54 mcg/24h',
+        approvedUntil: '31 Dec 2026',
+        grantingBody: 'NADA / WADA TUE Committee',
+      },
+    },
   },
   {
     id: 'ath-rahul-singh',

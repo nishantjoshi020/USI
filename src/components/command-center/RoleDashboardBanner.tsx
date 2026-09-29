@@ -176,6 +176,67 @@ export const RoleDashboardBanner: React.FC<RoleDashboardBannerProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Quadrennial Olympic Cycle Strategic Peaking Matrix (Specific to Performance Director) */}
+      {selectedRole === 'Performance Director' && (
+        <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-3 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-white tracking-wider uppercase">
+                QUADRENNIAL OLYMPIC CYCLE STRATEGIC PEAKING (PARIS 2024 → LA 2028)
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] font-mono">
+              <span className="text-slate-400">Countdown:</span>
+              <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                684 Days to LA 2028
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+            <div className="p-2.5 rounded bg-[#070B13] border border-slate-800/90 space-y-1">
+              <span className="text-slate-400 block text-[10px]">Quadrennial Phase</span>
+              <strong className="text-sky-300 font-bold block">Year 2: Capacity Expansion</strong>
+              <span className="text-[10px] text-slate-500 font-mono">Benchmark & Quota Slotting</span>
+            </div>
+            <div className="p-2.5 rounded bg-[#070B13] border border-slate-800/90 space-y-1">
+              <span className="text-slate-400 block text-[10px]">Olympic Pathway Longlist</span>
+              <strong className="text-slate-100 font-mono font-bold block">32 Elite Contenders</strong>
+              <span className="text-[10px] text-emerald-400">14 On Tier-1 Qualification Track</span>
+            </div>
+            <div className="p-2.5 rounded bg-[#070B13] border border-slate-800/90 space-y-1">
+              <span className="text-slate-400 block text-[10px]">World Top-8 Conversion</span>
+              <strong className="text-amber-300 font-mono font-bold block">6 Benchmark Achieved</strong>
+              <span className="text-[10px] text-slate-400">Target: 8 Top-8 Finalists</span>
+            </div>
+            <div className="p-2.5 rounded bg-[#070B13] border border-slate-800/90 space-y-1">
+              <span className="text-slate-400 block text-[10px]">Forecasted Podium Medals</span>
+              <strong className="text-emerald-400 font-mono font-bold block">3 Projected Medals</strong>
+              <span className="text-[10px] text-emerald-400 font-semibold">1 Gold · 2 Silver/Bronze</span>
+            </div>
+          </div>
+
+          {/* 4-Year Peaking Pipeline Progress Corridor */}
+          <div className="p-2.5 rounded bg-[#070B13] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px]">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-300">Periodisation Alignment:</span>
+              <span className="text-slate-400">Corridor ACWR 1.05–1.20 target peaking synchronization across 4 national training hubs</span>
+            </div>
+            <button
+              onClick={() =>
+                onTriggerQuickAction
+                  ? onTriggerQuickAction('la28-dossier', 'LA 2028 Strategic Dossier')
+                  : alert('LA 2028 Strategic Dossier opened')
+              }
+              className="text-sky-400 hover:text-sky-300 font-semibold whitespace-nowrap"
+            >
+              Inspect LA 2028 Milestone Plan →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

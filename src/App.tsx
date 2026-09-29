@@ -141,6 +141,14 @@ import {
   TrainingWorkspace,
 } from './components/training/TrainingWorkspace';
 import {
+  SportsScienceSubTab,
+  SportsScienceWorkspace,
+} from './components/sports-science/SportsScienceWorkspace';
+import {
+  OperationsSubTab,
+  OperationsWorkspace,
+} from './components/operations/OperationsWorkspace';
+import {
   ARJUN_EVIDENCE_BUNDLE,
   buildCopilotResponse,
   INITIAL_AI_ACTION_CENTRE,
@@ -1169,6 +1177,19 @@ export default function App() {
     activeNav === 'exercises' ||
     activeNav === 'workload';
 
+  const isSportsScienceRoute =
+    activeNav === 'readiness' ||
+    activeNav === 'fatigue' ||
+    activeNav === 'gps-wearables' ||
+    activeNav === 'recovery';
+
+  const isOperationsRoute =
+    activeNav === 'operations' ||
+    activeNav === 'camps' ||
+    activeNav === 'manifests' ||
+    activeNav === 'cargo' ||
+    activeNav === 'facilities';
+
   return (
     <div className="min-h-screen bg-[#090D16] text-[#F8FAFC] flex">
       {/* Persistent Left Sidebar */}
@@ -1721,6 +1742,26 @@ export default function App() {
                 });
               }}
               onOpenAthlete360={(ath) => handleOpenFullAthlete360(ath)}
+              onTriggerToast={triggerToast}
+            />
+          ) : isSportsScienceRoute ? (
+            <SportsScienceWorkspace
+              activeSubTab={activeNav as SportsScienceSubTab}
+              onSelectSubTab={(tab) => setActiveNav(tab)}
+              selectedRole={selectedRole}
+              athletes={athletes}
+              onOpenAthlete360={(ath) => handleOpenFullAthlete360(ath)}
+              onTriggerToast={triggerToast}
+            />
+          ) : isOperationsRoute ? (
+            <OperationsWorkspace
+              activeSubTab={
+                (['camps', 'manifests', 'cargo', 'facilities'].includes(activeNav)
+                  ? activeNav
+                  : 'camps') as OperationsSubTab
+              }
+              onSelectSubTab={(tab) => setActiveNav(tab)}
+              selectedRole={selectedRole}
               onTriggerToast={triggerToast}
             />
           ) : (
