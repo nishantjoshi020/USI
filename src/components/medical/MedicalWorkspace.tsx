@@ -380,13 +380,6 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
               className="pl-8 pr-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs text-slate-100 w-56"
             />
           </div>
-          <button
-            onClick={() => onOpenReportInjuryModal(selectedRegion)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-rose-500 hover:bg-rose-400 text-white font-semibold text-xs transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Report Injury</span>
-          </button>
         </div>
       </div>
 

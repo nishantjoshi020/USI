@@ -1872,3 +1872,307 @@ export const ROLE_DESCRIPTIONS: Record<string, { focus: string; clearance: strin
     clearance: 'Operations Level 4 · Facility & Logistics Management',
   },
 };
+
+export interface PersonaHierarchyPermission {
+  role: string;
+  hierarchyTier: string;
+  scopeBadge: string;
+  scopeExplanation: string;
+  canSwitchFederation: boolean;
+  canSwitchSport: boolean;
+  canSwitchProgram: boolean;
+  canSwitchSquad: boolean;
+  lockedReason: {
+    federation?: string;
+    sport?: string;
+    program?: string;
+    squad?: string;
+  };
+  defaultContext: Omit<HierarchyContext, 'date'>;
+  allowedFederations: string[];
+  allowedSports: string[];
+  allowedPrograms: string[];
+  allowedSquads: string[];
+}
+
+export const PERSONA_HIERARCHY_PERMISSIONS: Record<string, PersonaHierarchyPermission> = {
+  'Federation Admin': {
+    role: 'Federation Admin',
+    hierarchyTier: 'Tier 1 · Institutional Governance',
+    scopeBadge: 'All 4 Tiers Unlocked',
+    scopeExplanation:
+      'National Federation Administrators have multi-institution oversight across all Governing Federations, Sports, High Performance Programs, and Squads.',
+    canSwitchFederation: true,
+    canSwitchSport: true,
+    canSwitchProgram: true,
+    canSwitchSquad: true,
+    lockedReason: {},
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: CONTEXT_OPTIONS.federations,
+    allowedSports: CONTEXT_OPTIONS.sports,
+    allowedPrograms: CONTEXT_OPTIONS.programs,
+    allowedSquads: CONTEXT_OPTIONS.squads,
+  },
+  'Performance Director': {
+    role: 'Performance Director',
+    hierarchyTier: 'Tier 2 · High Performance Directorate',
+    scopeBadge: 'Sport · Program · Squad',
+    scopeExplanation:
+      'Performance Directors oversee all Sports, High Performance Programs, and Squads within their appointed Governing Federation, but cannot switch across external Federations.',
+    canSwitchFederation: false,
+    canSwitchSport: true,
+    canSwitchProgram: true,
+    canSwitchSquad: true,
+    lockedReason: {
+      federation:
+        'Performance Directors are appointed to a single Governing Federation (National High Performance Program). Only Federation Admins can switch across Governing Federations.',
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: CONTEXT_OPTIONS.sports,
+    allowedPrograms: CONTEXT_OPTIONS.programs,
+    allowedSquads: CONTEXT_OPTIONS.squads,
+  },
+  'Operations Team': {
+    role: 'Operations Team',
+    hierarchyTier: 'Tier 2 · Campus & Logistics Operations',
+    scopeBadge: 'Sport · Program · Squad',
+    scopeExplanation:
+      'Operations & Logistics coordinators manage facilities, travel manifests, and equipment across all Sports, Programs, and Squads within their assigned National Federation Campus.',
+    canSwitchFederation: false,
+    canSwitchSport: true,
+    canSwitchProgram: true,
+    canSwitchSquad: true,
+    lockedReason: {
+      federation:
+        'Operations Teams are stationed at a single Governing Federation campus (National High Performance Program).',
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: CONTEXT_OPTIONS.sports,
+    allowedPrograms: CONTEXT_OPTIONS.programs,
+    allowedSquads: CONTEXT_OPTIONS.squads,
+  },
+  'Sports Scientist': {
+    role: 'Sports Scientist',
+    hierarchyTier: 'Tier 3 · Sport Science Department',
+    scopeBadge: 'Program · Squad Only',
+    scopeExplanation:
+      'Sports Scientists are embedded within a single Sport discipline (Football) under their Federation and can switch across High Performance Programs and Squads within that sport.',
+    canSwitchFederation: false,
+    canSwitchSport: false,
+    canSwitchProgram: true,
+    canSwitchSquad: true,
+    lockedReason: {
+      federation:
+        'Sports Scientists operate within their assigned Governing Federation (National High Performance Program).',
+      sport:
+        'Lead Sports Scientists are embedded in a specific Sport biomechanics & telemetry department (Football). Switch to Performance Director or Federation Admin to change Sport.',
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: ['Football'],
+    allowedPrograms: CONTEXT_OPTIONS.programs,
+    allowedSquads: CONTEXT_OPTIONS.squads,
+  },
+  Physiotherapist: {
+    role: 'Physiotherapist',
+    hierarchyTier: 'Tier 3 · Sport Medical & RTP Unit',
+    scopeBadge: 'Program · Squad Only',
+    scopeExplanation:
+      'Clinical Physiotherapists are credentialed within a specific Sport Medical Department (Football) and manage rehabilitation and RTP clearance across Programs and Squads in that sport.',
+    canSwitchFederation: false,
+    canSwitchSport: false,
+    canSwitchProgram: true,
+    canSwitchSquad: true,
+    lockedReason: {
+      federation:
+        'Physiotherapists are credentialed under their Governing Federation (National High Performance Program).',
+      sport:
+        'Clinical Physiotherapists are assigned to a specific Sport medical department (Football). Switch to Performance Director or Federation Admin to inspect other Sports.',
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: ['Football'],
+    allowedPrograms: CONTEXT_OPTIONS.programs,
+    allowedSquads: CONTEXT_OPTIONS.squads,
+  },
+  Nutritionist: {
+    role: 'Nutritionist',
+    hierarchyTier: 'Tier 3 · Sport Performance Nutrition',
+    scopeBadge: 'Program · Squad Only',
+    scopeExplanation:
+      'Performance Nutritionists oversee metabolic fueling, hydration osmolality, and supplementation across Programs and Squads within their assigned Sport (Football).',
+    canSwitchFederation: false,
+    canSwitchSport: false,
+    canSwitchProgram: true,
+    canSwitchSquad: true,
+    lockedReason: {
+      federation:
+        'Nutritionists operate within their assigned Governing Federation (National High Performance Program).',
+      sport:
+        'Performance Nutritionists are assigned to a dedicated Sport department (Football). Switch to Performance Director or Federation Admin to switch Sports.',
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: ['Football'],
+    allowedPrograms: CONTEXT_OPTIONS.programs,
+    allowedSquads: CONTEXT_OPTIONS.squads,
+  },
+  Coach: {
+    role: 'Coach',
+    hierarchyTier: 'Tier 4 · Program Coaching Staff',
+    scopeBadge: 'Squad Selection Only',
+    scopeExplanation:
+      "Head Coaches are appointed to a specific Federation, Sport (Football), and Program (Senior Men's Program). They can switch only between operational Squads within their program.",
+    canSwitchFederation: false,
+    canSwitchSport: false,
+    canSwitchProgram: false,
+    canSwitchSquad: true,
+    lockedReason: {
+      federation:
+        'Coaches are contracted to a single Governing Federation (National High Performance Program).',
+      sport:
+        'Coaches are licensed for a single Sport discipline (Football).',
+      program:
+        "Head Coaches are appointed to a single High Performance Program (Senior Men's Program) and cannot access other pathway programs.",
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: ['Football'],
+    allowedPrograms: ["Senior Men's Program"],
+    allowedSquads: [
+      'Senior National Squad',
+      'Senior Squad',
+      'Squad A — Match Day Group',
+      'Rehabilitation & RTP Unit',
+    ],
+  },
+  Athlete: {
+    role: 'Athlete',
+    hierarchyTier: 'Tier 5 · Personal Athlete Scope',
+    scopeBadge: 'All 4 Tiers Locked',
+    scopeExplanation:
+      'Athletes (Arjun Mehta · #10) have strict self-service RBAC privacy and are locked to their assigned Federation, Sport, Program, and Squad.',
+    canSwitchFederation: false,
+    canSwitchSport: false,
+    canSwitchProgram: false,
+    canSwitchSquad: false,
+    lockedReason: {
+      federation:
+        'Athlete profiles are bound to their registered Governing Federation (National High Performance Program).',
+      sport:
+        'Athlete profiles are bound to their registered Sport discipline (Football).',
+      program:
+        "Athlete profiles are bound to their enrolled High Performance Program (Senior Men's Program).",
+      squad:
+        'Athletes can only view their own assigned squad context (Senior National Squad) under AMS privacy rules.',
+    },
+    defaultContext: {
+      federation: 'National High Performance Program',
+      sport: 'Football',
+      program: "Senior Men's Program",
+      squad: 'Senior National Squad',
+    },
+    allowedFederations: ['National High Performance Program'],
+    allowedSports: ['Football'],
+    allowedPrograms: ["Senior Men's Program"],
+    allowedSquads: ['Senior National Squad'],
+  },
+};
+
+export function getAllowedSquadsForContext(
+  role: string,
+  program: string
+): string[] {
+  const perm =
+    PERSONA_HIERARCHY_PERMISSIONS[role] ||
+    PERSONA_HIERARCHY_PERMISSIONS['Performance Director'];
+  if (!perm.canSwitchSquad) {
+    return perm.allowedSquads;
+  }
+  if (
+    program === 'U-23 Olympic Development Program' ||
+    program === 'U-19 Elite Pathway'
+  ) {
+    return ['U23', 'Squad A — Match Day Group', 'Rehabilitation & RTP Unit'];
+  }
+  return perm.allowedSquads;
+}
+
+export function getEnforcedContextForRole(
+  role: string,
+  currentContext: HierarchyContext
+): HierarchyContext {
+  const perm =
+    PERSONA_HIERARCHY_PERMISSIONS[role] ||
+    PERSONA_HIERARCHY_PERMISSIONS['Performance Director'];
+
+  const federation =
+    perm.canSwitchFederation &&
+    perm.allowedFederations.includes(currentContext.federation)
+      ? currentContext.federation
+      : perm.defaultContext.federation;
+
+  const sport =
+    perm.canSwitchSport && perm.allowedSports.includes(currentContext.sport)
+      ? currentContext.sport
+      : perm.defaultContext.sport;
+
+  const program =
+    perm.canSwitchProgram &&
+    perm.allowedPrograms.includes(currentContext.program)
+      ? currentContext.program
+      : perm.defaultContext.program;
+
+  const validSquads = getAllowedSquadsForContext(role, program);
+  const squad =
+    perm.canSwitchSquad && validSquads.includes(currentContext.squad)
+      ? currentContext.squad
+      : validSquads.includes(perm.defaultContext.squad)
+        ? perm.defaultContext.squad
+        : validSquads[0];
+
+  return {
+    ...currentContext,
+    federation,
+    sport,
+    program,
+    squad,
+  };
+}

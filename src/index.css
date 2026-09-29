@@ -13,7 +13,7 @@
     background-color: #090D16;
     color: #F8FAFC;
     letter-spacing: 0.005em;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .font-mono {
@@ -77,3 +77,96 @@ body::-webkit-scrollbar-corner,
     scrollbar-color: #1E293B #090D16;
   }
 }
+
+/* ============================================================================
+   VIEWPORT SWITCHER OVERRIDES (TABLET 834px & MOBILE 430px)
+   Ensures Tailwind's window-based media queries (sm:, md:, lg:, xl:) adapt
+   authentically inside the simulated Tablet and Mobile containers.
+   ============================================================================ */
+
+/* TABLET VIEWPORT (834px Slate) */
+.viewport-tablet .xl\:grid-cols-12,
+.viewport-tablet .lg\:grid-cols-12 {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.viewport-tablet .xl\:col-span-8,
+.viewport-tablet .xl\:col-span-7,
+.viewport-tablet .xl\:col-span-6,
+.viewport-tablet .xl\:col-span-5,
+.viewport-tablet .xl\:col-span-4,
+.viewport-tablet .lg\:col-span-8,
+.viewport-tablet .lg\:col-span-7,
+.viewport-tablet .lg\:col-span-6,
+.viewport-tablet .lg\:col-span-5,
+.viewport-tablet .lg\:col-span-4 {
+  grid-column: span 1 / span 1 !important;
+}
+
+.viewport-tablet .lg\:grid-cols-5,
+.viewport-tablet .xl\:grid-cols-5 {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.viewport-tablet .lg\:grid-cols-4,
+.viewport-tablet .xl\:grid-cols-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* MOBILE VIEWPORT (430px Tactical Handheld) */
+.viewport-mobile .xl\:grid-cols-12,
+.viewport-mobile .lg\:grid-cols-12,
+.viewport-mobile .lg\:grid-cols-4,
+.viewport-mobile .lg\:grid-cols-3,
+.viewport-mobile .lg\:grid-cols-2,
+.viewport-mobile .md\:grid-cols-4,
+.viewport-mobile .md\:grid-cols-3,
+.viewport-mobile .md\:grid-cols-2,
+.viewport-mobile .sm\:grid-cols-3 {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.viewport-mobile .lg\:grid-cols-5,
+.viewport-mobile .xl\:grid-cols-5,
+.viewport-mobile .sm\:grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.viewport-mobile .xl\:col-span-8,
+.viewport-mobile .xl\:col-span-7,
+.viewport-mobile .xl\:col-span-6,
+.viewport-mobile .xl\:col-span-5,
+.viewport-mobile .xl\:col-span-4,
+.viewport-mobile .lg\:col-span-8,
+.viewport-mobile .lg\:col-span-7,
+.viewport-mobile .lg\:col-span-6,
+.viewport-mobile .lg\:col-span-5,
+.viewport-mobile .lg\:col-span-4,
+.viewport-mobile .md\:col-span-2 {
+  grid-column: span 1 / span 1 !important;
+}
+
+.viewport-mobile .md\:flex-row,
+.viewport-mobile .lg\:flex-row {
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+
+.viewport-mobile .md\:items-end,
+.viewport-mobile .lg\:items-center {
+  align-items: flex-start !important;
+}
+
+.viewport-mobile main {
+  padding: 0.875rem 0.875rem 4.75rem 0.875rem !important;
+}
+
+.viewport-tablet,
+.viewport-mobile {
+  overflow-x: clip;
+}
+
+.viewport-mobile table {
+  min-width: 620px;
+}
+

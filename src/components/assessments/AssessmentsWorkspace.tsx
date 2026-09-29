@@ -546,12 +546,9 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                 <h3 className="text-sm font-bold text-slate-100 uppercase">
                   ACTIVE ASSESSMENT PROGRAMS ({programs.length})
                 </h3>
-                <button
-                  onClick={() => setIsCreateProgramOpen(true)}
-                  className="text-xs text-sky-400 hover:underline font-medium"
-                >
-                  + Create Program
-                </button>
+                <span className="text-[11px] font-mono text-slate-400">
+                  September Cycle
+                </span>
               </div>
 
               <div className="space-y-3 text-xs">
@@ -753,15 +750,9 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                   End-to-end field capture, automatic benchmark validation, and insight generation
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  setFieldWorkflowStep(4);
-                  onTriggerToast('Started live Field Testing session — Step 4: Enter Results');
-                }}
-                className="px-3.5 py-1.5 rounded bg-emerald-500 text-slate-950 font-semibold text-xs"
-              >
-                Start Testing
-              </button>
+              <span className="px-2.5 py-1 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-xs text-sky-300 font-semibold">
+                Step {fieldWorkflowStep} of 7 Active
+              </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-7 gap-2 text-xs">

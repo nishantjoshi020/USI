@@ -99,8 +99,8 @@ export const KpiGrid: React.FC<KpiGridProps> = ({
           <Activity className="w-3.5 h-3.5 text-sky-400" />
           Active KPI Indicators: <strong className="text-slate-200">{roleConfig.displayName}</strong>
         </span>
-        <span className="text-[10px] font-mono text-slate-400">
-          6 Live Metrics · Click any card to inspect
+        <span className="text-[10px] font-mono text-sky-400/90">
+          6 Live Metrics · Click any indicator for in-depth breakdown & PDF/CSV export
         </span>
       </div>
 
@@ -131,15 +131,16 @@ export const KpiGrid: React.FC<KpiGridProps> = ({
             <button
               key={kpi.id}
               onClick={() => onSelectKpi(kpi.id)}
-              className={`group text-left p-4 rounded-lg bg-[#0F1623] hover:bg-[#151E2E] border transition-all duration-150 flex flex-col justify-between ${
+              aria-expanded={isSelected}
+              className={`group text-left p-4 rounded-lg bg-[#0F1623] hover:bg-[#151E2E] border transition-all duration-150 flex flex-col justify-between cursor-pointer ${
                 isSelected
-                  ? 'border-sky-500 ring-1 ring-sky-500/30 bg-[#131C2D]'
-                  : 'border-slate-800/90 hover:border-slate-700'
+                  ? 'border-sky-400 ring-2 ring-sky-500/30 bg-[#131E33] shadow-lg shadow-sky-950/50'
+                  : 'border-slate-800/90 hover:border-sky-500/40'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-1">
+                  <span className="text-xs font-semibold text-slate-300 group-hover:text-white transition-colors line-clamp-1">
                     {kpi.label}
                   </span>
                   <Icon className={`w-4 h-4 shrink-0 ${iconColor}`} />
@@ -157,11 +158,28 @@ export const KpiGrid: React.FC<KpiGridProps> = ({
                 </div>
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                <span className="truncate">{kpi.subtext}</span>
-                <span className="inline-flex items-center gap-0.5 text-sky-400 opacity-0 group-hover:opacity-100 transition-opacity font-medium shrink-0">
-                  <ArrowUpRight className="w-3 h-3" />
-                </span>
+              <div className="mt-3 pt-2.5 border-t border-slate-800/80 space-y-1.5">
+                <div className="text-[11px] text-slate-400 truncate">
+                  {kpi.subtext}
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span
+                    className={
+                      isSelected
+                        ? 'text-sky-300 font-bold'
+                        : 'text-slate-500 group-hover:text-sky-400 transition-colors'
+                    }
+                  >
+                    {isSelected ? '● Inspecting Breakdown' : kpi.targetHint}
+                  </span>
+                  <ArrowUpRight
+                    className={`w-3 h-3 shrink-0 transition-transform ${
+                      isSelected
+                        ? 'text-sky-300 translate-x-0.5 -translate-y-0.5'
+                        : 'text-slate-500 group-hover:text-sky-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5'
+                    }`}
+                  />
+                </div>
               </div>
             </button>
           );

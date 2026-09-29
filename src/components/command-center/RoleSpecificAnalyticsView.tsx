@@ -27,12 +27,14 @@ interface RoleSpecificAnalyticsViewProps {
   selectedRole: UserRole;
   onOpenActionItem?: (item: RoleAttentionItem) => void;
   onNavigateSection?: (sectionKey: string) => void;
+  onSelectKpi?: (kpiId: string) => void;
 }
 
 export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps> = ({
   selectedRole,
   onOpenActionItem,
   onNavigateSection,
+  onSelectKpi,
 }) => {
   const config = ROLE_DASHBOARDS_CONFIG[selectedRole] || ROLE_DASHBOARDS_CONFIG['Performance Director'];
 
@@ -75,45 +77,53 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
 
           {/* 4 Metric Benchmark Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {config.analyticsMetrics.map((m, idx) => (
-              <div
-                key={idx}
-                className="bg-[#101827] border border-slate-800/80 rounded-lg p-3 hover:border-slate-700 transition-colors"
-              >
-                <span className="text-[11px] text-slate-400 font-medium line-clamp-1">
-                  {m.name}
-                </span>
-                <div className="flex items-baseline gap-1 mt-1.5">
-                  <span className="text-lg font-bold font-mono text-white tracking-tight">
-                    {m.current}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {m.unit}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/60 text-[10px]">
-                  <span className="text-slate-400">Target: {m.benchmark}</span>
-                  <span
-                    className={`flex items-center font-mono font-semibold ${
-                      m.status === 'optimal'
-                        ? 'text-emerald-400'
-                        : m.status === 'warning'
-                        ? 'text-amber-400'
-                        : 'text-rose-400'
-                    }`}
-                  >
-                    {m.trend === 'up' ? (
-                      <TrendingUp className="w-3 h-3 mr-0.5" />
-                    ) : m.trend === 'down' ? (
-                      <TrendingDown className="w-3 h-3 mr-0.5" />
-                    ) : (
-                      '●'
-                    )}
-                    {m.status.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            ))}
+            {config.analyticsMetrics.map((m, idx) => {
+              const linkedKpiId = config.kpis[idx]?.id || config.kpis[0]?.id;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onSelectKpi && linkedKpiId && onSelectKpi(linkedKpiId)}
+                  className="text-left bg-[#101827] border border-slate-800/80 rounded-lg p-3 hover:border-sky-500/40 hover:bg-[#131E31] transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[11px] text-slate-400 group-hover:text-slate-200 font-medium line-clamp-1">
+                      {m.name}
+                    </span>
+                    <ArrowUpRight className="w-3 h-3 text-slate-600 group-hover:text-sky-400 shrink-0 transition-colors" />
+                  </div>
+                  <div className="flex items-baseline gap-1 mt-1.5">
+                    <span className="text-lg font-bold font-mono text-white tracking-tight">
+                      {m.current}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {m.unit}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/60 text-[10px]">
+                    <span className="text-slate-400">Target: {m.benchmark}</span>
+                    <span
+                      className={`flex items-center font-mono font-semibold ${
+                        m.status === 'optimal'
+                          ? 'text-emerald-400'
+                          : m.status === 'warning'
+                          ? 'text-amber-400'
+                          : 'text-rose-400'
+                      }`}
+                    >
+                      {m.trend === 'up' ? (
+                        <TrendingUp className="w-3 h-3 mr-0.5" />
+                      ) : m.trend === 'down' ? (
+                        <TrendingDown className="w-3 h-3 mr-0.5" />
+                      ) : (
+                        '●'
+                      )}
+                      {m.status.toUpperCase()}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Distribution Progress Spectrum */}

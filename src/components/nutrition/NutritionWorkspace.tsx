@@ -14,9 +14,6 @@ import {
   Plus,
   Scale,
   Search,
-  ShieldCheck,
-  FileCheck,
-  Zap,
   Sparkles,
   Utensils,
   X,
@@ -54,6 +51,13 @@ interface NutritionWorkspaceProps {
   onAddHydrationIntake: (log: Omit<HydrationLog, 'id'>) => void;
   onAddSupplement: (supp: Omit<Supplement, 'id'>) => void;
   onToggleSupplementLogged: (suppId: string) => void;
+  onUpdateBodyComposition?: (
+    athleteId: string,
+    weightKg: number,
+    bodyFatPct: number,
+    leanMassKg: number,
+    statusLabel: 'Stable' | 'Lean Gain' | 'Monitor'
+  ) => void;
   onOpenAthlete360: (athleteId: string) => void;
   onNavigateModule: (nav: NavItemId) => void;
   onTriggerToast: (msg: string) => void;
@@ -73,6 +77,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
   onAddHydrationIntake,
   onAddSupplement,
   onToggleSupplementLogged,
+  onUpdateBodyComposition,
   onOpenAthlete360,
   onNavigateModule,
   onTriggerToast,
@@ -96,19 +101,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
   const [isCreatePlanOpen, setIsCreatePlanOpen] = useState(false);
   const [isAddHydrationOpen, setIsAddHydrationOpen] = useState(false);
   const [isAddSupplementOpen, setIsAddSupplementOpen] = useState(false);
-  const [selectedBatchCert, setSelectedBatchCert] = useState<{
-    supplementName: string;
-    batchNumber: string;
-    certAgency: 'Informed-Sport' | 'NSF Certified for Sport' | 'Cologne List';
-    certHash: string;
-    testDate: string;
-    labName: string;
-    substancesScreened: number;
-    status: 'Verified Negative (Pass)';
-  } | null>(null);
-  const [gpsSyncIntensity, setGpsSyncIntensity] = useState<
-    'low' | 'moderate' | 'high'
-  >('high');
+  const [isLogBodyCompOpen, setIsLogBodyCompOpen] = useState(false);
 
   // Create Nutrition Plan Form State (Section 4)
   const [planAthleteId, setPlanAthleteId] =
@@ -126,6 +119,8 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
   const [planEndDate, setPlanEndDate] = useState('31 Oct 2026');
 
   // Add Hydration Form State (Section 6)
+  const [intakeAthleteId, setIntakeAthleteId] =
+    useState<string>('ath-arjun-mehta');
   const [intakeTime, setIntakeTime] = useState('20:15');
   const [intakeAmountMl, setIntakeAmountMl] = useState(350);
   const [intakeBeverage, setIntakeBeverage] = useState(
@@ -133,21 +128,31 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
   );
 
   // Add Supplement Form State (Section 7)
+  const [suppAthleteId, setSuppAthleteId] =
+    useState<string>('ath-arjun-mehta');
   const [suppName, setSuppName] = useState('Omega-3 Fish Oil');
   const [suppPurpose, setSuppPurpose] =
     useState<Supplement['purpose']>('Recovery');
   const [suppDosage, setSuppDosage] = useState('2 capsules (2000mg)');
   const [suppSchedule, setSuppSchedule] = useState('With Dinner');
 
-  // Body Composition Metric Selector (Section 8)
+  // Body Composition Metric Selector & Log Form State (Section 8)
   const [bodyCompMetric, setBodyCompMetric] = useState<
     'weightKg' | 'bodyFatPct' | 'leanMassKg' | 'bmi'
   >('weightKg');
+  const [scanWeightKg, setScanWeightKg] = useState<number>(74.2);
+  const [scanBodyFatPct, setScanBodyFatPct] = useState<number>(9.8);
+  const [scanLeanMassKg, setScanLeanMassKg] = useState<number>(64.1);
+  const [scanStatusLabel, setScanStatusLabel] = useState<
+    'Stable' | 'Lean Gain' | 'Monitor'
+  >('Stable');
 
   const activePlan =
     plans.find((p) => p.id === activeProfilePlanId) || plans[0];
   const drawerPlan =
     plans.find((p) => p.id === selectedPlanDrawerId) || null;
+  const activeAthleteObj =
+    athletes.find((a) => a.id === activePlan.athleteId) || athletes[0];
 
   // Filtered Nutrition Plans Table
   const filteredPlans = useMemo(() => {
@@ -195,8 +200,40 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
     statusFilter,
   ]);
 
-  // Hydration totals (Section 6)
-  const totalHydrationMl = hydrationLogs.reduce(
+  // Hydration totals scoped to activePlan athlete (Section 6)
+  const athleteHydrationLogs = useMemo(() => {
+    const logs = hydrationLogs.filter(
+      (h) => h.athleteId === activePlan.athleteId
+    );
+    if (logs.length > 0) return logs;
+    // Synthesize baseline logs for the selected athlete if none logged yet
+    const baseMl = Math.round((activePlan.currentHydrationL || 2.8) * 1000);
+    return [
+      {
+        id: `hlog-base-1-${activePlan.athleteId}`,
+        athleteId: activePlan.athleteId,
+        time: '07:00',
+        amountMl: Math.round(baseMl * 0.25),
+        beverageType: 'Morning Water + Electrolytes',
+      },
+      {
+        id: `hlog-base-2-${activePlan.athleteId}`,
+        athleteId: activePlan.athleteId,
+        time: '10:30',
+        amountMl: Math.round(baseMl * 0.4),
+        beverageType: 'Intra-Session Isotonic Fluid',
+      },
+      {
+        id: `hlog-base-3-${activePlan.athleteId}`,
+        athleteId: activePlan.athleteId,
+        time: '14:15',
+        amountMl: Math.round(baseMl * 0.35),
+        beverageType: 'Post-Training Recovery Fluid',
+      },
+    ];
+  }, [hydrationLogs, activePlan.athleteId, activePlan.currentHydrationL]);
+
+  const totalHydrationMl = athleteHydrationLogs.reduce(
     (sum, h) => sum + h.amountMl,
     0
   );
@@ -213,9 +250,65 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
         ? 'Monitor'
         : 'Low';
 
+  // Supplements scoped to activePlan athlete (or fallback)
+  const athleteSupplements = useMemo(() => {
+    const list = supplements.filter(
+      (s) => s.athleteId === activePlan.athleteId
+    );
+    return list.length > 0 ? list : supplements;
+  }, [supplements, activePlan.athleteId]);
+
+  // Dynamic Body Composition for the currently selected athlete
+  const activeBodyComposition: BodyComposition = useMemo(() => {
+    if (bodyComposition.athleteId === activePlan.athleteId) {
+      return bodyComposition;
+    }
+    const w = activeAthleteObj?.weightKg || 74.0;
+    const hM = (activeAthleteObj?.heightCm || 178) / 100;
+    const bmi = Number((w / (hM * hM)).toFixed(1));
+    const bf = 10.2;
+    const lean = Number((w * (1 - bf / 100)).toFixed(1));
+    return {
+      athleteId: activePlan.athleteId,
+      athleteName: activePlan.athleteName,
+      weightKg: w,
+      bodyFatPct: bf,
+      leanMassKg: lean,
+      bmi,
+      statusLabel: activePlan.bodyCompStatus || 'Stable',
+      aiObservation: `${activePlan.athleteName}'s body mass (${w} kg) and lean mass (${lean} kg) remain aligned with ${activePlan.goal} targets during ${activePlan.trainingPhase}.`,
+      history8w: Array.from({ length: 8 }, (_, idx) => ({
+        week: `W${idx + 1}`,
+        weightKg: Number((w - 0.3 + (idx % 3) * 0.15).toFixed(1)),
+        bodyFatPct: Number((bf + 0.2 - idx * 0.03).toFixed(1)),
+        leanMassKg: Number((lean - 0.2 + idx * 0.04).toFixed(1)),
+        bmi,
+      })),
+    };
+  }, [bodyComposition, activePlan, activeAthleteObj]);
+
   const handleSubmitNewPlan = () => {
     const targetAth =
       athletes.find((a) => a.id === planAthleteId) || athletes[0];
+    const scaledMeals: Meal[] = activePlan.meals.map((m, idx) => {
+      const ratio = planCalories / (activePlan.targetCalories || 2850);
+      return {
+        ...m,
+        id: `meal-${Date.now()}-${idx}`,
+        calories: Math.round(m.calories * ratio),
+        proteinG: Math.round(m.proteinG * (planProtein / (activePlan.targetProteinG || 165))),
+        carbsG: Math.round(m.carbsG * (planCarbs / (activePlan.targetCarbsG || 380))),
+        fatG: Math.round(m.fatG * (planFat / (activePlan.targetFatG || 80))),
+        consumed: idx < 4,
+      };
+    });
+    const consumedMeals = scaledMeals.filter((m) => m.consumed);
+    const curCal = consumedMeals.reduce((s, m) => s + m.calories, 0);
+    const curProt = consumedMeals.reduce((s, m) => s + m.proteinG, 0);
+    const curCarbs = consumedMeals.reduce((s, m) => s + m.carbsG, 0);
+    const curFat = consumedMeals.reduce((s, m) => s + m.fatG, 0);
+    const compPct = Math.min(100, Math.round((curCal / planCalories) * 100));
+
     const newPlan: NutritionPlan = {
       id: `nplan-${Date.now()}`,
       athleteId: targetAth.id,
@@ -226,29 +319,32 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
       goal: planGoal,
       trainingPhase: planPhase,
       targetCalories: planCalories,
-      currentCalories: Math.round(planCalories * 0.91),
+      currentCalories: curCal,
       targetProteinG: planProtein,
-      currentProteinG: Math.round(planProtein * 0.94),
+      currentProteinG: curProt,
       targetCarbsG: planCarbs,
-      currentCarbsG: Math.round(planCarbs * 0.9),
+      currentCarbsG: curCarbs,
       targetFatG: planFat,
-      currentFatG: Math.round(planFat * 0.92),
+      currentFatG: curFat,
       targetHydrationL: 3.5,
       currentHydrationL: 2.8,
       mealFrequency: planMealsFreq,
       startDate: planStartDate,
       endDate: planEndDate,
-      compliancePct: 91,
-      hydrationCompliancePct: 82,
+      compliancePct: compPct,
+      hydrationCompliancePct: 80,
       supplementCompliancePct: 96,
       bodyCompStatus: 'Stable',
-      status: 'On Track',
+      status: compPct >= 80 ? 'On Track' : 'Monitor',
       compliance7d: activePlan.compliance7d,
-      meals: activePlan.meals,
+      meals: scaledMeals,
     };
     onCreateNutritionPlan(newPlan);
     setActiveProfilePlanId(newPlan.id);
     setIsCreatePlanOpen(false);
+    onTriggerToast(
+      `Saved ${newPlan.planName} (${planCalories} kcal) for ${targetAth.name} ✓`
+    );
   };
 
   return (
@@ -275,7 +371,10 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             </span>
             {['Nutritionist', 'Sports Scientist', 'Performance Director'].includes(selectedRole) && (
               <button
-                onClick={() => setIsCreatePlanOpen(true)}
+                onClick={() => {
+                  setPlanAthleteId(activePlan.athleteId);
+                  setIsCreatePlanOpen(true);
+                }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -283,7 +382,10 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               </button>
             )}
             <button
-              onClick={() => setIsAddHydrationOpen(true)}
+              onClick={() => {
+                setIntakeAthleteId(activePlan.athleteId);
+                setIsAddHydrationOpen(true);
+              }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-sky-300 font-semibold text-xs transition-colors"
             >
               <Droplets className="w-3.5 h-3.5" />
@@ -341,9 +443,22 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             })}
           </div>
 
-          <span className="text-[11px] font-mono text-slate-400">
-            Active Athlete Focus: <strong className="text-slate-200">{activePlan.athleteName}</strong>
-          </span>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[11px] font-mono text-slate-400">
+              Active Athlete Focus:
+            </span>
+            <select
+              value={activePlan.id}
+              onChange={(e) => setActiveProfilePlanId(e.target.value)}
+              className="px-2.5 py-1 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-sky-300 focus:outline-none focus:border-sky-500"
+            >
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.athleteName} ({p.planName})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -719,121 +834,6 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* Dynamic Catapult GPS Caloric Burn & Carb Auto-Periodisation */}
-              <div className="p-4 rounded bg-[#0B101B] border border-sky-500/40 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-bold text-slate-100 uppercase">
-                      CATAPULT GNSS ENERGY EXPENDITURE & CARB PERIODISATION
-                    </span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    Live GPS Telemetry Synced
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Morning Session</span>
-                    <strong className="font-mono text-slate-100 block mt-0.5">8,420 m</strong>
-                    <span className="text-[10px] text-sky-400">840m HSR (&gt;19.8km/h)</span>
-                  </div>
-                  <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Mechanical Load</span>
-                    <strong className="font-mono text-slate-100 block mt-0.5">712 AU</strong>
-                    <span className="text-[10px] text-slate-400">PlayerLoad™</span>
-                  </div>
-                  <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Session Burn</span>
-                    <strong className="font-mono text-amber-400 block mt-0.5">1,280 kcal</strong>
-                    <span className="text-[10px] text-slate-400">Active Expenditure</span>
-                  </div>
-                  <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Daily Caloric Need</span>
-                    <strong className="font-mono text-emerald-400 block mt-0.5">
-                      {gpsSyncIntensity === 'low'
-                        ? '2,350 kcal'
-                        : gpsSyncIntensity === 'moderate'
-                          ? '2,850 kcal'
-                          : '3,450 kcal'}
-                    </strong>
-                    <span className="text-[10px] text-slate-400">BMR + Activity</span>
-                  </div>
-                </div>
-
-                {/* Interactive Dynamic Carbohydrate Periodisation Mode Selector */}
-                <div className="space-y-1.5 pt-1 border-t border-slate-800/80">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-300 font-semibold">
-                      Carbohydrate Target Auto-Periodisation (g/kg CHO · Body Mass 76.4kg):
-                    </span>
-                    <span className="font-mono text-sky-400 font-bold">
-                      {gpsSyncIntensity === 'low'
-                        ? '3.5 g/kg → 267g CHO'
-                        : gpsSyncIntensity === 'moderate'
-                          ? '5.5 g/kg → 420g CHO'
-                          : '8.0 g/kg → 611g CHO (Match Intensity)'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    {(
-                      [
-                        { id: 'low', label: 'Rest / Regen', rate: '3.5 g/kg', cal: '2,350 kcal' },
-                        { id: 'moderate', label: 'Tactical Skills', rate: '5.5 g/kg', cal: '2,850 kcal' },
-                        { id: 'high', label: 'High Match Prep', rate: '8.0 g/kg (GPS Sync)', cal: '3,450 kcal' },
-                      ] as const
-                    ).map((mode) => (
-                      <button
-                        key={mode.id}
-                        onClick={() => setGpsSyncIntensity(mode.id)}
-                        className={`p-2 rounded border text-left transition-all ${
-                          gpsSyncIntensity === mode.id
-                            ? 'bg-sky-500/20 border-sky-400 text-sky-200'
-                            : 'bg-[#0F1623] border-slate-800 text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        <div className="font-bold text-[11px]">{mode.label}</div>
-                        <div className="font-mono text-[10px] mt-0.5">{mode.rate}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-[11px] text-slate-400">
-                    Matches AIS & IOC Sports Nutrition consensus guidelines
-                  </span>
-                  <button
-                    onClick={() => {
-                      const newTargetCalories =
-                        gpsSyncIntensity === 'low'
-                          ? 2350
-                          : gpsSyncIntensity === 'moderate'
-                            ? 2850
-                            : 3450;
-                      const newTargetCarbs =
-                        gpsSyncIntensity === 'low'
-                          ? 267
-                          : gpsSyncIntensity === 'moderate'
-                            ? 420
-                            : 611;
-                      onCreateNutritionPlan({
-                        ...activePlan,
-                        targetCalories: newTargetCalories,
-                        targetCarbsG: newTargetCarbs,
-                      });
-                      onTriggerToast(
-                        `Applied GPS-calibrated carbohydrate intake: ${newTargetCarbs}g (${gpsSyncIntensity === 'high' ? '8.0' : gpsSyncIntensity === 'moderate' ? '5.5' : '3.5'} g/kg) for ${activePlan.athleteName} ✓`
-                      );
-                    }}
-                    className="px-3 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition-colors"
-                  >
-                    Apply GPS-Calibrated Macros ✓
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Section 5: Daily Meal Plan Preview with [Mark Consumed] */}
@@ -912,12 +912,9 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                   Periodised macronutrient prescription & 7-meal fueling schedule
                 </p>
               </div>
-              <button
-                onClick={() => setIsCreatePlanOpen(true)}
-                className="px-3.5 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
-              >
-                + Create Nutrition Plan
-              </button>
+              <span className="px-2.5 py-1 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-xs text-sky-300 font-semibold">
+                {activePlan.planName}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
@@ -1049,18 +1046,15 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
               <h2 className="text-sm font-bold text-slate-100 uppercase">
-                HYDRATION TRACKING — ARJUN MEHTA
+                HYDRATION TRACKING — {activePlan.athleteName.toUpperCase()}
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Chronological fluid intake log & electrolyte compliance
+                Chronological fluid intake log & electrolyte compliance for {activePlan.athleteName}
               </p>
             </div>
-            <button
-              onClick={() => setIsAddHydrationOpen(true)}
-              className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
-            >
-              + Add Intake
-            </button>
+            <span className="px-2.5 py-1 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-xs text-sky-300 font-semibold">
+              Target: {hydrationTargetL.toFixed(1)} L / day
+            </span>
           </div>
 
           {/* 4 Summary Cards matching Section 6 */}
@@ -1102,10 +1096,10 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           {/* Hydration Timeline */}
           <div className="space-y-2.5">
             <div className="text-xs font-bold text-slate-200 uppercase">
-              Daily Intake Timeline
+              Daily Intake Timeline ({athleteHydrationLogs.length} Entries)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
-              {hydrationLogs.map((log) => (
+              {athleteHydrationLogs.map((log) => (
                 <div
                   key={log.id}
                   className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-1"
@@ -1134,14 +1128,17 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
               <h2 className="text-sm font-bold text-slate-100 uppercase">
-                SUPPLEMENT MANAGEMENT — ARJUN MEHTA
+                SUPPLEMENT MANAGEMENT — {activePlan.athleteName.toUpperCase()}
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Batch-tested sports nutrition supplementation schedule & intake compliance (No medical claims)
               </p>
             </div>
             <button
-              onClick={() => setIsAddSupplementOpen(true)}
+              onClick={() => {
+                setSuppAthleteId(activePlan.athleteId);
+                setIsAddSupplementOpen(true);
+              }}
               className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
             >
               + Add Supplement
@@ -1157,73 +1154,44 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                   <th className="py-2.5 px-3">Dosage</th>
                   <th className="py-2.5 px-3">Schedule</th>
                   <th className="py-2.5 px-3">Compliance</th>
-                  <th className="py-2.5 px-3">Batch Certification</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-4 text-right">Log Intake</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/70">
-                {supplements.map((supp) => {
-                  const certAgency = supp.name.toLowerCase().includes('whey') || supp.name.toLowerCase().includes('protein')
-                    ? 'Informed-Sport'
-                    : supp.name.toLowerCase().includes('creatine')
-                      ? 'NSF Certified for Sport'
-                      : 'Cologne List';
-                  const batchLot = `LOT-2026-${supp.id.slice(-4).toUpperCase()}`;
-
-                  return (
-                    <tr key={supp.id} className="hover:bg-[#141D2E]">
-                      <td className="py-3 px-4 font-bold text-slate-100">
-                        {supp.name}
-                      </td>
-                      <td className="py-3 px-3 text-sky-300">{supp.purpose}</td>
-                      <td className="py-3 px-3 font-mono text-slate-200">
-                        {supp.dosage}
-                      </td>
-                      <td className="py-3 px-3 text-slate-300">{supp.schedule}</td>
-                      <td className="py-3 px-3 font-mono font-bold text-emerald-400">
-                        {supp.compliancePct}%
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] font-bold">
-                            {certAgency}
-                          </span>
-                          <button
-                            onClick={() =>
-                              setSelectedBatchCert({
-                                supplementName: supp.name,
-                                batchNumber: batchLot,
-                                certAgency,
-                                certHash: 'SHA256:4a8f9c1e2b3d8842',
-                                testDate: '12 Aug 2026',
-                                labName: 'LGC Anti-Doping Testing Services, Newmarket UK',
-                                substancesScreened: 285,
-                                status: 'Verified Negative (Pass)',
-                              })
-                            }
-                            className="text-[11px] text-sky-400 hover:underline font-mono"
-                          >
-                            {batchLot} ⎘
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[11px]">
-                          {supp.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => onToggleSupplementLogged(supp.id)}
-                          className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium"
-                        >
-                          Log Dose ✓
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {athleteSupplements.map((supp) => (
+                  <tr key={supp.id} className="hover:bg-[#141D2E]">
+                    <td className="py-3 px-4 font-bold text-slate-100">
+                      {supp.name}
+                    </td>
+                    <td className="py-3 px-3 text-sky-300">{supp.purpose}</td>
+                    <td className="py-3 px-3 font-mono text-slate-200">
+                      {supp.dosage}
+                    </td>
+                    <td className="py-3 px-3 text-slate-300">{supp.schedule}</td>
+                    <td className="py-3 px-3 font-mono font-bold text-emerald-400">
+                      {supp.compliancePct}%
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[11px]">
+                        {supp.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => {
+                          onToggleSupplementLogged(supp.id);
+                          onTriggerToast(
+                            `Logged ${supp.name} dose for ${activePlan.athleteName} ✓`
+                          );
+                        }}
+                        className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium"
+                      >
+                        Log Dose ✓
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -1238,15 +1206,29 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
               <h2 className="text-sm font-bold text-slate-100 uppercase">
-                BODY COMPOSITION TELEMETRY — {bodyComposition.athleteName.toUpperCase()}
+                BODY COMPOSITION TELEMETRY — {activeBodyComposition.athleteName.toUpperCase()}
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 8-week anthropometric & DEXA lean mass progression
               </p>
             </div>
-            <span className="px-3 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold">
-              Status: {bodyComposition.statusLabel}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold">
+                Status: {activeBodyComposition.statusLabel}
+              </span>
+              <button
+                onClick={() => {
+                  setScanWeightKg(activeBodyComposition.weightKg);
+                  setScanBodyFatPct(activeBodyComposition.bodyFatPct);
+                  setScanLeanMassKg(activeBodyComposition.leanMassKg);
+                  setScanStatusLabel(activeBodyComposition.statusLabel);
+                  setIsLogBodyCompOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+              >
+                + Log Body Composition Scan
+              </button>
+            </div>
           </div>
 
           {/* 4 Metric Cards */}
@@ -1256,22 +1238,22 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 {
                   id: 'weightKg',
                   label: 'Weight',
-                  val: `${bodyComposition.weightKg} kg`,
+                  val: `${activeBodyComposition.weightKg} kg`,
                 },
                 {
                   id: 'bodyFatPct',
                   label: 'Body Fat %',
-                  val: `${bodyComposition.bodyFatPct}%`,
+                  val: `${activeBodyComposition.bodyFatPct}%`,
                 },
                 {
                   id: 'leanMassKg',
                   label: 'Lean Mass',
-                  val: `${bodyComposition.leanMassKg} kg`,
+                  val: `${activeBodyComposition.leanMassKg} kg`,
                 },
                 {
                   id: 'bmi',
                   label: 'BMI',
-                  val: `${bodyComposition.bmi}`,
+                  val: `${activeBodyComposition.bmi}`,
                 },
               ] as const
             ).map((m) => (
@@ -1298,7 +1280,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               8-Week Trend ({bodyCompMetric})
             </div>
             <div className="grid grid-cols-8 gap-2 items-end h-32 pt-4">
-              {bodyComposition.history8w.map((pt) => {
+              {activeBodyComposition.history8w.map((pt) => {
                 const val = pt[bodyCompMetric];
                 return (
                   <div
@@ -1331,7 +1313,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 AI Observation (Non-Diagnostic)
               </div>
               <p className="text-slate-100 mt-0.5 font-medium">
-                "{bodyComposition.aiObservation}"
+                "{activeBodyComposition.aiObservation}"
               </p>
             </div>
           </div>
@@ -1622,7 +1604,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <span className="font-bold text-sm text-slate-100 uppercase">
-                + Add Hydration Intake (Arjun Mehta)
+                + Add Hydration Intake
               </span>
               <button
                 onClick={() => setIsAddHydrationOpen(false)}
@@ -1633,6 +1615,20 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             </div>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 mb-1">Athlete</label>
+                <select
+                  value={intakeAthleteId}
+                  onChange={(e) => setIntakeAthleteId(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                >
+                  {athletes.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.athleteId})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-slate-400 mb-1">Time</label>
                 <input
@@ -1677,11 +1673,15 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               <button
                 onClick={() => {
                   onAddHydrationIntake({
-                    athleteId: 'ath-arjun-mehta',
+                    athleteId: intakeAthleteId,
                     time: intakeTime,
                     amountMl: intakeAmountMl,
                     beverageType: intakeBeverage,
                   });
+                  const matchPlan = plans.find(
+                    (p) => p.athleteId === intakeAthleteId
+                  );
+                  if (matchPlan) setActiveProfilePlanId(matchPlan.id);
                   setIsAddHydrationOpen(false);
                 }}
                 className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
@@ -1716,6 +1716,20 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             </div>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 mb-1">Athlete</label>
+                <select
+                  value={suppAthleteId}
+                  onChange={(e) => setSuppAthleteId(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                >
+                  {athletes.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.athleteId})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-slate-400 mb-1">
                   Supplement Name
@@ -1772,7 +1786,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               <button
                 onClick={() => {
                   onAddSupplement({
-                    athleteId: 'ath-arjun-mehta',
+                    athleteId: suppAthleteId,
                     name: suppName,
                     purpose: suppPurpose,
                     dosage: suppDosage,
@@ -1780,6 +1794,10 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                     compliancePct: 100,
                     status: 'Active',
                   });
+                  const matchPlan = plans.find(
+                    (p) => p.athleteId === suppAthleteId
+                  );
+                  if (matchPlan) setActiveProfilePlanId(matchPlan.id);
                   setIsAddSupplementOpen(false);
                 }}
                 className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
@@ -1791,78 +1809,106 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Batch Certificate Inspection Modal */}
-      {selectedBatchCert && (
+      {/* =========================================================
+       * MODAL 4: LOG BODY COMPOSITION SCAN (SECTION 8)
+       * ========================================================= */}
+      {isLogBodyCompOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            onClick={() => setSelectedBatchCert(null)}
-            className="fixed inset-0 bg-black/75 backdrop-blur-[1px]"
+            onClick={() => setIsLogBodyCompOpen(false)}
+            className="fixed inset-0 bg-black/75"
           />
-          <div className="relative w-full max-w-lg bg-[#0F1623] border border-slate-800 rounded-xl p-6 z-10 shadow-2xl space-y-4 text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <h3 className="text-sm font-bold text-slate-100 uppercase">
-                    ANTI-DOPING BATCH VERIFICATION CERTIFICATE
-                  </h3>
-                  <div className="text-[11px] text-slate-400 font-mono">
-                    {selectedBatchCert.certAgency} · {selectedBatchCert.batchNumber}
-                  </div>
-                </div>
-              </div>
+          <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-sm text-slate-100 uppercase">
+                Log Body Composition Scan ({activePlan.athleteName})
+              </span>
               <button
-                onClick={() => setSelectedBatchCert(null)}
+                onClick={() => setIsLogBodyCompOpen(false)}
                 className="text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Supplement Name:</span>
-                <span className="font-bold text-slate-100">{selectedBatchCert.supplementName}</span>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 mb-1">Weight (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={scanWeightKg}
+                  onChange={(e) => setScanWeightKg(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Testing Laboratory:</span>
-                <span className="text-slate-200 text-right">{selectedBatchCert.labName}</span>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Body Fat (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={scanBodyFatPct}
+                  onChange={(e) => setScanBodyFatPct(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Analysis Date:</span>
-                <span className="font-mono text-slate-200">{selectedBatchCert.testDate}</span>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Lean Mass (kg)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={scanLeanMassKg}
+                  onChange={(e) => setScanLeanMassKg(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">WADA Substances Screened:</span>
-                <span className="font-mono text-emerald-400 font-bold">
-                  {selectedBatchCert.substancesScreened}+ Prohibited Compounds
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Analytical Assay Result:</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">
-                  {selectedBatchCert.status}
-                </span>
-              </div>
-              <div className="flex justify-between font-mono text-[10px] text-slate-500 pt-1 border-t border-slate-800">
-                <span>Digital Certificate Hash:</span>
-                <span className="text-sky-400">{selectedBatchCert.certHash}</span>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Status Classification
+                </label>
+                <select
+                  value={scanStatusLabel}
+                  onChange={(e) =>
+                    setScanStatusLabel(
+                      e.target.value as 'Stable' | 'Lean Gain' | 'Monitor'
+                    )
+                  }
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                >
+                  <option value="Stable">Stable</option>
+                  <option value="Lean Gain">Lean Gain</option>
+                  <option value="Monitor">Monitor</option>
+                </select>
               </div>
             </div>
 
-            <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 leading-relaxed">
-              ✓ Guaranteed free of banned substances in compliance with ISO 17025 accredited laboratory testing standards. Safe for in-competition consumption by National and Olympic squad athletes.
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsLogBodyCompOpen(false)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
+              >
+                Cancel
+              </button>
               <button
                 onClick={() => {
-                  onTriggerToast(`Downloaded PDF Laboratory Certificate for ${selectedBatchCert.batchNumber} ✓`);
-                  setSelectedBatchCert(null);
+                  if (onUpdateBodyComposition) {
+                    onUpdateBodyComposition(
+                      activePlan.athleteId,
+                      scanWeightKg,
+                      scanBodyFatPct,
+                      scanLeanMassKg,
+                      scanStatusLabel
+                    );
+                  }
+                  setIsLogBodyCompOpen(false);
                 }}
-                className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold"
+                className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
               >
-                Download PDF Certificate ⎘
+                Save Scan Telemetry
               </button>
             </div>
           </div>

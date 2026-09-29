@@ -406,26 +406,6 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
               </button>
             )}
 
-            {tabs.includes('Medical') && (
-              <button
-                onClick={() => setActiveTab('Medical')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-              >
-                <HeartPulse className="w-3.5 h-3.5 text-rose-400" />
-                <span>Medical</span>
-              </button>
-            )}
-
-            {tabs.includes('Training') && (
-              <button
-                onClick={() => setActiveTab('Training')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-              >
-                <Dumbbell className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Training</span>
-              </button>
-            )}
-
             <button
               onClick={() => onOpenAiAssistance('summary')}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors whitespace-nowrap"
@@ -644,13 +624,6 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
 
               <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => onOpenAiAssistance('readiness')}
-                    className="px-3 py-1.5 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-xs font-semibold text-sky-300 transition-colors"
-                  >
-                    View Evidence
-                  </button>
-
                   <button
                     onClick={handleGenerateUpdatedAiSummary}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors"

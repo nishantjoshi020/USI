@@ -34,7 +34,6 @@ import { ROLE_DASHBOARDS_CONFIG } from '../../data/roleDashboardConfig';
 
 interface RoleDashboardBannerProps {
   selectedRole: UserRole;
-  onSelectRole?: (role: UserRole) => void;
   onTriggerQuickAction?: (actionId: string, label: string) => void;
 }
 

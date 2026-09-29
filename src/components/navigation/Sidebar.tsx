@@ -17,9 +17,10 @@ import {
   Utensils,
   PanelLeftClose,
   PanelLeftOpen,
-  Plane,
+  X,
 } from 'lucide-react';
 import { NavItemId, UserRole } from '../../types/usi';
+import { ViewportMode } from './TopContextBar';
 
 interface SidebarProps {
   activeNav: NavItemId;
@@ -27,6 +28,11 @@ interface SidebarProps {
   attentionCount: number;
   activeInjuryCount: number;
   selectedRole?: UserRole;
+  viewportMode?: ViewportMode;
+  isMobileDrawerOpen?: boolean;
+  onCloseMobileDrawer?: () => void;
+  isCompact?: boolean;
+  onToggleCompact?: (next: boolean) => void;
 }
 
 interface NavGroup {
@@ -49,6 +55,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   attentionCount,
   activeInjuryCount,
   selectedRole = 'Performance Director',
+  viewportMode = 'desktop',
+  isMobileDrawerOpen = false,
+  onCloseMobileDrawer,
+  isCompact: controlledIsCompact,
+  onToggleCompact,
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     athletes: false,
@@ -59,7 +70,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
     'assessments-tid': false,
     'analytics-bi': false,
   });
-  const [isCompact, setIsCompact] = useState(false);
+  const [internalCompact, setInternalCompact] = useState(false);
+
+  const isCompact =
+    controlledIsCompact !== undefined ? controlledIsCompact : internalCompact;
+
+  const setIsCompact = (next: boolean) => {
+    setInternalCompact(next);
+    if (onToggleCompact) {
+      onToggleCompact(next);
+    }
+  };
+
+  React.useEffect(() => {
+    if (viewportMode === 'tablet') {
+      setIsCompact(true);
+    } else if (viewportMode === 'mobile') {
+      setIsCompact(false);
+    } else {
+      setIsCompact(false);
+    }
+  }, [viewportMode]);
+
+  const handleNavClick = (nav: NavItemId) => {
+    onSelectNav(nav);
+    if (viewportMode === 'mobile' && onCloseMobileDrawer) {
+      onCloseMobileDrawer();
+    }
+  };
 
   const toggleSection = (id: string) => {
     setCollapsedSections((prev) => ({
@@ -139,7 +177,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             badgeTone: 'amber',
             children: [
               { id: 'athlete-registry', label: 'Squad Selection Registry', badge: 184 },
-              { id: 'athlete-lifecycle', label: 'Athlete Lifecycle & Onboarding', badge: 'Active' },
             ],
           },
           {
@@ -373,7 +410,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon: Users,
             children: [
               { id: 'athlete-registry', label: 'National Athlete Registry', badge: 184 },
-              { id: 'athlete-lifecycle', label: 'Onboarding & Approvals Hub', badge: 'Flow' },
               { id: 'enrollment', label: 'Enrollment Applications' },
               { id: 'verification', label: 'Licensing Verification & Passports' },
             ],
@@ -415,15 +451,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             navId: 'command-center',
           },
           {
-            id: 'operations',
-            label: 'Team Logistics & Camps',
-            icon: Plane,
-            navId: 'camps',
+            id: 'training',
+            label: 'Facility Scheduling',
+            icon: Building2,
             children: [
-              { id: 'camps', label: 'Training Camps & Travel', badge: 'Active' },
-              { id: 'manifests', label: 'Flight Manifests & Rooming' },
-              { id: 'cargo', label: 'ATA Carnet & Equipment' },
-              { id: 'facilities', label: 'Facility Master Schedule', badge: '5 Bookings' },
+              { id: 'sessions', label: 'Pitch & Court Bookings', badge: '5 Bookings' },
             ],
           },
           {
@@ -469,7 +501,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             badgeTone: 'amber',
             children: [
               { id: 'athlete-registry', label: 'Athlete Registry', badge: 184 },
-              { id: 'athlete-lifecycle', label: 'Lifecycle & Onboarding Hub', badge: 'Active' },
               { id: 'enrollment', label: 'Enrollment' },
               { id: 'verification', label: 'Verification' },
             ],
@@ -536,17 +567,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ],
           },
           {
-            id: 'operations',
-            label: 'Camp Operations & Logistics',
-            icon: Plane,
-            children: [
-              { id: 'camps', label: 'Camps & Expeditions' },
-              { id: 'manifests', label: 'Flight Manifests & Rooming' },
-              { id: 'cargo', label: 'ATA Carnet & Cargo' },
-              { id: 'facilities', label: 'Facility Master Schedule' },
-            ],
-          },
-          {
             id: 'analytics-bi',
             label: 'Analytics & BI',
             icon: BarChart3,
@@ -587,16 +607,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navGroups = getNavGroupsForRole();
 
-  return (
+  if (viewportMode === 'mobile' && !isMobileDrawerOpen) {
+    return null;
+  }
+
+  const sidebarContent = (
     <aside
       className={`${
-        isCompact ? 'w-16' : 'w-64'
-      } shrink-0 bg-[#090D16] border-r border-slate-800/90 flex flex-col h-screen sticky top-0 select-none transition-all duration-150 z-30`}
+        viewportMode === 'mobile'
+          ? 'w-72 fixed inset-y-0 left-0 sm:left-[max(0px,calc(50%-215px))] z-50 shadow-2xl h-dvh'
+          : isCompact
+            ? 'w-16 sticky top-0 self-start z-30 h-dvh max-h-dvh'
+            : 'w-64 sticky top-0 self-start z-30 h-dvh max-h-dvh'
+      } shrink-0 bg-[#090D16] border-r border-slate-800/90 flex flex-col select-none transition-all duration-150`}
     >
       {/* Brand Lockup */}
-      <div className="h-16 px-4 border-b border-slate-800/90 flex items-center justify-between">
+      <div className="h-14 px-4 border-b border-slate-800/90 flex items-center justify-between">
         <button
-          onClick={() => onSelectNav('command-center')}
+          onClick={() => handleNavClick('command-center')}
           className="flex items-center gap-3 text-left group focus:outline-none"
         >
           <div className="w-8 h-8 rounded-md bg-sky-500/15 border border-sky-500/40 flex items-center justify-center shrink-0">
@@ -614,17 +642,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        <button
-          onClick={() => setIsCompact(!isCompact)}
-          title={isCompact ? 'Expand navigation' : 'Collapse navigation'}
-          className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
-        >
-          {isCompact ? (
-            <PanelLeftOpen className="w-4 h-4" />
-          ) : (
-            <PanelLeftClose className="w-4 h-4" />
-          )}
-        </button>
+        {viewportMode === 'mobile' ? (
+          <button
+            onClick={onCloseMobileDrawer}
+            title="Close navigation"
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsCompact(!isCompact)}
+            title={isCompact ? 'Expand navigation' : 'Collapse navigation'}
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
+          >
+            {isCompact ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
+        )}
       </div>
 
       {/* Navigation Scroll Area */}
@@ -641,7 +679,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <div key={group.id} className={isCommandCenter ? 'pb-2 mb-2 border-b border-slate-800/80' : ''}>
                 <button
-                  onClick={() => onSelectNav(group.navId!)}
+                  onClick={() => handleNavClick(group.navId!)}
                   title={isCompact ? group.label : undefined}
                   className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
                     isDirectActive
@@ -689,10 +727,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => {
                   if (group.navId) {
-                    onSelectNav(group.navId);
+                    handleNavClick(group.navId);
                     setCollapsedSections((prev) => ({ ...prev, [group.id]: false }));
                   } else if (isCompact && group.children?.[0]) {
-                    onSelectNav(group.children[0].id);
+                    handleNavClick(group.children[0].id);
                   } else {
                     toggleSection(group.id);
                   }
@@ -744,7 +782,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     return (
                       <button
                         key={child.id}
-                        onClick={() => onSelectNav(child.id)}
+                        onClick={() => handleNavClick(child.id)}
                         className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors ${
                           active
                             ? 'bg-sky-500/15 text-sky-300 font-semibold'
@@ -768,4 +806,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
     </aside>
   );
+
+  if (viewportMode === 'mobile') {
+    return (
+      <>
+        <div
+          onClick={onCloseMobileDrawer}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-40"
+        />
+        {sidebarContent}
+      </>
+    );
+  }
+
+  return sidebarContent;
 };

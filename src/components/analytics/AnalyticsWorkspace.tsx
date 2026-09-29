@@ -360,25 +360,29 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
 
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => onSelectSubTab('analytics-reports')}
-              className={`px-3.5 py-2 rounded-md text-xs font-semibold border transition-colors ${
-                isReportsView
-                  ? 'bg-sky-500 text-slate-950 border-sky-400'
-                  : 'bg-[#090D16] text-slate-200 border-slate-700 hover:bg-slate-800'
-              }`}
+              onClick={() =>
+                onSelectSubTab(
+                  isReportsView ? 'analytics-federation' : 'analytics-reports'
+                )
+              }
+              className="px-3.5 py-2 rounded-md text-xs font-semibold border bg-[#090D16] text-slate-200 border-slate-700 hover:bg-slate-800 transition-colors"
             >
-              Report Builder & Schedules
+              {isReportsView
+                ? '← Back to Performance Analytics'
+                : 'Report Builder & Schedules'}
             </button>
-            <button
-              onClick={() => {
-                setExportState('idle');
-                setIsExportModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export Report</span>
-            </button>
+            {!isReportsView && (
+              <button
+                onClick={() => {
+                  setExportState('idle');
+                  setIsExportModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Report</span>
+              </button>
+            )}
           </div>
         </div>
 
