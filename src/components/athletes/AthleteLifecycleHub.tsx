@@ -33,6 +33,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Athlete, Injury, TrainingSession, UserRole, BodyRegionId } from '../../types/usi';
+import { OperationalWorkflowsHub } from '../workflows/OperationalWorkflowsHub';
 
 /* ==========================================================================
    LIFECYCLE EVENT BUS — Cross-Persona Notification System
@@ -530,7 +531,7 @@ export const AthleteLifecycleHub: React.FC<AthleteLifecycleHubProps> = ({
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState<LifecycleStage | 'ALL'>('ALL');
-  const [activeTab, setActiveTab] = useState<'overview' | 'lifecycle' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'workflows' | 'overview' | 'lifecycle' | 'notifications'>('workflows');
 
   // Derive lifecycle state for all athletes
   const allLifecycleStates: AthleteLifecycleState[] = useMemo(() =>
@@ -646,6 +647,7 @@ export const AthleteLifecycleHub: React.FC<AthleteLifecycleHubProps> = ({
         {/* Tab Nav */}
         <div className="flex items-center gap-1 mt-4 border-b border-slate-800">
           {([
+            { id: 'workflows', label: '⚡ Role-Based Operational Workflows' },
             { id: 'overview', label: 'Squad Overview' },
             { id: 'lifecycle', label: 'Lifecycle Detail' },
             { id: 'notifications', label: `My Actions ${myPendingCount > 0 ? `(${myPendingCount})` : ''}` },
@@ -664,6 +666,26 @@ export const AthleteLifecycleHub: React.FC<AthleteLifecycleHubProps> = ({
           ))}
         </div>
       </div>
+
+      {/* TAB: ROLE-BASED OPERATIONAL WORKFLOWS */}
+      {activeTab === 'workflows' && (
+        <OperationalWorkflowsHub
+          athletes={athletes}
+          injuries={injuries}
+          sessions={sessions}
+          selectedRole={selectedRole}
+          onOpenOnboarding={onOpenOnboarding}
+          onOpenApproval={onOpenApproval}
+          onOpenCoachAssignment={onOpenCoachAssignment}
+          onOpenAthlete360={onOpenAthlete360}
+          onOpenReportInjury={onOpenReportInjury}
+          onOpenSessionAssignment={onOpenSessionAssignment}
+          onOpenCreateRehab={onOpenCreateRehab}
+          onOpenAdvanceRtp={onOpenAdvanceRtp}
+          onNavigate={onNavigate}
+          onTriggerToast={onTriggerToast}
+        />
+      )}
 
       {/* TAB: SQUAD OVERVIEW */}
       {activeTab === 'overview' && (

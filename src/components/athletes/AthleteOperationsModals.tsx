@@ -100,8 +100,13 @@ export const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({
                     <div className="text-[11px] text-sky-400 mt-0.5">
                       {c.role} · {c.sport} · {c.squad}
                     </div>
-                    <div className="text-[11px] font-mono text-slate-400 mt-1">
-                      Current Athletes: {c.currentAthletesCount}
+                    <div className="text-[11px] font-mono text-slate-300 mt-1 flex items-center justify-between">
+                      <span>Caseload: <strong>{c.currentAthletesCount}</strong>/20</span>
+                      <span className={`text-[10px] font-bold ${
+                        c.currentAthletesCount >= 20 ? 'text-rose-400' : c.currentAthletesCount >= 18 ? 'text-amber-400' : 'text-emerald-400'
+                      }`}>
+                        {c.currentAthletesCount >= 20 ? 'Capacity Full' : c.currentAthletesCount >= 18 ? 'Near Cap' : 'Available'}
+                      </span>
                     </div>
                   </button>
                 );
@@ -109,10 +114,23 @@ export const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({
             </div>
           </div>
 
+          {/* Coach Caseload Capacity Banner */}
+          <div className="p-3 rounded-md bg-[#090D16] border border-slate-800 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">Selected Coach Workload:</span>
+              <strong className="text-sky-300">{selectedCoach.name}</strong>
+              <span className="text-slate-500 font-mono">({selectedCoach.currentAthletesCount} / 20 athletes)</span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">
+              Recommended Cap: 20
+            </span>
+          </div>
+
           {/* Assignment Confirmation Summary Box */}
           <div className="p-4 rounded-md bg-[#0B101B] border border-slate-800 space-y-2.5">
-            <div className="text-xs font-bold text-slate-200 border-b border-slate-800 pb-2">
-              Coach Assignment Summary
+            <div className="text-xs font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center justify-between">
+              <span>Coach Assignment Summary</span>
+              <span className="text-[10px] font-mono text-sky-400">Admin assigns → Coach accepts → Athlete notified</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -207,21 +225,29 @@ export const AthleteApprovalModal: React.FC<AthleteApprovalModalProps> = ({
   onRequestChanges,
   onRejectAthlete,
 }) => {
-  const [mode, setMode] = useState<'review' | 'request-changes' | 'reject'>(
-    'review'
-  );
-  const [reason, setReason] = useState('Missing proof of insurance.');
+  const [activeTier, setActiveTier] = useState<1 | 2 | 3>(1);
+  const [tierStatus, setTierStatus] = useState<{
+    admin: 'pending' | 'approved' | 'changes';
+    coach: 'pending' | 'approved' | 'changes';
+    medical: 'pending' | 'cleared' | 'restricted' | 'rejected';
+  }>({
+    admin: 'approved',
+    coach: 'pending',
+    medical: 'pending',
+  });
+  const [mode, setMode] = useState<'review' | 'request-changes' | 'reject'>('review');
+  const [reason, setReason] = useState('Sports registration document is expired.');
 
   useEffect(() => {
     if (athlete) {
       setMode('review');
-      setReason(
-        athlete.verificationNotes || 'Missing proof of insurance.'
-      );
+      setReason(athlete.verificationNotes || 'Sports registration document is expired.');
     }
   }, [athlete]);
 
   if (!athlete) return null;
+
+  const isAllApproved = tierStatus.admin === 'approved' && tierStatus.coach === 'approved' && (tierStatus.medical === 'cleared' || tierStatus.medical === 'restricted');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -230,15 +256,16 @@ export const AthleteApprovalModal: React.FC<AthleteApprovalModalProps> = ({
         className="fixed inset-0 bg-black/75 backdrop-blur-[1px]"
       />
 
-      <div className="relative w-full max-w-xl bg-[#0F1623] border border-slate-700 rounded-lg shadow-2xl overflow-hidden z-10">
+      <div className="relative w-full max-w-2xl bg-[#0F1623] border border-slate-700 rounded-lg shadow-2xl overflow-hidden z-10">
         <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div>
             <div className="text-xs font-mono text-amber-400">
-              FEDERATION VERIFICATION & APPROVAL WORKFLOW
+              MULTI-DISCIPLINARY 3-TIER APPROVAL FLOW
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5">
-              Review Athlete Application — {athlete.name}
+              Review Application — {athlete.name} ({athlete.athleteId})
             </h2>
+            <p className="text-[11px] text-slate-400">The athlete cannot approve their own data. Requires Admin, Coach, and Medical clearances.</p>
           </div>
           <button
             onClick={onClose}
@@ -248,119 +275,214 @@ export const AthleteApprovalModal: React.FC<AthleteApprovalModalProps> = ({
           </button>
         </div>
 
-        <div className="p-5 space-y-4 text-xs">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">Applicant</span>
-              <strong className="text-slate-100">
-                {athlete.name} ({athlete.athleteId})
-              </strong>
+        {/* 3 Tier Navigation Strip */}
+        <div className="grid grid-cols-3 border-b border-slate-800 bg-[#0B101B] text-xs">
+          <button
+            onClick={() => setActiveTier(1)}
+            className={`p-3 text-left border-r border-slate-800 transition-colors ${
+              activeTier === 1 ? 'bg-sky-500/15 border-b-2 border-b-sky-500 text-sky-300' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <div className="font-mono text-[10px] text-slate-500">LEVEL 1</div>
+            <div className="font-semibold text-slate-200">Admin Verification</div>
+            <div className={`text-[10px] font-mono mt-0.5 ${tierStatus.admin === 'approved' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+              {tierStatus.admin === 'approved' ? '✓ Approved' : 'Pending Review'}
             </div>
-            <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">Sport / Squad</span>
-              <strong className="text-slate-100">
-                {athlete.sport} · {athlete.squad}
-              </strong>
-            </div>
-            <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">
-                Profile Completion
-              </span>
-              <strong className="font-mono text-emerald-400">
-                {athlete.profileCompletion}%
-              </strong>
-            </div>
-            <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">Medical Status</span>
-              <strong className="text-amber-300">{athlete.medicalStatus}</strong>
-            </div>
-            <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">Documents</span>
-              <strong className="text-slate-200">
-                {athlete.documents.length} Attached
-              </strong>
-            </div>
-            <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
-              <span className="text-slate-400 block text-[11px]">Current State</span>
-              <strong className="text-amber-400">
-                {athlete.verificationStatus}
-              </strong>
-            </div>
-          </div>
+          </button>
 
+          <button
+            onClick={() => setActiveTier(2)}
+            className={`p-3 text-left border-r border-slate-800 transition-colors ${
+              activeTier === 2 ? 'bg-sky-500/15 border-b-2 border-b-sky-500 text-sky-300' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <div className="font-mono text-[10px] text-slate-500">LEVEL 2</div>
+            <div className="font-semibold text-slate-200">Coach Sporting</div>
+            <div className={`text-[10px] font-mono mt-0.5 ${tierStatus.coach === 'approved' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+              {tierStatus.coach === 'approved' ? '✓ Approved' : 'Pending Review'}
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTier(3)}
+            className={`p-3 text-left transition-colors ${
+              activeTier === 3 ? 'bg-sky-500/15 border-b-2 border-b-sky-500 text-sky-300' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <div className="font-mono text-[10px] text-slate-500">LEVEL 3</div>
+            <div className="font-semibold text-slate-200">Medical Clearance</div>
+            <div className={`text-[10px] font-mono mt-0.5 ${
+              tierStatus.medical === 'cleared' ? 'text-emerald-400 font-bold' :
+              tierStatus.medical === 'restricted' ? 'text-amber-400 font-bold' : 'text-slate-400'
+            }`}>
+              {tierStatus.medical === 'cleared' ? '✓ Cleared' : tierStatus.medical === 'restricted' ? '⚠ Restricted' : 'Pending Review'}
+            </div>
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4 text-xs">
+          {/* LEVEL 1: ADMIN */}
+          {activeTier === 1 && (
+            <div className="space-y-3">
+              <div className="font-bold text-slate-200 text-sm">Level 1 — Administrative Verification Checklist</div>
+              <p className="text-slate-400 text-xs">Verifies identity, date of birth, national federation registration, team eligibility, and anti-doping consent.</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded bg-[#090D16] border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Identity & DOB</span>
+                  <strong className="text-slate-100">{athlete.name} · {athlete.dob || '2004-06-12'}</strong>
+                </div>
+                <div className="p-2.5 rounded bg-[#090D16] border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Registration State</span>
+                  <strong className="text-slate-100">{athlete.documents.length} Valid Docs Attached</strong>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  onClick={() => setTierStatus({ ...tierStatus, admin: 'approved' })}
+                  className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
+                >
+                  Approve Admin Verification ✓
+                </button>
+                <button
+                  onClick={() => setMode('request-changes')}
+                  className="px-3 py-2 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-semibold text-xs"
+                >
+                  Request Changes
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LEVEL 2: COACH */}
+          {activeTier === 2 && (
+            <div className="space-y-3">
+              <div className="font-bold text-slate-200 text-sm">Level 2 — Coach Sporting Profile Verification</div>
+              <p className="text-slate-400 text-xs">Coach reviews sporting discipline, position, playing level, ranking, and baseline targets.</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded bg-[#090D16] border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Sport & Discipline</span>
+                  <strong className="text-slate-100">{athlete.sport} · {athlete.position}</strong>
+                </div>
+                <div className="p-2.5 rounded bg-[#090D16] border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Squad Category</span>
+                  <strong className="text-sky-300">{athlete.squad}</strong>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  onClick={() => setTierStatus({ ...tierStatus, coach: 'approved' })}
+                  className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
+                >
+                  Approve Sporting Profile ✓
+                </button>
+                <button
+                  onClick={() => setMode('request-changes')}
+                  className="px-3 py-2 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-semibold text-xs"
+                >
+                  Request Sporting Changes
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LEVEL 3: MEDICAL */}
+          {activeTier === 3 && (
+            <div className="space-y-3">
+              <div className="font-bold text-slate-200 text-sm">Level 3 — Medical Clearance Assessment</div>
+              <p className="text-slate-400 text-xs">Chief Medical Officer reviews pre-competition medical history, previous surgeries, and current restrictions.</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded bg-[#090D16] border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">Cardiac & Musculoskeletal</span>
+                  <strong className="text-emerald-400">ECG & Echo Screen Passed</strong>
+                </div>
+                <div className="p-2.5 rounded bg-[#090D16] border border-slate-800">
+                  <span className="text-slate-400 block text-[10px]">WADA Anti-Doping TUE</span>
+                  <strong className="text-slate-100">0 Therapeutic Exemptions Needed</strong>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  onClick={() => setTierStatus({ ...tierStatus, medical: 'cleared' })}
+                  className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
+                >
+                  Issue Medical Clearance ✓
+                </button>
+                <button
+                  onClick={() => setTierStatus({ ...tierStatus, medical: 'restricted' })}
+                  className="px-3 py-2 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-semibold text-xs"
+                >
+                  Clear with Restrictions
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Request Changes / Reject Sub-Form */}
           {mode !== 'review' && (
             <div className="p-4 rounded bg-[#0B101B] border border-amber-500/40 space-y-2">
               <label className="block font-semibold text-amber-300">
                 {mode === 'request-changes'
-                  ? 'Reason for Requesting Changes (Required):'
+                  ? 'Reason for Requesting Changes (Dispatched to Athlete Task Inbox):'
                   : 'Reason for Rejection (Required):'}
               </label>
               <input
                 type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g. Missing proof of insurance."
+                placeholder="e.g. Sports registration document is expired."
                 className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
               />
             </div>
           )}
-        </div>
 
-        <div className="p-4 border-t border-slate-800 bg-[#090D16] flex flex-wrap items-center justify-between gap-2">
-          {mode === 'review' ? (
-            <>
-              <button
-                onClick={() => setMode('reject')}
-                className="px-3.5 py-2 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-semibold text-xs"
-              >
-                Reject
-              </button>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setMode('request-changes')}
-                  className="px-3.5 py-2 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-semibold text-xs"
-                >
-                  Request Changes
-                </button>
-
-                <button
-                  onClick={() => {
-                    onApproveAthlete(athlete.id);
-                    onClose();
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Approve Athlete</span>
-                </button>
+          {/* Final Activated Banner */}
+          {isAllApproved && (
+            <div className="p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/50 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-sm">🟢</div>
+                <div>
+                  <div className="font-bold text-emerald-300 text-xs">Athlete Activated Ready</div>
+                  <div className="text-[11px] text-slate-300">Admin: Approved · Sporting: Approved · Medical: Cleared</div>
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-end gap-2 w-full">
-              <button
-                onClick={() => setMode('review')}
-                className="px-3 py-1.5 rounded bg-slate-800 text-xs text-slate-300"
-              >
-                Back
-              </button>
               <button
                 onClick={() => {
-                  if (!reason.trim()) return;
-                  if (mode === 'request-changes') {
-                    onRequestChanges(athlete.id, reason.trim());
-                  } else {
-                    onRejectAthlete(athlete.id, reason.trim());
-                  }
+                  onApproveAthlete(athlete.id);
                   onClose();
                 }}
-                className="px-4 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs"
+                className="px-4 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5"
               >
-                {mode === 'request-changes'
-                  ? 'Submit Changes Requested'
-                  : 'Confirm Rejection'}
+                <Check className="w-3.5 h-3.5" />
+                <span>Confirm Full Activation</span>
               </button>
             </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-slate-800 bg-[#090D16] flex items-center justify-between">
+          <button onClick={onClose} className="px-3.5 py-2 rounded bg-slate-800 text-slate-300 hover:text-white text-xs">
+            Close
+          </button>
+          {mode !== 'review' ? (
+            <button
+              onClick={() => {
+                if (mode === 'request-changes') onRequestChanges(athlete.id, reason);
+                else onRejectAthlete(athlete.id, reason);
+                onClose();
+              }}
+              className="px-4 py-2 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
+            >
+              Submit Feedback
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setTierStatus({ admin: 'approved', coach: 'approved', medical: 'cleared' });
+              }}
+              className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs"
+            >
+              Simulate All 3 Approvals
+            </button>
           )}
         </div>
       </div>

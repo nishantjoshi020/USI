@@ -308,7 +308,47 @@ export const CoachWorkflowPanel: React.FC<CoachWorkflowPanelProps> = ({
   onOpenTrainingModModal,
   onTriggerToast,
 }) => {
-  const [activeCoachTab, setActiveCoachTab] = useState<'roster' | 'lineup' | 'load'>('roster');
+  const [activeCoachTab, setActiveCoachTab] = useState<'triage' | 'roster' | 'lineup' | 'load'>('triage');
+  const [triageSquad, setTriageSquad] = useState([
+    {
+      id: 'ath-1',
+      name: 'Rahul Sharma',
+      readiness: 8,
+      session: 'Sprint Acceleration 6x30m',
+      status: 'Ready',
+      notes: 'Readiness 8/10 · Sleep 8.2h · 0 pain',
+      modified: false,
+    },
+    {
+      id: 'ath-2',
+      name: 'Arjun Mehta',
+      readiness: 5,
+      session: 'Max Sprint 8x60m (95% Vmax)',
+      status: 'Modify',
+      notes: 'Readiness 5/10 · Sleep 5h · Knee pain 4/10 · Previous knee history',
+      modified: false,
+    },
+    {
+      id: 'ath-3',
+      name: 'Aman Verma',
+      readiness: 3,
+      session: 'Heavy Lower Body Strength',
+      status: 'Review',
+      notes: 'Readiness 3/10 · Adductor tightness 6/10 · ACWR 1.48 (Elevated)',
+      modified: false,
+    },
+  ]);
+  const [plannedActualReview, setPlannedActualReview] = useState<{
+    planned: number;
+    actual: number;
+    rpe: number;
+    status: 'pending' | 'approved' | 'flagged';
+  }>({
+    planned: 80,
+    actual: 92,
+    rpe: 8,
+    status: 'pending',
+  });
   const [startingXI, setStartingXI] = useState<Set<string>>(new Set(
     athletes.filter((a) => a.trainingStatus === 'ACTIVE' && a.readiness >= 80).slice(0, 11).map((a) => a.id)
   ));
@@ -387,6 +427,7 @@ export const CoachWorkflowPanel: React.FC<CoachWorkflowPanelProps> = ({
         {/* Tab Bar */}
         <div className="flex items-center gap-1 mt-4 border-b border-slate-800/70">
           {([
+            { id: 'triage', label: "Today's Operational Triage" },
             { id: 'roster', label: 'Squad Roster' },
             { id: 'lineup', label: `Starting XI Builder (${startingXI.size}/11)` },
             { id: 'load', label: 'Load & Periodisation' },
@@ -407,6 +448,109 @@ export const CoachWorkflowPanel: React.FC<CoachWorkflowPanelProps> = ({
       </div>
 
       <div className="p-5">
+        {/* OPERATIONAL TRIAGE TAB */}
+        {activeCoachTab === 'triage' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div>
+                <h4 className="text-sm font-bold text-slate-100">Morning Squad Readiness & Immediate Session Modification</h4>
+                <p className="text-xs text-slate-400">Coach follows: Assigned → Prepare → Deliver → Monitor → Review → Adjust</p>
+              </div>
+              <span className="text-xs font-mono text-emerald-400">Live Active Session</span>
+            </div>
+
+            <div className="border border-slate-800 rounded-lg overflow-hidden text-xs">
+              <div className="bg-[#090D16] p-3 grid grid-cols-12 font-bold text-slate-300 border-b border-slate-800">
+                <div className="col-span-3">Athlete</div>
+                <div className="col-span-2">Readiness</div>
+                <div className="col-span-3">Scheduled Session</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2 text-right">Adjustment Action</div>
+              </div>
+
+              {triageSquad.map((ath) => (
+                <div key={ath.id} className="p-3 grid grid-cols-12 items-center border-b border-slate-800/60 hover:bg-[#131B2B]">
+                  <div className="col-span-3">
+                    <div className="font-semibold text-slate-100">{ath.name}</div>
+                    <div className="text-[10px] text-slate-400">{ath.notes}</div>
+                  </div>
+                  <div className="col-span-2 font-mono font-bold text-slate-200">{ath.readiness} / 10</div>
+                  <div className="col-span-3 text-slate-300">
+                    {ath.modified ? (
+                      <span className="text-emerald-300 font-semibold">{ath.session}</span>
+                    ) : (
+                      <span>{ath.session}</span>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                      ath.modified ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+                      ath.status === 'Ready' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+                      ath.status === 'Modify' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                      'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                    }`}>
+                      {ath.modified ? '✓ MODIFIED' : ath.status === 'Modify' ? '⚠ MODIFY' : ath.status === 'Review' ? '🔴 REVIEW' : 'READY'}
+                    </span>
+                  </div>
+                  <div className="col-span-2 text-right">
+                    {ath.status === 'Modify' && !ath.modified ? (
+                      <button
+                        onClick={() => {
+                          setTriageSquad(triageSquad.map(a => a.id === ath.id ? { ...a, session: 'Technical drills + low-intensity running', modified: true } : a));
+                          onTriggerToast('✓ Coach changed Arjun session from Max Sprint to Technical Drills + Low-Intensity Running');
+                        }}
+                        className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px]"
+                      >
+                        Modify Session
+                      </button>
+                    ) : ath.status === 'Review' ? (
+                      <button
+                        onClick={() => onTriggerToast('Summoned Joint Review for Aman Verma')}
+                        className="px-2 py-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[11px]"
+                      >
+                        Joint Review
+                      </button>
+                    ) : (
+                      <span className="text-emerald-400 font-bold text-[11px]">✓ Cleared</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Coach Planned vs Actual Load Review */}
+            <div className="p-3.5 rounded-lg bg-[#090D16] border border-slate-800 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-200">Coach Planned vs Actual Workload Review</span>
+                <span className="font-mono text-amber-400 text-[11px]">Planned: {plannedActualReview.planned} AU · Actual: {plannedActualReview.actual} AU (+15%)</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                <span>Rahul Sharma submitted session log: RPE {plannedActualReview.rpe}/10 · Pain 1/10 post-training</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setPlannedActualReview({ ...plannedActualReview, status: 'flagged' });
+                      onTriggerToast('Session flagged for scientific load review');
+                    }}
+                    className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                  >
+                    Flag for Review
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPlannedActualReview({ ...plannedActualReview, status: 'approved' });
+                      onTriggerToast('✓ Coach Approved Session and updated training load database');
+                    }}
+                    className="px-3 py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
+                  >
+                    Approve Session ✓
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ROSTER TAB */}
         {activeCoachTab === 'roster' && (
           <div className="space-y-3">
