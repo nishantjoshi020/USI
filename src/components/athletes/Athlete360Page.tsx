@@ -151,6 +151,14 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
   const [whereaboutsLocation, setWhereaboutsLocation] = useState(
     athlete.wadaWhereabouts?.dailyLocation || 'National High Performance Centre, Hostel Wing B, Room 302'
   );
+  const [loggedMeals, setLoggedMeals] = useState<Record<string, boolean>>({
+    'meal-1': true,
+    'meal-2': true,
+    'meal-3': false,
+    'meal-4': false,
+    'meal-5': false,
+  });
+  const [loggedHydrationMl, setLoggedHydrationMl] = useState(2600);
 
   const getTabsForRole = (role: UserRole): Athlete360TabId[] => {
     switch (role) {
@@ -1606,11 +1614,174 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                       {onNavigateModule && (
                         <button
                           onClick={() => onNavigateModule('nutrition')}
-                          className="px-3.5 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+                          className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors"
                         >
                           Open Full Nutrition Workspace →
                         </button>
                       )}
+                    </div>
+
+                    {/* Interactive Daily Intake & Hydration Protocol */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* Left 8 Cols: Prescribed Fueling Protocol */}
+                      <div className="lg:col-span-8 p-4 rounded-lg bg-[#0F1623] border border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <Utensils className="w-4 h-4 text-emerald-400" />
+                            <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                              Today's Prescribed Fueling & Recovery Protocol
+                            </h4>
+                          </div>
+                          <span className="font-mono text-[11px] text-emerald-400">
+                            {Object.values(loggedMeals).filter(Boolean).length}/5 Completed (
+                            {Math.round((Object.values(loggedMeals).filter(Boolean).length / 5) * 100)}%)
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {[
+                            {
+                              id: 'meal-1',
+                              time: '07:30 IST',
+                              label: 'Pre-Training Carbohydrate Fueling',
+                              menu: 'Rolled Oats (80g) + 35g Whey Isolate + Banana + Tart Cherry (75g CHO, 35g PRO)',
+                            },
+                            {
+                              id: 'meal-2',
+                              time: '10:00 IST',
+                              label: 'Hydration Bolus & Electrolyte Priming',
+                              menu: '500ml Hypotonic Drink + 450mg Sodium + 200mg Potassium',
+                            },
+                            {
+                              id: 'meal-3',
+                              time: '11:45 IST',
+                              label: 'Intra-Session High-Intensity Fuel',
+                              menu: 'Dual-Source Maltodextrin:Fructose Hydrogel (60g CHO/hr)',
+                            },
+                            {
+                              id: 'meal-4',
+                              time: '13:15 IST',
+                              label: 'Post-Session Anabolic Window Shake',
+                              menu: '4:1 CHO:PRO Recovery Bolus + 5g Informed-Sport Creapure® Creatine',
+                            },
+                            {
+                              id: 'meal-5',
+                              time: '20:30 IST',
+                              label: 'Dinner & Slow-Digesting Night Protein',
+                              menu: 'Grilled Salmon + Quinoa + Steamed Asparagus + 30g Micellar Casein',
+                            },
+                          ].map((item) => {
+                            const isDone = Boolean(loggedMeals[item.id]);
+                            return (
+                              <div
+                                key={item.id}
+                                className={`p-2.5 rounded border transition-colors flex items-center justify-between gap-3 ${
+                                  isDone
+                                    ? 'bg-[#091515] border-emerald-500/30'
+                                    : 'bg-[#0B101B] border-slate-800'
+                                }`}
+                              >
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-[10px] text-slate-400 font-semibold">{item.time}</span>
+                                    <span className="text-slate-600">·</span>
+                                    <span className={`text-xs font-semibold ${isDone ? 'text-emerald-300' : 'text-slate-200'}`}>
+                                      {item.label}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-400">{item.menu}</p>
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    setLoggedMeals((prev) => ({ ...prev, [item.id]: !isDone }));
+                                    onUpdateAthlete(
+                                      athlete.id,
+                                      {
+                                        nutritionCompliancePct: Math.min(
+                                          100,
+                                          Math.round(((Object.values(loggedMeals).filter(Boolean).length + (isDone ? -1 : 1)) / 5) * 100)
+                                        ),
+                                      },
+                                      `${isDone ? 'Unchecked' : 'Logged'} fueling meal: ${item.label}`,
+                                      `${isDone ? 'Unchecked' : 'Logged'} ${item.label} ✓ Updated daily compliance`
+                                    );
+                                  }}
+                                  className={`px-3 py-1.5 rounded text-xs font-semibold shrink-0 transition-colors ${
+                                    isDone
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                      : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'
+                                  }`}
+                                >
+                                  {isDone ? '✓ Consumed' : 'Mark Consumed'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Right 4 Cols: Rapid Hydration Bolus Logger */}
+                      <div className="lg:col-span-4 p-4 rounded-lg bg-[#0F1623] border border-slate-800 space-y-3 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                              Live Fluid Intake
+                            </span>
+                            <span className="font-mono text-xs font-bold text-amber-400">
+                              {(loggedHydrationMl / 1000).toFixed(1)}L / 3.5L
+                            </span>
+                          </div>
+
+                          <div className="mt-3 space-y-2">
+                            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-amber-400 h-full rounded-full transition-all"
+                                style={{ width: `${Math.min(100, Math.round((loggedHydrationMl / 3500) * 100))}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                              <span>Current: {loggedHydrationMl}ml</span>
+                              <span>Target: 3,500ml</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-2">
+                            <span className="text-[11px] text-slate-400 font-medium block">
+                              Log Hydration Bolus:
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { label: '+250ml Water', amount: 250 },
+                                { label: '+500ml Water', amount: 500 },
+                                { label: '+500ml Hypotonic', amount: 500 },
+                                { label: '+750ml Bottle', amount: 750 },
+                              ].map((btn) => (
+                                <button
+                                  key={btn.label}
+                                  onClick={() => {
+                                    const next = Math.min(5000, loggedHydrationMl + btn.amount);
+                                    setLoggedHydrationMl(next);
+                                    onUpdateAthlete(
+                                      athlete.id,
+                                      {},
+                                      `Logged ${btn.amount}ml fluid intake (Total: ${(next / 1000).toFixed(1)}L)`,
+                                      `Added ${btn.amount}ml to daily fluid total (${(next / 1000).toFixed(1)}L logged) ✓`
+                                    );
+                                  }}
+                                  className="p-2 rounded bg-[#090D16] hover:bg-[#131B2A] border border-slate-800 text-[11px] font-mono text-amber-300 font-semibold transition-colors"
+                                >
+                                  {btn.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-2.5 rounded bg-emerald-950/30 border border-emerald-500/30 text-[11px] text-emerald-300">
+                          Pre-session USG: <strong>1.018 (Nominal)</strong> · Sweat rate modeled at <strong>1.2 L/hr</strong>
+                        </div>
+                      </div>
                     </div>
                   </>
                 );

@@ -40,16 +40,26 @@ interface PersonaSpecializedSectionsProps {
   selectedRole: UserRole;
   onTriggerToast: (message: string) => void;
   onNavigateSection?: (navId: string) => void;
+  onUpdateAthleteWellness?: (scores: {
+    sleep: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    readiness: number;
+  }) => void;
 }
 
 export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProps> = ({
   selectedRole,
   onTriggerToast,
   onNavigateSection,
+  onUpdateAthleteWellness,
 }) => {
   // Athlete Wellness State
   const [wellnessLogged, setWellnessLogged] = useState(false);
   const [sorenessLevel, setSorenessLevel] = useState(2);
+  const [fatigueLevel, setFatigueLevel] = useState(3);
+  const [stressLevel, setStressLevel] = useState(2);
   const [sleepScore, setSleepScore] = useState(88);
 
   // Operations Work Orders State
@@ -189,6 +199,45 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-slate-300">Perceived Fatigue</span>
+                      <span className="font-mono font-bold text-amber-400">{fatigueLevel}/10</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={fatigueLevel}
+                      onChange={(e) => setFatigueLevel(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-slate-300">Mental Stress</span>
+                      <span className="font-mono font-bold text-indigo-400">{stressLevel}/10</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={stressLevel}
+                      onChange={(e) => setStressLevel(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Computed Hooper-Mackinnon Readiness Preview */}
+                <div className="p-2.5 rounded bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between">
+                  <span className="text-[11px] text-emerald-300 font-medium">Computed Readiness Index</span>
+                  <span className="font-mono font-bold text-xs text-emerald-400">
+                    {Math.min(100, Math.max(35, Math.round((sleepScore * 0.4) + ((10 - sorenessLevel) * 3) + ((10 - fatigueLevel) * 2) + 10)))}%
+                  </span>
+                </div>
+
                 {/* Subjective Status Feedback */}
                 <div className="p-3 rounded-lg bg-[#101827] border border-slate-800/80 space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
@@ -205,7 +254,15 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
             <button
               onClick={() => {
                 setWellnessLogged(true);
-                onTriggerToast('Morning wellness survey logged successfully. Synced with coaching staff.');
+                const computedReadiness = Math.min(100, Math.max(35, Math.round((sleepScore * 0.4) + ((10 - sorenessLevel) * 3) + ((10 - fatigueLevel) * 2) + 10)));
+                onUpdateAthleteWellness?.({
+                  sleep: sleepScore,
+                  soreness: sorenessLevel,
+                  fatigue: fatigueLevel,
+                  stress: stressLevel,
+                  readiness: computedReadiness,
+                });
+                onTriggerToast(`Morning wellness check-in logged ✓ Synced to Coach & Sport Science console (Readiness: ${computedReadiness}%)`);
               }}
               className="w-full py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-200 transition-all flex items-center justify-center gap-2"
             >

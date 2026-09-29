@@ -239,6 +239,53 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
   selectedRole = 'Operations Team',
   onTriggerToast,
 }) => {
+  const [campsList, setCampsList] = useState(CAMPS_DATA);
+  const [isPlanCampOpen, setIsPlanCampOpen] = useState(false);
+  const [campName, setCampName] = useState('Pre-Olympic Altitude Acclimatization Camp');
+  const [campLocation, setCampLocation] = useState('Ooty / Nilgiris High Altitude Complex');
+  const [campVenue, setCampVenue] = useState('SAI High Altitude Training Center');
+  const [campDates, setCampDates] = useState('15 Nov – 30 Nov 2026');
+  const [campHeadcount, setCampHeadcount] = useState(28);
+  const [campBudget, setCampBudget] = useState('₹32,50,000');
+  const [campCoordinator, setCampCoordinator] = useState('Kavita Rao');
+
+  const handleCreateCamp = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newCampItem = {
+      id: `camp-${Date.now()}`,
+      name: campName,
+      location: campLocation,
+      venue: campVenue,
+      dates: campDates,
+      status: 'Upcoming' as const,
+      headcount: campHeadcount,
+      budgetAllocated: campBudget,
+      budgetVariance: '₹0 (On Track)',
+      travelCoordinator: campCoordinator,
+    };
+    setCampsList([newCampItem, ...campsList]);
+    setIsPlanCampOpen(false);
+    onTriggerToast(`Created new training camp itinerary: "${campName}" ✓`);
+  };
+
+  const handleExportManifestCsv = () => {
+    const csvContent =
+      'Flight Number,Carrier,Route,Departure,Arrival,Passengers,Excess Cargo (kg),Status\n' +
+      TRAVEL_MANIFESTS.map(
+        (f) =>
+          `"${f.flightNumber}","${f.airline}","${f.route}","${f.departure}","${f.arrival}",${f.passengersCount},${f.excessBaggageKg},"${f.status}"`
+      ).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'National_Squad_Flight_Manifest.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    onTriggerToast('Exported flight manifest CSV to downloads ✓');
+  };
+
   return (
     <div className="space-y-5">
       {/* 1. Header & Navigation Subtabs */}
@@ -303,8 +350,22 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
       {/* 2. SUBTAB: CAMPS LOGISTICS & BUDGET */}
       {activeSubTab === 'camps' && (
         <div className="space-y-4">
+          <div className="flex items-center justify-between pb-1">
+            <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wide flex items-center gap-2">
+              <Globe className="w-4 h-4 text-amber-400" />
+              <span>National & International Training Camps ({campsList.length})</span>
+            </h2>
+            <button
+              onClick={() => setIsPlanCampOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Plan New Camp</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {CAMPS_DATA.map((camp) => (
+            {campsList.map((camp) => (
               <div
                 key={camp.id}
                 className="p-5 rounded-lg bg-[#0F1623] border border-slate-800 space-y-3 shadow-sm hover:border-amber-500/40 transition-colors"
@@ -367,10 +428,19 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
         <div className="space-y-5">
           {/* Flight Manifests */}
           <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5">
-            <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <Plane className="w-4 h-4 text-amber-400" />
-              <span>International Tour Group Flight Manifests</span>
-            </h2>
+            <div className="flex items-center justify-between pb-3">
+              <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wide flex items-center gap-2">
+                <Plane className="w-4 h-4 text-amber-400" />
+                <span>International Tour Group Flight Manifests</span>
+              </h2>
+              <button
+                onClick={handleExportManifestCsv}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-semibold text-xs transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Manifest (CSV)</span>
+              </button>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -534,6 +604,128 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Plan New Camp Modal */}
+      {isPlanCampOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsPlanCampOpen(false)}
+            className="fixed inset-0 bg-black/75 backdrop-blur-[1px]"
+          />
+          <div className="relative w-full max-w-lg bg-[#0F1623] border border-amber-500/40 rounded-xl p-5 shadow-2xl z-10 text-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  Plan National / International Training Camp
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsPlanCampOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCamp} className="space-y-3.5">
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">Camp Name & Phase</label>
+                <input
+                  type="text"
+                  value={campName}
+                  onChange={(e) => setCampName(e.target.value)}
+                  required
+                  className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Location</label>
+                  <input
+                    type="text"
+                    value={campLocation}
+                    onChange={(e) => setCampLocation(e.target.value)}
+                    required
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Venue / Complex</label>
+                  <input
+                    type="text"
+                    value={campVenue}
+                    onChange={(e) => setCampVenue(e.target.value)}
+                    required
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Dates</label>
+                  <input
+                    type="text"
+                    value={campDates}
+                    onChange={(e) => setCampDates(e.target.value)}
+                    required
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Headcount</label>
+                  <input
+                    type="number"
+                    value={campHeadcount}
+                    onChange={(e) => setCampHeadcount(Number(e.target.value))}
+                    required
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">Allocated Budget</label>
+                  <input
+                    type="text"
+                    value={campBudget}
+                    onChange={(e) => setCampBudget(e.target.value)}
+                    required
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">Lead Operations Coordinator</label>
+                <input
+                  type="text"
+                  value={campCoordinator}
+                  onChange={(e) => setCampCoordinator(e.target.value)}
+                  required
+                  className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 text-xs focus:border-amber-400 outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsPlanCampOpen(false)}
+                  className="px-3.5 py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-colors"
+                >
+                  Save & Authorize Camp
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

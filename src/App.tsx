@@ -81,6 +81,7 @@ import { AthleteAttentionTable } from './components/command-center/AthleteAttent
 import { AiRecommendationsAndAnalytics } from './components/command-center/AiRecommendationsAndAnalytics';
 import { AthleteDetailDrawer } from './components/drawers/AthleteDetailDrawer';
 import { SessionDetailDrawer } from './components/drawers/SessionDetailDrawer';
+import { MorningSquadTriageDrawer } from './components/drawers/MorningSquadTriageDrawer';
 import {
   GlobalSearchModal,
   NotificationPanel,
@@ -313,6 +314,7 @@ export default function App() {
   const [rtpGateModalInjuryId, setRtpGateModalInjuryId] = useState<
     string | null
   >(null);
+  const [isMorningTriageOpen, setIsMorningTriageOpen] = useState(false);
 
   // Toast Feedback State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -634,6 +636,23 @@ export default function App() {
       })
     );
 
+    if (nextStage === 5) {
+      setNotifications((prev) => [
+        {
+          id: `notif-rtp-cleared-${Date.now()}`,
+          timestamp: 'Just now',
+          read: false,
+          category: 'Medical',
+          title: `Full Match Clearance: ${targetInj.athleteName}`,
+          description: `Stage 5/5 Return-to-Competition approved by ${selectedRole}. Athlete is now FULLY AVAILABLE for senior selection.`,
+          severity: 'Low',
+          linkedAthleteId: targetInj.athleteId,
+          targetNav: 'injury-intelligence',
+        },
+        ...prev,
+      ]);
+    }
+
     const auditMsg = overrideDetails
       ? `RTP Gate Override Approved by ${overrideDetails.authorisedBy}: Advanced ${targetInj.athleteName} to Stage ${nextStage}/5 (${nextStageName}). Reason: "${overrideDetails.reason}"`
       : `Advanced ${targetInj.athleteName} to RTP Stage ${nextStage}/5 (${nextStageName})`;
@@ -641,7 +660,7 @@ export default function App() {
     updateAthleteWithAudit(
       targetInj.athleteId,
       {
-        trainingStatus: nextStage >= 4 ? 'RETURN TO PLAY' : 'IN REHAB',
+        trainingStatus: nextStage >= 5 ? 'ACTIVE' : nextStage >= 4 ? 'RETURN TO PLAY' : 'IN REHAB',
         medicalStatus: nextStage === 5 ? 'Cleared' : targetInj.medicalStatus,
       },
       auditMsg,
@@ -741,12 +760,78 @@ export default function App() {
   };
 
   const handleReviewRiskAthletes = () => {
+    setIsMorningTriageOpen(true);
     setTableStatusFilter('Attention');
     document
       .getElementById('athlete-attention-section')
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     triggerToast(
-      'AI Operational Alert: Filtered table to 3 athletes with elevated injury-risk patterns'
+      'Morning Squad Triage Console opened for elevated injury-risk cohort'
+    );
+  };
+
+  const handleApplyMorningTriageModification = (
+    athleteId: string,
+    modification: string,
+    trainingStatus: Athlete['trainingStatus'],
+    notes: string
+  ) => {
+    const target = athletes.find((a) => a.id === athleteId);
+    updateAthleteWithAudit(
+      athleteId,
+      { trainingStatus },
+      `Morning Triage: ${modification} (${trainingStatus})`,
+      `Applied morning modification to ${target?.name || 'athlete'}: ${modification}`,
+      {
+        title: `Morning Squad Triage: ${modification}`,
+        description: notes,
+        category: 'Training',
+        detailNotes: `Prescribed by ${selectedRole}: ${modification}. Training status set to ${trainingStatus}.`,
+      }
+    );
+
+    // Update today's primary session notes & load
+    setSessions((prev) =>
+      prev.map((s, idx) =>
+        idx === 0
+          ? {
+              ...s,
+              notes: `${s.notes || ''} · [Triage: ${target?.name || 'Athlete'} → ${modification}]`,
+            }
+          : s
+      )
+    );
+  };
+
+  const handleAthleteWellnessSurveySubmit = (scores: {
+    sleep: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    readiness: number;
+  }) => {
+    const targetAthId = 'ath-01'; // Default active athlete Ananya Sen
+    const target = athletes.find((a) => a.id === targetAthId) || athletes[0];
+    if (!target) return;
+
+    updateAthleteWithAudit(
+      target.id,
+      {
+        readiness: scores.readiness,
+        sorenessScore: scores.soreness,
+        wellnessScore: Math.round(
+          (scores.sleep + (10 - scores.fatigue) * 10 + (10 - scores.stress) * 10) / 3
+        ),
+        sleepHours: Number((scores.sleep / 10).toFixed(1)),
+      },
+      `Logged morning wellness check-in: Readiness ${scores.readiness}%, Soreness ${scores.soreness}/10`,
+      `Morning wellness check-in submitted ✓ Readiness computed at ${scores.readiness}%`,
+      {
+        title: 'Daily Hooper-Mackinnon Wellness Logged',
+        description: `Sleep: ${scores.sleep}/100 · Soreness: ${scores.soreness}/10 · Fatigue: ${scores.fatigue}/10 · Stress: ${scores.stress}/10`,
+        category: 'Training',
+        detailNotes: `Calculated readiness score ${scores.readiness}%. Synced with coaching staff & sports science triage.`,
+      }
     );
   };
 
@@ -1272,6 +1357,7 @@ export default function App() {
                 selectedRole={selectedRole}
                 onTriggerToast={triggerToast}
                 onNavigateSection={(sec) => setActiveNav(sec as any)}
+                onUpdateAthleteWellness={handleAthleteWellnessSurveySubmit}
               />
 
               {/* Standard Tactical & Clinical Squad Sections (Hidden for Athlete, Nutritionist, Operations, Federation Admin) */}
@@ -1536,6 +1622,39 @@ export default function App() {
                 setActiveNav('athlete-360');
               }}
               onTriggerToast={triggerToast}
+              onPromoteTalentAthlete={(profileId, athleteId) => {
+                setTalentProfiles((prev) =>
+                  prev.map((tp) =>
+                    tp.id === profileId
+                      ? {
+                          ...tp,
+                          squad: 'Senior Squad',
+                          status: 'Promoted to Senior Squad',
+                          pathwayStage: 'Tier 1 — Senior National',
+                        }
+                      : tp
+                  )
+                );
+                const ath = athletes.find((a) => a.id === athleteId);
+                if (ath) {
+                  updateAthleteWithAudit(
+                    ath.id,
+                    {
+                      squad: 'Senior Squad',
+                      coach: 'Vikram Sharma',
+                      coachRole: 'Head Coach',
+                    },
+                    'Promoted from TID Academy to Senior Squad (TID Pathway)',
+                    `Promoted ${ath.name} to Senior Squad ✓ Assigned to Coach Vikram Sharma`,
+                    {
+                      title: 'Promoted to Senior National Squad',
+                      description: 'Talent identification benchmark alignment >= 90%',
+                      category: 'Administrative',
+                      detailNotes: `Promoted from Development Squad by ${selectedRole}. Reassigned to Vikram Sharma.`,
+                    }
+                  );
+                }
+              }}
             />
           ) : isAnalyticsRoute ? (
             <AnalyticsWorkspace
@@ -1816,6 +1935,17 @@ export default function App() {
           setDrawerAthleteId(athleteId);
         }}
         onCompleteSessionAction={handleCompleteSessionAction}
+      />
+
+      {/* Morning Squad Triage Drawer */}
+      <MorningSquadTriageDrawer
+        isOpen={isMorningTriageOpen}
+        onClose={() => setIsMorningTriageOpen(false)}
+        athletes={athletes}
+        selectedRole={selectedRole}
+        onApplyModification={handleApplyMorningTriageModification}
+        onOpenAthlete360={handleOpenFullAthlete360}
+        onTriggerToast={triggerToast}
       />
 
       {/* Iteration 3: Clinical Injury Detail Drawer */}

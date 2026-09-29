@@ -52,6 +52,7 @@ interface AssessmentsWorkspaceProps {
   onSaveTestResult: (updatedResult: TestResult) => void;
   onOpenAthlete360: (athleteId: string) => void;
   onTriggerToast: (msg: string) => void;
+  onPromoteTalentAthlete?: (profileId: string, athleteId: string) => void;
 }
 
 export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
@@ -69,6 +70,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
   onSaveTestResult,
   onOpenAthlete360,
   onTriggerToast,
+  onPromoteTalentAthlete,
 }) => {
   // Test Library Filter
   const [selectedTestCategory, setSelectedTestCategory] = useState<
@@ -1076,7 +1078,8 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                     <th className="py-2.5 px-3">Performance Index</th>
                     <th className="py-2.5 px-3">Benchmark Alignment</th>
                     <th className="py-2.5 px-3">Development Priority</th>
-                    <th className="py-2.5 px-4">Status</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-4 text-right">Pathway Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/70">
@@ -1106,10 +1109,27 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                         <td className="py-3 px-3 text-slate-200">
                           {tp.developmentPriority}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-3">
                           <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200 font-mono text-[11px]">
                             {tp.status}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          {tp.squad === 'Senior Squad' || tp.status.includes('Promoted') ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 font-semibold">
+                              <CheckCircle2 className="w-3 h-3" /> Senior Squad
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                onPromoteTalentAthlete?.(tp.id, tp.athleteId);
+                                onTriggerToast(`Promoted ${tp.athleteName} to Senior Squad ✓ Assigned to Coach Vikram Sharma`);
+                              }}
+                              className="px-2.5 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 transition-colors"
+                            >
+                              Promote to Senior →
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1216,15 +1236,30 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setSelectedTalentDrawerId(null);
-                onOpenAthlete360(selectedTalentProfile.athleteId);
-              }}
-              className="w-full py-2.5 rounded bg-sky-500 text-slate-950 font-semibold"
-            >
-              Open Full Athlete 360 →
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  onPromoteTalentAthlete?.(selectedTalentProfile.id, selectedTalentProfile.athleteId);
+                  onTriggerToast(
+                    `Promoted ${selectedTalentProfile.athleteName} to Senior National Squad ✓ Reassigned to Head Coach Vikram Sharma`
+                  );
+                }}
+                className="w-full py-2.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Promote to Senior Squad & Reassign Coach</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedTalentDrawerId(null);
+                  onOpenAthlete360(selectedTalentProfile.athleteId);
+                }}
+                className="w-full py-2.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors"
+              >
+                Open Full Athlete 360 →
+              </button>
+            </div>
           </aside>
         </div>
       )}

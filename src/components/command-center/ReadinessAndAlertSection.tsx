@@ -82,13 +82,22 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
               </p>
             </div>
 
-            <button
-              onClick={onViewAthletesRegistry}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-medium text-sky-300 hover:text-sky-200 transition-colors whitespace-nowrap"
-            >
-              <span>View athletes</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onReviewRiskAthletes}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-semibold text-amber-300 transition-colors whitespace-nowrap"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                <span>Morning Triage Console</span>
+              </button>
+              <button
+                onClick={onViewAthletesRegistry}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-medium text-sky-300 hover:text-sky-200 transition-colors whitespace-nowrap"
+              >
+                <span>View athletes</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Stacked Distribution Bar */}
