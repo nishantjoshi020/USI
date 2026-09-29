@@ -724,20 +724,8 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
         )}
       </div>
 
-      {/* Right Zone: Add Athlete, AI Copilot Trigger, Notifications, Compact Role Selector, View Switcher */}
+      {/* Right Zone: AI Copilot Trigger, Notifications, Compact Role Selector, View Switcher */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {/* Persistent Global Add Athlete Trigger */}
-        {onOpenOnboarding && selectedRole !== 'Athlete' && (
-          <button
-            onClick={onOpenOnboarding}
-            title="Enroll / Add New Athlete to Federation"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm transition-colors whitespace-nowrap"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            {!isIconOnly && <span>+ Add Athlete</span>}
-          </button>
-        )}
-
         {/* Persistent AI Copilot Trigger */}
         {onOpenAICopilot && (
           <button
