@@ -62,6 +62,8 @@ interface PersonaSpecializedSectionsProps {
   onOpenReportInjury?: (athleteId?: string) => void;
   onTriggerToast: (message: string) => void;
   onNavigateSection?: (navId: string) => void;
+  onOpenCreateRehab?: (injury: Injury) => void;
+  onOpenAdvanceRtp?: (injury: Injury) => void;
   onUpdateAthleteWellness?: (scores: {
     sleep: number;
     fatigue: number;
@@ -83,6 +85,8 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
   onOpenCoachAssignment,
   onOpenSessionAssignment,
   onOpenReportInjury,
+  onOpenCreateRehab,
+  onOpenAdvanceRtp,
   onTriggerToast,
   onNavigateSection,
   onUpdateAthleteWellness,
@@ -95,6 +99,9 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
   const [sleepScore, setSleepScore] = useState(88);
   const [wellnessEntryMode, setWellnessEntryMode] = useState<'3tap' | 'sliders'>('3tap');
 
+  // Coach Tactical Load Slider State
+  const [squadIntensityPct, setSquadIntensityPct] = useState(95);
+
   // Operations Work Orders State
   const [workOrders, setWorkOrders] = useState([
     { id: 'WO-101', title: 'Pitch 1 Sprinkler Valve Calibration', zone: 'Zone A Turf', status: 'IN_PROGRESS', priority: 'HIGH', time: '11:45 IST' },
@@ -102,19 +109,21 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
     { id: 'WO-103', title: 'Gym Cable Pulley Friction Inspection', zone: 'Olympic Gym', status: 'PENDING', priority: 'LOW', time: '14:00 IST' },
   ]);
 
-  // Nutrition Hydration Queue State
+  // Nutrition Hydration Queue State - Real System Athletes
   const [hydrationQueue, setHydrationQueue] = useState([
-    { id: 'ATH-01', name: 'Ananya Sen', squad: 'Track & Field', usg: 1.028, status: 'CRITICAL', action: '750ml Hypotonic Bolus' },
-    { id: 'ATH-02', name: 'Rohan Kapoor', squad: 'Senior Squad', usg: 1.018, status: 'NORMAL', action: 'Standard Electrolyte' },
-    { id: 'ATH-03', name: 'Vikram Malhotra', squad: 'Senior Squad', usg: 1.012, status: 'OPTIMAL', action: 'Pre-Hydrated' },
-    { id: 'ATH-04', name: 'Priya Nair', squad: 'National U-23', usg: 1.022, status: 'MONITOR', action: '500ml Water + Pinch Salt' },
+    { id: 'ath-arjun-mehta', name: 'Arjun Mehta', squad: 'Senior Squad', usg: 1.024, status: 'MONITOR', action: '500ml Hypotonic Bolus' },
+    { id: 'ath-vikram-nair', name: 'Vikramaditya Nair', squad: 'Senior Squad', usg: 1.026, status: 'CRITICAL', action: '750ml Electrolyte + Carbs' },
+    { id: 'ath-kabir-rao', name: 'Kabir Rao', squad: 'National U-23', usg: 1.018, status: 'NORMAL', action: 'Standard Electrolyte' },
+    { id: 'ath-devansh-kulkarni', name: 'Devansh Kulkarni', squad: 'Senior Squad', usg: 1.019, status: 'NORMAL', action: 'Collagen Recovery Shake' },
+    { id: 'ath-rahul-singh', name: 'Rahul Singh', squad: 'Senior Squad', usg: 1.012, status: 'OPTIMAL', action: 'Pre-Hydrated' },
   ]);
 
-  // Federation Registry Queue
+  // Federation Registry Queue - Real System Athletes
   const [registryQueue, setRegistryQueue] = useState([
-    { id: 'REG-882', name: 'Aarav Patel', sport: 'Athletics (100m)', state: 'Maharashtra', docs: 'Verified (Passport + Bio)', status: 'Awaiting Seal' },
-    { id: 'REG-883', name: 'Sneha Deshmukh', sport: 'Badminton', state: 'Telangana', docs: 'Age Verification Complete', status: 'Approved' },
-    { id: 'REG-884', name: 'Kabir Verma', sport: 'Shooting (10m)', state: 'Punjab', docs: 'Medical Card Pending', status: 'Action Required' },
+    { id: 'ath-zorawar-gill', name: 'Zorawar Gill', sport: 'Football (Midfield)', state: 'Punjab', docs: 'National Camp Call-up · Insurance Pending', status: 'Review Required' },
+    { id: 'ath-pranav-sundaram', name: 'Pranav Sundaram', sport: 'Football (Forward)', state: 'Tamil Nadu', docs: 'U-23 Contract · NOC Cleared', status: 'Awaiting Seal' },
+    { id: 'ath-vikram-nair', name: 'Vikramaditya Nair', sport: 'Football (Forward)', state: 'Kerala', docs: 'Senior Passport · Biometrics Cleared', status: 'Approved' },
+    { id: 'ath-arjun-mehta', name: 'Arjun Mehta', sport: 'Football (Forward)', state: 'Maharashtra', docs: 'Passport 48d Expiry · Tatkal Dispatched', status: 'Urgent Flag' },
   ]);
 
   /* =========================================================================
@@ -1044,7 +1053,611 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
     );
   }
 
-  // For Performance Director, Coach, Sports Scientist, Physiotherapist:
-  // Return null because their primary dashboards utilize the standard sections with role-level action restrictions
+  /* =========================================================================
+     5. COACH SPECIALIZED HUB: TACTICAL SQUAD AVAILABILITY & MATCHDAY LOAD
+     ========================================================================= */
+  if (selectedRole === 'Coach') {
+    const unconstrainedFit = allAthletes.filter((a) => a.trainingStatus === 'ACTIVE');
+    const loadCapped = allAthletes.filter((a) => a.trainingStatus === 'RESTRICTED' || a.trainingStatus === 'RETURN TO PLAY');
+    const unavailableAthletes = allAthletes.filter((a) => a.trainingStatus === 'INJURED' || a.trainingStatus === 'IN REHAB');
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Squad Selection Board (7 Cols) */}
+          <div className="lg:col-span-7 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  Matchday Squad Selection & Unconstrained Availability Board
+                </h3>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-300 font-bold">
+                {unconstrainedFit.length} Starters Ready · {loadCapped.length} Load Capped
+              </span>
+            </div>
+
+            {/* Tactical Substitution Recommendation Alert */}
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start justify-between gap-3 text-xs">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-amber-300 font-semibold block">
+                    Tactical Substitution Alert: Arjun Mehta Speed Cap (≤ 24.0 km/h)
+                  </strong>
+                  <span className="text-amber-200/90 text-[11px]">
+                    Arjun is restricted to 80% Vmax during Stage 3 Hamstring RTP. Recommended tactical swap: <strong>Promote Pranav Sundaram</strong> to starting 11v11 high-press transition unit; assign Arjun to controlled finishing grid.
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => onTriggerToast('Tactical swap applied ✓ Pranav Sundaram promoted to high-press unit')}
+                className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] shrink-0 transition-colors"
+              >
+                Apply Swap ✓
+              </button>
+            </div>
+
+            {/* Three Tiers of Availability */}
+            <div className="space-y-3">
+              {/* Starters / Ready */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">
+                  ● 100% Match Fit Starters ({unconstrainedFit.length})
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  {unconstrainedFit.map((ath) => (
+                    <div key={ath.id} className="p-2.5 rounded bg-[#101827] border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-slate-100">{ath.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">#{ath.jerseyNumber} · {ath.position}</div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-emerald-400">{ath.readiness}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Load-Capped Players */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                <span className="text-[11px] font-mono text-amber-400 font-bold uppercase tracking-wider block">
+                  ▲ Speed-Capped & Controlled Volume ({loadCapped.length})
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {loadCapped.map((ath) => (
+                    <div key={ath.id} className="p-2.5 rounded bg-amber-950/20 border border-amber-500/30 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-amber-200">{ath.name}</div>
+                        <div className="text-[10px] text-slate-400">
+                          Cap: {ath.id === 'ath-arjun-mehta' ? '≤ 80% Vmax (24.0 km/h)' : '≤ 85% Vmax'} · {ath.position}
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300 font-bold">
+                        {ath.trainingStatus}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Unavailable / Off-Feet */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                <span className="text-[11px] font-mono text-rose-400 font-bold uppercase tracking-wider block">
+                  ✕ Medically Unavailable ({unavailableAthletes.length})
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {unavailableAthletes.map((ath) => (
+                    <div key={ath.id} className="p-2.5 rounded bg-rose-950/20 border border-rose-500/30 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-rose-200">{ath.name}</div>
+                        <div className="text-[10px] text-slate-400">
+                          {ath.id === 'ath-devansh-kulkarni' ? 'Right Ankle Effusion · Off-Feet' : 'In Rehabilitation'}
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 font-bold">
+                        {ath.trainingStatus}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Tactical Load Adjuster & Drill Assignment (5 Cols) */}
+          <div className="lg:col-span-5 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-amber-400" />
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    Live Tactical Training Load Controller
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Senior Squad
+                </span>
+              </div>
+
+              {/* Intensity Slider */}
+              <div className="p-3.5 rounded-xl bg-[#101827] border border-slate-800 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-300 font-medium">Session Intensity Governor</span>
+                  <span className="font-mono font-bold text-amber-400">{squadIntensityPct}% Intensity</span>
+                </div>
+                <input
+                  type="range"
+                  min="70"
+                  max="115"
+                  value={squadIntensityPct}
+                  onChange={(e) => setSquadIntensityPct(Number(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                />
+                <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                  <span>70% Recovery Deload</span>
+                  <span>100% Match Standard</span>
+                  <span>115% High Overload</span>
+                </div>
+                <p className="text-[11px] text-slate-400 pt-1">
+                  Adjusting governor recalculates planned AU across today’s 11v11 transition drill ({Math.round(780 * (squadIntensityPct / 100))} AU).
+                </p>
+              </div>
+
+              {/* Drill Quick Select */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-slate-300 block">Today's Tactical Drills</span>
+                {[
+                  { name: '11v11 High-Press Wave (Main Pitch)', duration: '35 min', load: '320 AU', target: 'Unconstrained XI' },
+                  { name: 'Controlled Acceleration Finishing Grid', duration: '20 min', load: '180 AU', target: 'Arjun & Vikramaditya' },
+                  { name: 'Positional Rondo & Transition Support', duration: '25 min', load: '210 AU', target: 'Midfield Group' },
+                ].map((d, i) => (
+                  <div key={i} className="p-2.5 rounded bg-[#101827] border border-slate-800 flex items-center justify-between text-xs">
+                    <div>
+                      <div className="font-semibold text-white">{d.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">{d.duration} · {d.load} · Target: {d.target}</div>
+                    </div>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              {onOpenSessionAssignment && (
+                <button
+                  onClick={onOpenSessionAssignment}
+                  className="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-colors"
+                >
+                  <Dumbbell className="w-3.5 h-3.5" />
+                  <span>Assign Tactical Drills to Squad</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================================================
+     6. SPORTS SCIENTIST SPECIALIZED HUB: FORCE-PLATE ASYMMETRY & SPRINT BANDS
+     ========================================================================= */
+  if (selectedRole === 'Sports Scientist') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Force-Plate Dual CMJ Asymmetry Console (7 Cols) */}
+          <div className="lg:col-span-7 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 gap-2">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-sky-400" />
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  Dual Force-Plate Countermovement Jump (CMJ) Asymmetry Console
+                </h3>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300 font-bold">
+                Hawkin Dynamics / Vald Live Sync
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  name: 'Arjun Mehta',
+                  id: 'ath-arjun-mehta',
+                  asymmetry: '-14.2% Left Deficit',
+                  metric: 'Eccentric Deceleration Impulse',
+                  status: 'HIGH DEFICIT',
+                  tone: 'rose',
+                  note: 'Correlates with prior Biceps Femoris pathology; cap linear acceleration.',
+                },
+                {
+                  name: 'Vikramaditya Nair',
+                  id: 'ath-vikram-nair',
+                  asymmetry: '-9.2% FT:CT Ratio Drop',
+                  metric: 'Flight Time to Contraction Time',
+                  status: 'NEUROMUSCULAR FATIGUE',
+                  tone: 'amber',
+                  note: 'Acute deceleration fatigue from matchplay simulation.',
+                },
+                {
+                  name: 'Kabir Rao',
+                  id: 'ath-kabir-rao',
+                  asymmetry: '-14.0% Shoulder ER Torque',
+                  metric: 'Isometric Rotator Cuff Dynamometry',
+                  status: 'ROTATOR CUFF MONITOR',
+                  tone: 'amber',
+                  note: 'Symmetry improving (+4% this week) in Stage 2 rehab.',
+                },
+                {
+                  name: 'Rohan Chhetri',
+                  id: 'ath-rohan-chhetri',
+                  asymmetry: '96.4% Bilateral Symmetry',
+                  metric: 'NordBord Eccentric Hamstring Peak',
+                  status: 'GATE MET',
+                  tone: 'emerald',
+                  note: 'Passed Stage 4 criteria threshold (≥ 90%).',
+                },
+              ].map((item) => (
+                <div key={item.id} className="p-3.5 rounded-lg bg-[#101827] border border-slate-800/80 flex items-start justify-between gap-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white">{item.name}</span>
+                      <span className={`px-2 py-0.2 rounded text-[9px] font-mono font-bold ${
+                        item.tone === 'rose' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
+                        item.tone === 'amber' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                        'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300 font-mono">
+                      <span>{item.metric}: </span>
+                      <strong className={item.tone === 'rose' ? 'text-rose-400' : item.tone === 'amber' ? 'text-amber-400' : 'text-emerald-400'}>
+                        {item.asymmetry}
+                      </strong>
+                    </div>
+                    <p className="text-[10px] text-slate-500">{item.note}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (onSelectActiveAthlete) onSelectActiveAthlete(item.id);
+                      onTriggerToast(`Force trace dossier loaded for ${item.name}`);
+                    }}
+                    className="px-2.5 py-1 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-300 shrink-0"
+                  >
+                    View Traces →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* GPS Sprint Exposure & Catapult Telemetry (5 Cols) */}
+          <div className="lg:col-span-5 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-sky-400" />
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    GPS High-Speed Velocity Bands & Exposure
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  StatsSports Pods
+                </span>
+              </div>
+
+              {/* Velocity Bands */}
+              <div className="space-y-2.5">
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">Sprint Exposures (&gt; 25.2 km/h)</span>
+                    <span className="font-mono font-bold text-sky-400">540m / 600m target</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="bg-sky-500 h-full rounded-full" style={{ width: '90%' }} />
+                  </div>
+                  <div className="text-[10px] text-slate-500">Pranav Sundaram leads squad with 34.1 km/h top velocity.</div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">Maximal Decelerations (&gt; -3.5 m/s²)</span>
+                    <span className="font-mono font-bold text-amber-400">42 Events (High Load)</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="bg-amber-500 h-full rounded-full" style={{ width: '84%' }} />
+                  </div>
+                  <div className="text-[10px] text-slate-500">Deceleration fatigue correlates with Vikramaditya's FT:CT drop.</div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">ACWR Danger Threshold (&gt; 1.35 AU)</span>
+                    <span className="font-mono font-bold text-rose-400">3 Athletes in Red Zone</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-400 pt-0.5">
+                    Arjun Mehta (1.42), Vikramaditya (1.39), Devansh (1.37)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onTriggerToast('Dispatched sports science load alert to Head Coach Vikram Sharma ✓')}
+              className="w-full py-2.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-xs font-bold text-sky-200 transition-all flex items-center justify-center gap-2"
+            >
+              <Send className="w-3.5 h-3.5 text-sky-400" />
+              <span>Send Load Alert to Coach</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================================================
+     7. PHYSIOTHERAPIST SPECIALIZED HUB: 5-STAGE RTP PROTOCOL CONTROLLER
+     ========================================================================= */
+  if (selectedRole === 'Physiotherapist') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* 5-Stage RTP Protocol Gate Controller (7 Cols) */}
+          <div className="lg:col-span-7 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 gap-2">
+              <div className="flex items-center gap-2">
+                <HeartPulse className="w-4 h-4 text-rose-400" />
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  5-Stage Return-to-Play Protocol Gate Controller
+                </h3>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] font-mono text-rose-300 font-bold">
+                {injuries.length} Active Clinical Cases
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {injuries.map((inj) => (
+                <div key={inj.id} className="p-3.5 rounded-lg bg-[#101827] border border-slate-800/80 space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-white flex items-center gap-2">
+                        <span>{inj.athleteName}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">({inj.sport} · {inj.position})</span>
+                      </div>
+                      <div className="text-[11px] text-slate-300">
+                        {inj.diagnosis} ({inj.bodyRegionDisplay}) · Pain: <strong>{inj.painScore}/10</strong>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        Stage {inj.rtpStage}/5: {inj.rtpStageName}
+                      </span>
+                      {onOpenAdvanceRtp && (
+                        <button
+                          onClick={() => onOpenAdvanceRtp(inj)}
+                          className="px-2.5 py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[10px] transition-colors"
+                        >
+                          Advance Gate →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 5 Objective Gate Criteria Matrix */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1 text-[10px] font-mono">
+                    <div className={`p-1.5 rounded border text-center ${inj.gateCriteria?.painThresholdMet ? 'bg-emerald-950/20 text-emerald-300 border-emerald-500/30' : 'bg-slate-900 text-slate-500 border-slate-800'}`}>
+                      <span>Pain ≤ 2/10: <strong>{inj.gateCriteria?.painThresholdMet ? '✓' : '✗'}</strong></span>
+                    </div>
+                    <div className={`p-1.5 rounded border text-center ${inj.gateCriteria?.strengthSymmetryMet ? 'bg-emerald-950/20 text-emerald-300 border-emerald-500/30' : 'bg-slate-900 text-slate-500 border-slate-800'}`}>
+                      <span>Symmetry ≥90%: <strong>{inj.gateCriteria?.strengthSymmetryMet ? '✓' : '✗'}</strong></span>
+                    </div>
+                    <div className={`p-1.5 rounded border text-center ${inj.gateCriteria?.runningToleranceMet ? 'bg-emerald-950/20 text-emerald-300 border-emerald-500/30' : 'bg-slate-900 text-slate-500 border-slate-800'}`}>
+                      <span>Run Tolerance: <strong>{inj.gateCriteria?.runningToleranceMet ? '✓' : '✗'}</strong></span>
+                    </div>
+                    <div className={`p-1.5 rounded border text-center ${inj.gateCriteria?.functionalTestMet ? 'bg-emerald-950/20 text-emerald-300 border-emerald-500/30' : 'bg-slate-900 text-slate-500 border-slate-800'}`}>
+                      <span>Functional Test: <strong>{inj.gateCriteria?.functionalTestMet ? '✓' : '✗'}</strong></span>
+                    </div>
+                    <div className={`p-1.5 rounded border text-center ${inj.gateCriteria?.medicalClearanceMet ? 'bg-emerald-950/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-950/20 text-amber-300 border-amber-500/30'}`}>
+                      <span>CMO Clearance: <strong>{inj.gateCriteria?.medicalClearanceMet ? '✓' : '⏳'}</strong></span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Clinical Physiotherapy Bay & Rehab Session Builder (5 Cols) */}
+          <div className="lg:col-span-5 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    Physiotherapy Clinic & Rehab Protocols
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Medical Rehab Lab
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { athlete: 'Arjun Mehta', focus: 'Stage 3 Controlled Accelerations & Nordic Hamstring', time: '10:00 IST', clinician: 'Dr. S. Patel' },
+                  { athlete: 'Devansh Kulkarni', focus: 'Syndesmosis Effusion Lymphatic Drainage & Pool Walking', time: '11:15 IST', clinician: 'Dr. M. Raghavan' },
+                  { athlete: 'Kabir Rao', focus: 'Isokinetic Rotator Cuff External Rotation @ 90°', time: '14:00 IST', clinician: 'A. Sen' },
+                  { athlete: 'Aarav Fernandes', focus: 'Posterior Capsule Sleeper Stretch & Scapular Y/T/W', time: '15:30 IST', clinician: 'A. Sen' },
+                ].map((r, i) => (
+                  <div key={i} className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-white">{r.athlete}</span>
+                      <span className="text-[10px] font-mono text-indigo-300">{r.time}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">{r.focus}</p>
+                    <div className="text-[10px] text-slate-500 font-mono">Lead: {r.clinician}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              {onOpenReportInjury && (
+                <button
+                  onClick={() => onOpenReportInjury()}
+                  className="flex-1 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-colors"
+                >
+                  <HeartPulse className="w-3.5 h-3.5" />
+                  <span>Report New Injury</span>
+                </button>
+              )}
+              {injuries.length > 0 && onOpenCreateRehab && (
+                <button
+                  onClick={() => onOpenCreateRehab(injuries[0])}
+                  className="flex-1 py-2.5 rounded-lg bg-[#101827] hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Log Rehab Session</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* =========================================================================
+     8. PERFORMANCE DIRECTOR SPECIALIZED HUB: LA 2028 OLYMPIC PATHWAY COMMAND
+     ========================================================================= */
+  if (selectedRole === 'Performance Director') {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Multidisciplinary Squad Availability Matrix (7 Cols) */}
+          <div className="lg:col-span-7 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 gap-2">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  LA 2028 Olympic Pathway Carding & Interdisciplinary Matrix
+                </h3>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono text-amber-300 font-bold">
+                10 Carded Tier-1 Athletes
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 font-mono text-[10px] uppercase">
+                    <th className="pb-2">Athlete</th>
+                    <th className="pb-2">Discipline</th>
+                    <th className="pb-2">Technical</th>
+                    <th className="pb-2">Medical</th>
+                    <th className="pb-2">Autonomic</th>
+                    <th className="pb-2 text-right">Pathway Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-medium">
+                  {allAthletes.map((a) => (
+                    <tr key={a.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="py-2.5">
+                        <div className="font-semibold text-white">{a.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{a.athleteId}</div>
+                      </td>
+                      <td className="py-2.5 text-slate-300 text-[11px]">{a.sport} · {a.position}</td>
+                      <td className="py-2.5">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                          a.trainingStatus === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-300' :
+                          a.trainingStatus === 'RESTRICTED' ? 'bg-amber-500/20 text-amber-300' :
+                          'bg-rose-500/20 text-rose-300'
+                        }`}>
+                          {a.trainingStatus}
+                        </span>
+                      </td>
+                      <td className="py-2.5 font-mono text-[11px] text-slate-300">
+                        {a.medicalStatus}
+                      </td>
+                      <td className="py-2.5 font-mono font-bold text-white">
+                        {a.readiness}%
+                      </td>
+                      <td className="py-2.5 text-right">
+                        <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-300 font-mono text-[10px]">
+                          Tier-1 Carded
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Executive Approvals & Governance Queue (5 Cols) */}
+          <div className="lg:col-span-5 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    Executive Governance & Clearance Sign-Off
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Director Level
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-semibold text-white">Arjun Mehta: Stage 3 Hamstring Clearance</span>
+                    <span className="text-[10px] font-mono text-amber-400 font-bold">Awaiting CMO</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Chief Medical Officer sign-off required to advance to Stage 4 full matchplay training.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-semibold text-white">Asian Grand Prix Travel Sanction #USI-881</span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">Approved</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Ministry travel clearance and daily allowance budget locked for 28 athletes.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#101827] border border-slate-800 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-semibold text-white">NADA / WADA Whereabouts Q4 Pool</span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">100% Filed</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    All 10 athletes’ 60-minute daily testing windows locked with zero missed test strikes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onTriggerToast('Exporting complete LA 2028 Olympic Pathway Executive Briefing (PDF)...')}
+              className="w-full py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Executive Pathway Briefing</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 };

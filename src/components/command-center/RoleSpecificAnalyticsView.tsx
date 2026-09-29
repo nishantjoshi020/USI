@@ -20,14 +20,20 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { UserRole } from '../../types/usi';
+import { Athlete, Injury, NutritionPlan, TrainingSession, UserRole } from '../../types/usi';
 import { ROLE_DASHBOARDS_CONFIG, RoleAttentionItem } from '../../data/roleDashboardConfig';
+import { computeDynamicRoleMetrics } from '../../utils/dynamicMetrics';
 
 interface RoleSpecificAnalyticsViewProps {
   selectedRole: UserRole;
   onOpenActionItem?: (item: RoleAttentionItem) => void;
   onNavigateSection?: (sectionKey: string) => void;
   onSelectKpi?: (kpiId: string) => void;
+  athletes?: Athlete[];
+  injuries?: Injury[];
+  sessions?: TrainingSession[];
+  nutritionPlans?: NutritionPlan[];
+  activeAthlete?: Athlete | null;
 }
 
 export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps> = ({
@@ -35,8 +41,24 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
   onOpenActionItem,
   onNavigateSection,
   onSelectKpi,
+  athletes = [],
+  injuries = [],
+  sessions = [],
+  nutritionPlans = [],
+  activeAthlete = null,
 }) => {
   const config = ROLE_DASHBOARDS_CONFIG[selectedRole] || ROLE_DASHBOARDS_CONFIG['Performance Director'];
+
+  const dynamicMetrics = React.useMemo(() => {
+    return computeDynamicRoleMetrics(
+      selectedRole,
+      athletes,
+      injuries,
+      sessions,
+      nutritionPlans,
+      activeAthlete
+    );
+  }, [selectedRole, athletes, injuries, sessions, nutritionPlans, activeAthlete]);
 
   const getSeverityBadge = (severity: RoleAttentionItem['severity']) => {
     switch (severity) {
@@ -63,11 +85,11 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
               <div className="flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-sky-400" />
                 <h3 className="text-sm font-bold text-white tracking-wide">
-                  {config.primaryAnalyticsTitle}
+                  {dynamicMetrics.primaryAnalyticsTitle}
                 </h3>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                {config.primaryAnalyticsSubtitle}
+                {dynamicMetrics.primaryAnalyticsSubtitle}
               </p>
             </div>
             <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300 self-start sm:self-center">
@@ -77,8 +99,8 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
 
           {/* 4 Metric Benchmark Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {config.analyticsMetrics.map((m, idx) => {
-              const linkedKpiId = config.kpis[idx]?.id || config.kpis[0]?.id;
+            {dynamicMetrics.analyticsMetrics.map((m, idx) => {
+              const linkedKpiId = dynamicMetrics.kpis[idx]?.id || dynamicMetrics.kpis[0]?.id;
               return (
                 <button
                   key={idx}
@@ -131,7 +153,7 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-200 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-sky-400" />
-                {config.distributionTitle}
+                {dynamicMetrics.distributionTitle}
               </span>
               <span className="text-[11px] font-mono text-slate-400">
                 100% Cohort Sample
@@ -140,7 +162,7 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
 
             {/* Stacked Bar */}
             <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden flex">
-              {config.distributionData.map((d, i) => (
+              {dynamicMetrics.distributionData.map((d, i) => (
                 <div
                   key={i}
                   style={{ width: `${d.percentage}%` }}
@@ -152,7 +174,7 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
 
             {/* Legend */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
-              {config.distributionData.map((d, i) => (
+              {dynamicMetrics.distributionData.map((d, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-slate-300">
                   <span className={`w-2 h-2 rounded-full ${d.colorClass} shrink-0`} />
                   <span className="truncate">{d.label}:</span>
@@ -176,12 +198,12 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
                 </h3>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono font-bold text-amber-300">
-                {config.priorityItems.length} ACTIONABLE
+                {dynamicMetrics.priorityItems.length} ACTIONABLE
               </span>
             </div>
 
             <div className="space-y-2.5 mt-3">
-              {config.priorityItems.map((item) => (
+              {dynamicMetrics.priorityItems.map((item) => (
                 <div
                   key={item.id}
                   className="p-3 rounded-lg bg-[#101827] border border-slate-800/80 hover:border-slate-700 transition-all space-y-2"

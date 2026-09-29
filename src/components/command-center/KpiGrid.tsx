@@ -18,8 +18,9 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
-import { UserRole } from '../../types/usi';
+import { Athlete, Injury, NutritionPlan, TrainingSession, UserRole } from '../../types/usi';
 import { ROLE_DASHBOARDS_CONFIG } from '../../data/roleDashboardConfig';
+import { computeDynamicRoleMetrics } from '../../utils/dynamicMetrics';
 
 export type KpiFilterKey =
   | 'total-athletes'
@@ -34,12 +35,22 @@ interface KpiGridProps {
   activeKpi: KpiFilterKey | null;
   onSelectKpi: (kpi: KpiFilterKey) => void;
   selectedRole?: UserRole;
+  athletes?: Athlete[];
+  injuries?: Injury[];
+  sessions?: TrainingSession[];
+  nutritionPlans?: NutritionPlan[];
+  activeAthlete?: Athlete | null;
 }
 
 export const KpiGrid: React.FC<KpiGridProps> = ({
   activeKpi,
   onSelectKpi,
   selectedRole = 'Performance Director',
+  athletes = [],
+  injuries = [],
+  sessions = [],
+  nutritionPlans = [],
+  activeAthlete = null,
 }) => {
   const roleConfig = ROLE_DASHBOARDS_CONFIG[selectedRole] || ROLE_DASHBOARDS_CONFIG['Performance Director'];
 
@@ -81,7 +92,18 @@ export const KpiGrid: React.FC<KpiGridProps> = ({
     }
   };
 
-  const kpis = roleConfig.kpis.map((kpi) => ({
+  const dynamicMetrics = React.useMemo(() => {
+    return computeDynamicRoleMetrics(
+      selectedRole,
+      athletes,
+      injuries,
+      sessions,
+      nutritionPlans,
+      activeAthlete
+    );
+  }, [selectedRole, athletes, injuries, sessions, nutritionPlans, activeAthlete]);
+
+  const kpis = dynamicMetrics.kpis.map((kpi) => ({
     id: kpi.id,
     label: kpi.label,
     value: kpi.value,

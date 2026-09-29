@@ -1524,6 +1524,11 @@ export default function App() {
                 activeKpi={activeKpi}
                 onSelectKpi={handleSelectKpi}
                 selectedRole={selectedRole}
+                athletes={athletes}
+                injuries={injuries}
+                sessions={sessions}
+                nutritionPlans={nutritionPlans}
+                activeAthlete={activeAthlete360}
               />
 
               {/* Dynamic Role-Specific Analytics & Priority Queue */}
@@ -1533,9 +1538,15 @@ export default function App() {
                   triggerToast(`[${item.badge}] Action queue opened: ${item.title}`)
                 }
                 onNavigateSection={(sec) => setActiveNav(sec as any)}
+                onSelectKpi={handleSelectKpi}
+                athletes={athletes}
+                injuries={injuries}
+                sessions={sessions}
+                nutritionPlans={nutritionPlans}
+                activeAthlete={activeAthlete360}
               />
 
-              {/* Specialized Persona Hubs for Athlete, Nutritionist, Operations, Federation Admin */}
+              {/* Specialized Persona Hubs for All 8 Personas */}
               <PersonaSpecializedSections
                 selectedRole={selectedRole}
                 activeAthlete={activeAthlete360}
@@ -1551,6 +1562,8 @@ export default function App() {
                   if (athId) setReportInjuryInitialAthleteId(athId);
                   setIsReportInjuryOpen(true);
                 }}
+                onOpenCreateRehab={(inj) => setRehabSessionModalInjuryId(inj.id)}
+                onOpenAdvanceRtp={(inj) => setRtpGateModalInjuryId(inj.id)}
                 onTriggerToast={triggerToast}
                 onNavigateSection={(sec) => setActiveNav(sec as any)}
                 onUpdateAthleteWellness={handleAthleteWellnessSurveySubmit}
@@ -1561,6 +1574,7 @@ export default function App() {
                 <>
                   {/* 7. ATHLETE READINESS SECTION & 8. AI OPERATIONAL ALERT */}
                   <ReadinessAndAlertSection
+                    athletes={athletes}
                     selectedReadinessTier={selectedReadinessTier}
                     onSelectReadinessTier={handleSelectReadinessTier}
                     onViewAthletesRegistry={() => setActiveNav('athlete-registry')}
@@ -1570,6 +1584,8 @@ export default function App() {
 
                   {/* 9. TODAY'S TRAINING OPERATIONS & 10. INJURY INTELLIGENCE */}
                   <TrainingAndInjurySection
+                    sessions={sessions}
+                    injuries={injuries}
                     onSelectSession={(sess) => setSelectedSession(sess)}
                     onSelectInjuryAthlete={(athleteId) => {
                       const foundInj = injuries.find(
