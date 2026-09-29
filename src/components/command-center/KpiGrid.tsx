@@ -2,12 +2,24 @@ import React from 'react';
 import {
   Activity,
   AlertTriangle,
+  Apple,
   ArrowUpRight,
+  BarChart2,
+  Building2,
   CalendarCheck,
+  CheckCircle2,
+  Droplets,
+  FileCheck,
+  Globe,
   HeartPulse,
+  Moon,
+  ShieldCheck,
+  Trophy,
   UserCheck,
   Users,
 } from 'lucide-react';
+import { UserRole } from '../../types/usi';
+import { ROLE_DASHBOARDS_CONFIG } from '../../data/roleDashboardConfig';
 
 export type KpiFilterKey =
   | 'total-athletes'
@@ -15,88 +27,83 @@ export type KpiFilterKey =
   | 'attention'
   | 'injuries'
   | 'readiness'
-  | 'attendance';
+  | 'attendance'
+  | string;
 
 interface KpiGridProps {
   activeKpi: KpiFilterKey | null;
   onSelectKpi: (kpi: KpiFilterKey) => void;
+  selectedRole?: UserRole;
 }
 
-export const KpiGrid: React.FC<KpiGridProps> = ({ activeKpi, onSelectKpi }) => {
-  const kpis: {
-    id: KpiFilterKey;
-    label: string;
-    value: string;
-    subtext: string;
-    deltaLabel: string;
-    tone: 'neutral' | 'emerald' | 'amber' | 'rose' | 'sky';
-    targetHint: string;
-    icon: React.FC<{ className?: string }>;
-  }[] = [
-    {
-      id: 'total-athletes',
-      label: 'Total Athletes',
-      value: '184',
-      subtext: '4 National Squads',
-      deltaLabel: '+6 enrolled',
-      tone: 'neutral',
-      targetHint: 'Open Athlete Registry',
-      icon: Users,
-    },
-    {
-      id: 'active-athletes',
-      label: 'Active Athletes',
-      value: '162',
-      subtext: '88.0% squad availability',
-      deltaLabel: 'Full clearance',
-      tone: 'emerald',
-      targetHint: 'Filter Ready Cohort',
-      icon: UserCheck,
-    },
-    {
-      id: 'attention',
-      label: 'Athletes Requiring Attention',
-      value: '18',
-      subtext: '3 high risk · 15 monitor',
-      deltaLabel: '+3 vs yesterday',
-      tone: 'amber',
-      targetHint: 'Focus Attention Table',
-      icon: AlertTriangle,
-    },
-    {
-      id: 'injuries',
-      label: 'Active Injuries',
-      value: '4',
-      subtext: '2 rehab · 1 RTP · 1 escalated',
-      deltaLabel: '2.2% incidence',
-      tone: 'rose',
-      targetHint: 'Open Injury Intelligence',
-      icon: HeartPulse,
-    },
-    {
-      id: 'readiness',
-      label: 'Average Readiness',
-      value: '78%',
-      subtext: '7-day mean: 80.4%',
-      deltaLabel: '-2.4% vs 7d',
-      tone: 'sky',
-      targetHint: 'Inspect Readiness Distribution',
-      icon: Activity,
-    },
-    {
-      id: 'attendance',
-      label: "Today's Attendance",
-      value: '94%',
-      subtext: '6 of 8 sessions completed',
-      deltaLabel: 'On schedule',
-      tone: 'emerald',
-      targetHint: 'Focus Training Operations',
-      icon: CalendarCheck,
-    },
-  ];
+export const KpiGrid: React.FC<KpiGridProps> = ({
+  activeKpi,
+  onSelectKpi,
+  selectedRole = 'Performance Director',
+}) => {
+  const roleConfig = ROLE_DASHBOARDS_CONFIG[selectedRole] || ROLE_DASHBOARDS_CONFIG['Performance Director'];
+
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'Activity':
+        return Activity;
+      case 'AlertTriangle':
+        return AlertTriangle;
+      case 'Apple':
+        return Apple;
+      case 'BarChart2':
+        return BarChart2;
+      case 'Building2':
+        return Building2;
+      case 'CalendarCheck':
+        return CalendarCheck;
+      case 'CheckCircle2':
+        return CheckCircle2;
+      case 'Droplets':
+        return Droplets;
+      case 'FileCheck':
+        return FileCheck;
+      case 'Globe':
+        return Globe;
+      case 'HeartPulse':
+        return HeartPulse;
+      case 'Moon':
+        return Moon;
+      case 'ShieldCheck':
+        return ShieldCheck;
+      case 'Trophy':
+        return Trophy;
+      case 'UserCheck':
+        return UserCheck;
+      case 'Users':
+      default:
+        return Users;
+    }
+  };
+
+  const kpis = roleConfig.kpis.map((kpi) => ({
+    id: kpi.id,
+    label: kpi.label,
+    value: kpi.value,
+    subtext: kpi.subtext,
+    deltaLabel: kpi.deltaLabel,
+    tone: kpi.tone,
+    targetHint: kpi.targetHint,
+    icon: getIconComponent(kpi.iconName),
+  }));
 
   return (
     <section aria-label="Operational Key Performance Indicators">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+          <Activity className="w-3.5 h-3.5 text-sky-400" />
+          Active KPI Indicators: <strong className="text-slate-200">{roleConfig.displayName}</strong>
+        </span>
+        <span className="text-[10px] font-mono text-slate-400">
+          6 Live Metrics · Click any card to inspect
+        </span>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;

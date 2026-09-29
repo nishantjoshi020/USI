@@ -72,6 +72,8 @@ import {
 import { Sidebar } from './components/navigation/Sidebar';
 import { TopContextBar } from './components/navigation/TopContextBar';
 import { KpiFilterKey, KpiGrid } from './components/command-center/KpiGrid';
+import { RoleDashboardBanner } from './components/command-center/RoleDashboardBanner';
+import { RoleSpecificAnalyticsView } from './components/command-center/RoleSpecificAnalyticsView';
 import { ReadinessAndAlertSection } from './components/command-center/ReadinessAndAlertSection';
 import { TrainingAndInjurySection } from './components/command-center/TrainingAndInjurySection';
 import { AthleteAttentionTable } from './components/command-center/AthleteAttentionTable';
@@ -704,6 +706,8 @@ export default function App() {
       triggerToast('Highlighting Monitor readiness tier (65–79%)');
     } else if (kpi === 'attendance') {
       setSelectedSession(sessions[0]);
+    } else {
+      triggerToast(`Focused KPI metric: ${kpi.replace(/-/g, ' ').toUpperCase()}`);
     }
   };
 
@@ -1223,22 +1227,30 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Subtle Role Focus Context Strip */}
-              <div className="px-3.5 py-2 rounded-md bg-[#0F1623]/90 border border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                  <span>
-                    <strong className="text-slate-100">{selectedRole} Priority Focus:</strong>{' '}
-                    {ROLE_DESCRIPTIONS[selectedRole]?.focus}
-                  </span>
-                </div>
-                <span className="font-mono text-[11px] text-slate-400">
-                  {ROLE_DESCRIPTIONS[selectedRole]?.clearance}
-                </span>
-              </div>
+              {/* Dynamic 8-Persona Role Dashboard Banner */}
+              <RoleDashboardBanner
+                selectedRole={selectedRole}
+                onSelectRole={handleSelectRole}
+                onTriggerQuickAction={(id, label) =>
+                  triggerToast(`[${selectedRole}] Quick action triggered: ${label}`)
+                }
+              />
 
-              {/* 6. KPI CARDS */}
-              <KpiGrid activeKpi={activeKpi} onSelectKpi={handleSelectKpi} />
+              {/* Dynamic Role-Aware KPI Cards */}
+              <KpiGrid
+                activeKpi={activeKpi}
+                onSelectKpi={handleSelectKpi}
+                selectedRole={selectedRole}
+              />
+
+              {/* Dynamic Role-Specific Analytics & Priority Queue */}
+              <RoleSpecificAnalyticsView
+                selectedRole={selectedRole}
+                onOpenActionItem={(item) =>
+                  triggerToast(`[${item.badge}] Action queue opened: ${item.title}`)
+                }
+                onNavigateSection={(sec) => setActiveNav(sec as any)}
+              />
 
               {/* 7. ATHLETE READINESS SECTION & 8. AI OPERATIONAL ALERT */}
               <ReadinessAndAlertSection

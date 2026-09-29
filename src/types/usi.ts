@@ -4,7 +4,9 @@ export type UserRole =
   | 'Sports Scientist'
   | 'Physiotherapist'
   | 'Nutritionist'
-  | 'Federation Admin';
+  | 'Federation Admin'
+  | 'Athlete'
+  | 'Operations Team';
 
 export type AthleteStatus = 'Attention' | 'Monitor' | 'Ready' | 'Restricted' | 'Unavailable';
 

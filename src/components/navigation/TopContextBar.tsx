@@ -38,6 +38,8 @@ const ROLES: UserRole[] = [
   'Physiotherapist',
   'Nutritionist',
   'Federation Admin',
+  'Athlete',
+  'Operations Team',
 ];
 
 export const TopContextBar: React.FC<TopContextBarProps> = ({
