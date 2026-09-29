@@ -103,6 +103,15 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
   const [selectedResultId, setSelectedResultId] =
     useState<string>('tr-arjun-30m');
   const [entryValueInput, setEntryValueInput] = useState<string>('4.21');
+  const [activeAssessmentAthleteId, setActiveAssessmentAthleteId] =
+    useState<string>('ath-arjun-mehta');
+  const [isLogNewTestModalOpen, setIsLogNewTestModalOpen] = useState(false);
+  const [newTestAthleteId, setNewTestAthleteId] =
+    useState<string>('ath-arjun-mehta');
+  const [newTestId, setNewTestId] = useState<string>(
+    tests[0]?.id || 'test-30m'
+  );
+  const [newTestVal, setNewTestVal] = useState<string>('4.20');
 
   // Benchmarking Cycle Toggle (Section 17)
   const [benchmarkCycle, setBenchmarkCycle] = useState<'current' | 'previous'>(
@@ -116,6 +125,8 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
 
   const activeResult =
     testResults.find((r) => r.id === selectedResultId) || testResults[0];
+  const activeAssessmentAthlete =
+    athletes.find((a) => a.id === activeAssessmentAthleteId) || athletes[0];
 
   const numericEntry = parseFloat(entryValueInput) || activeResult.currentResult;
   const isAboveBenchmark = activeResult.lowerIsBetter
@@ -164,9 +175,92 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
   const selectedTalentProfile =
     talentProfiles.find((t) => t.id === selectedTalentDrawerId) || null;
 
-  const arjunProgressionResults = testResults.filter(
-    (r) => r.athleteId === 'ath-arjun-mehta'
-  );
+  const athleteProgressionResults: TestResult[] = useMemo(() => {
+    const existing = testResults.filter(
+      (r) => r.athleteId === activeAssessmentAthlete.id
+    );
+    if (existing.length > 0) return existing;
+    // Synthesize from the athlete's performanceMetrics if not yet in testResults
+    const pm = activeAssessmentAthlete.performanceMetrics;
+    const parseNum = (s: string, fallback: number) => {
+      const m = parseFloat(s.replace(/[^0-9.]/g, ''));
+      return isNaN(m) ? fallback : m;
+    };
+    return [
+      {
+        id: `tr-synth-30m-${activeAssessmentAthlete.id}`,
+        testId: 'test-30m',
+        testName: '30m Sprint',
+        category: 'Speed',
+        unit: 'sec',
+        athleteId: activeAssessmentAthlete.id,
+        athleteName: activeAssessmentAthlete.name,
+        squad: activeAssessmentAthlete.squad,
+        currentResult: parseNum(pm.sprint30m.current, 4.24),
+        previousResult: Number(
+          (parseNum(pm.sprint30m.current, 4.24) + 0.05).toFixed(2)
+        ),
+        personalBest: parseNum(pm.sprint30m.personalBest, 4.19),
+        squadAverage: parseNum(pm.sprint30m.squadAvg, 4.28),
+        programBenchmark: parseNum(pm.sprint30m.benchmark, 4.25),
+        nationalBenchmark: 4.18,
+        lowerIsBetter: true,
+        improvementPct: 1.2,
+        progressionStatus: 'Improving',
+        cycleHistory: pm.sprint30m.cycles.slice(-3),
+        fieldStatus: 'Completed',
+        validated: true,
+      },
+      {
+        id: `tr-synth-cmj-${activeAssessmentAthlete.id}`,
+        testId: 'test-cmj',
+        testName: 'Countermovement Jump',
+        category: 'Power',
+        unit: 'cm',
+        athleteId: activeAssessmentAthlete.id,
+        athleteName: activeAssessmentAthlete.name,
+        squad: activeAssessmentAthlete.squad,
+        currentResult: parseNum(pm.cmj.current, 47.5),
+        previousResult: Number(
+          (parseNum(pm.cmj.current, 47.5) - 1.5).toFixed(1)
+        ),
+        personalBest: parseNum(pm.cmj.personalBest, 49.0),
+        squadAverage: parseNum(pm.cmj.squadAvg, 45.8),
+        programBenchmark: parseNum(pm.cmj.benchmark, 46.0),
+        nationalBenchmark: 49.5,
+        lowerIsBetter: false,
+        improvementPct: 3.2,
+        progressionStatus: 'Improving',
+        cycleHistory: pm.cmj.cycles.slice(-3),
+        fieldStatus: 'Completed',
+        validated: true,
+      },
+      {
+        id: `tr-synth-yoyo-${activeAssessmentAthlete.id}`,
+        testId: 'test-yoyo',
+        testName: 'Yo-Yo Test',
+        category: 'Endurance',
+        unit: 'level',
+        athleteId: activeAssessmentAthlete.id,
+        athleteName: activeAssessmentAthlete.name,
+        squad: activeAssessmentAthlete.squad,
+        currentResult: parseNum(pm.yoYo.current, 19.2),
+        previousResult: Number(
+          (parseNum(pm.yoYo.current, 19.2) - 0.4).toFixed(1)
+        ),
+        personalBest: parseNum(pm.yoYo.personalBest, 19.6),
+        squadAverage: parseNum(pm.yoYo.squadAvg, 18.6),
+        programBenchmark: parseNum(pm.yoYo.benchmark, 18.8),
+        nationalBenchmark: 19.8,
+        lowerIsBetter: false,
+        improvementPct: 2.1,
+        progressionStatus: 'Improving',
+        cycleHistory: pm.yoYo.cycles.slice(-3),
+        fieldStatus: 'Completed',
+        validated: true,
+      },
+    ];
+  }, [testResults, activeAssessmentAthlete]);
 
   return (
     <div className="space-y-5">
@@ -266,6 +360,33 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                 </button>
               );
             })}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[11px] font-mono text-slate-400">
+              Athlete Focus:
+            </span>
+            <select
+              value={activeAssessmentAthlete.id}
+              onChange={(e) => {
+                const nextAthId = e.target.value;
+                setActiveAssessmentAthleteId(nextAthId);
+                const matchRes = testResults.find(
+                  (r) => r.athleteId === nextAthId
+                );
+                if (matchRes) {
+                  setSelectedResultId(matchRes.id);
+                  setEntryValueInput(String(matchRes.currentResult));
+                }
+              }}
+              className="px-2.5 py-1 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-sky-300 focus:outline-none focus:border-sky-500"
+            >
+              {athletes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.athleteId} · {a.squad})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -476,12 +597,12 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
               </div>
             </div>
 
-            {/* 18. PROGRESSION ANALYSIS PREVIEW (ARJUN MEHTA) */}
+            {/* 18. PROGRESSION ANALYSIS PREVIEW (SELECTED ATHLETE) */}
             <div className="xl:col-span-6 bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div>
                   <h3 className="text-sm font-bold text-slate-100 uppercase">
-                    ATHLETE PROGRESSION ANALYSIS — ARJUN MEHTA
+                    ATHLETE PROGRESSION ANALYSIS — {activeAssessmentAthlete.name.toUpperCase()}
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
                     3-Cycle longitudinal physical trajectory with non-color-only status indicators
@@ -496,7 +617,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
               </div>
 
               <div className="space-y-2.5 text-xs">
-                {arjunProgressionResults.map((res) => (
+                {athleteProgressionResults.map((res) => (
                   <div
                     key={res.id}
                     className="p-3.5 rounded bg-[#0B101B] border border-slate-800 flex flex-wrap items-center justify-between gap-3"
@@ -676,15 +797,27 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
             {/* Field Testing Athletes Status Queue */}
             <div className="xl:col-span-5 bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-3">
-              <div className="text-sm font-bold text-slate-100 uppercase pb-2 border-b border-slate-800">
-                ASSIGNED ATHLETES (30M SPRINT & CMJ BATTERY)
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="text-sm font-bold text-slate-100 uppercase">
+                  ASSIGNED ATHLETES ({testResults.length})
+                </div>
+                <button
+                  onClick={() => {
+                    setNewTestAthleteId(activeAssessmentAthlete.id);
+                    setIsLogNewTestModalOpen(true);
+                  }}
+                  className="px-2.5 py-1 rounded bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 text-xs font-semibold"
+                >
+                  + Log Athlete Test
+                </button>
               </div>
-              <div className="space-y-2.5 text-xs">
+              <div className="space-y-2.5 text-xs max-h-[380px] overflow-y-auto pr-1">
                 {testResults.map((res) => (
                   <button
                     key={res.id}
                     onClick={() => {
                       setSelectedResultId(res.id);
+                      setActiveAssessmentAthleteId(res.athleteId);
                       setEntryValueInput(String(res.currentResult));
                     }}
                     className={`w-full p-3.5 rounded border text-left flex items-center justify-between transition-all ${
@@ -801,14 +934,30 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => {
+                    const nextHistory = activeResult.cycleHistory.map((c, idx) =>
+                      idx === activeResult.cycleHistory.length - 1
+                        ? { ...c, value: numericEntry }
+                        : c
+                    );
+                    const nextPersonalBest = activeResult.lowerIsBetter
+                      ? Math.min(activeResult.personalBest, numericEntry)
+                      : Math.max(activeResult.personalBest, numericEntry);
                     onSaveTestResult({
                       ...activeResult,
                       currentResult: numericEntry,
+                      personalBest: nextPersonalBest,
                       improvementPct: Math.abs(calculatedImprovementPct),
+                      progressionStatus:
+                        calculatedImprovementPct >= 0 ? 'Improving' : 'Stable',
+                      cycleHistory: nextHistory,
                       fieldStatus: 'Completed',
                       validated: true,
                     });
+                    setActiveAssessmentAthleteId(activeResult.athleteId);
                     setFieldWorkflowStep(6);
+                    onTriggerToast(
+                      `Validated ${activeResult.testName} (${numericEntry} ${activeResult.unit}) for ${activeResult.athleteName} ✓`
+                    );
                   }}
                   className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
                 >
@@ -830,7 +979,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
               <div>
                 <h2 className="text-sm font-bold text-slate-100 uppercase">
-                  MULTI-TIER BENCHMARK COMPARISON — ARJUN MEHTA
+                  MULTI-TIER BENCHMARK COMPARISON — {activeAssessmentAthlete.name.toUpperCase()}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Compare Athlete vs Squad Average vs Program Benchmark vs National Benchmark
@@ -863,7 +1012,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
-              {arjunProgressionResults.map((res) => {
+              {athleteProgressionResults.map((res) => {
                 const displayedAthleteVal =
                   benchmarkCycle === 'current'
                     ? res.currentResult
@@ -895,7 +1044,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                     <div className="space-y-2 font-mono">
                       <div className="flex justify-between p-2 rounded bg-[#0F1623] border border-sky-500/30">
                         <span className="text-sky-300">
-                          Arjun ({benchmarkCycle}):
+                          {activeAssessmentAthlete.name} ({benchmarkCycle}):
                         </span>
                         <strong className="text-slate-100">
                           {displayedAthleteVal} {res.unit}
@@ -933,10 +1082,10 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
           {/* 18. PROGRESSION ANALYSIS CHARTS */}
           <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-4">
             <h3 className="text-sm font-bold text-slate-100 uppercase">
-              MULTI-CYCLE PROGRESSION CHARTS — ARJUN MEHTA
+              MULTI-CYCLE PROGRESSION CHARTS — {activeAssessmentAthlete.name.toUpperCase()}
             </h3>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
-              {arjunProgressionResults.map((res) => (
+              {athleteProgressionResults.map((res) => (
                 <div
                   key={res.id}
                   className="p-4 rounded bg-[#0B101B] border border-slate-800 space-y-3"
@@ -1325,10 +1474,177 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                     status: 'Active',
                   });
                   setIsCreateProgramOpen(false);
+                  onTriggerToast(
+                    `Created Assessment Program: ${progName} (${progSquad}) ✓`
+                  );
                 }}
                 className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
               >
                 Save Assessment Program
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+       * LOG NEW ATHLETE TEST RESULT MODAL
+       * ========================================================= */}
+      {isLogNewTestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsLogNewTestModalOpen(false)}
+            className="fixed inset-0 bg-black/75"
+          />
+          <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-sm text-slate-100 uppercase">
+                + Log Athlete Test Result
+              </span>
+              <button
+                onClick={() => setIsLogNewTestModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 mb-1">Athlete</label>
+                <select
+                  value={newTestAthleteId}
+                  onChange={(e) => setNewTestAthleteId(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                >
+                  {athletes.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.athleteId} · {a.squad})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Standardized Test
+                </label>
+                <select
+                  value={newTestId}
+                  onChange={(e) => {
+                    const tid = e.target.value;
+                    setNewTestId(tid);
+                    const foundT = tests.find((t) => t.id === tid);
+                    if (foundT) setNewTestVal(String(foundT.numericBenchmark));
+                  }}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                >
+                  {tests.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.category} · Benchmark: {t.benchmark})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Measured Result
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newTestVal}
+                  onChange={(e) => setNewTestVal(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsLogNewTestModalOpen(false)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const targetAth =
+                    athletes.find((a) => a.id === newTestAthleteId) ||
+                    athletes[0];
+                  const targetTest =
+                    tests.find((t) => t.id === newTestId) || tests[0];
+                  const valNum =
+                    parseFloat(newTestVal) || targetTest.numericBenchmark;
+                  const existingMatch = testResults.find(
+                    (r) =>
+                      r.athleteId === targetAth.id &&
+                      (r.testId === targetTest.id ||
+                        r.testName === targetTest.name)
+                  );
+                  const prevVal = existingMatch
+                    ? existingMatch.currentResult
+                    : targetTest.lowerIsBetter
+                      ? Number((valNum + 0.06).toFixed(2))
+                      : Number((valNum * 0.96).toFixed(1));
+                  const newRes: TestResult = {
+                    id: existingMatch ? existingMatch.id : `tr-${Date.now()}`,
+                    testId: targetTest.id,
+                    testName: targetTest.name,
+                    category: targetTest.category,
+                    unit: targetTest.unit,
+                    athleteId: targetAth.id,
+                    athleteName: targetAth.name,
+                    squad: targetAth.squad.includes('U23')
+                      ? 'U23'
+                      : 'Senior Squad',
+                    currentResult: valNum,
+                    previousResult: prevVal,
+                    personalBest: targetTest.lowerIsBetter
+                      ? Math.min(valNum, prevVal)
+                      : Math.max(valNum, prevVal),
+                    squadAverage: targetTest.numericBenchmark,
+                    programBenchmark: targetTest.numericBenchmark,
+                    nationalBenchmark: targetTest.lowerIsBetter
+                      ? Number((targetTest.numericBenchmark * 0.98).toFixed(2))
+                      : Number((targetTest.numericBenchmark * 1.04).toFixed(1)),
+                    lowerIsBetter: targetTest.lowerIsBetter,
+                    improvementPct: 2.4,
+                    progressionStatus: 'Improving',
+                    cycleHistory: [
+                      {
+                        cycle: 'May',
+                        value: prevVal,
+                        squadAvg: targetTest.numericBenchmark,
+                        benchmark: targetTest.numericBenchmark,
+                      },
+                      {
+                        cycle: 'Jul',
+                        value: prevVal,
+                        squadAvg: targetTest.numericBenchmark,
+                        benchmark: targetTest.numericBenchmark,
+                      },
+                      {
+                        cycle: 'Sep',
+                        value: valNum,
+                        squadAvg: targetTest.numericBenchmark,
+                        benchmark: targetTest.numericBenchmark,
+                      },
+                    ],
+                    fieldStatus: 'Completed',
+                    validated: true,
+                  };
+                  onSaveTestResult(newRes);
+                  setSelectedResultId(newRes.id);
+                  setEntryValueInput(String(valNum));
+                  setActiveAssessmentAthleteId(targetAth.id);
+                  setIsLogNewTestModalOpen(false);
+                  onTriggerToast(
+                    `Logged & validated ${targetTest.name} (${valNum} ${targetTest.unit}) for ${targetAth.name} ✓`
+                  );
+                }}
+                className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+              >
+                Save & Validate Result ✓
               </button>
             </div>
           </div>

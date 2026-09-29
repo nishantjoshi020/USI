@@ -1,20 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  FileCheck,
-  ShieldCheck,
-  Upload,
-  UserPlus,
   X,
 } from 'lucide-react';
 import { Athlete, MedicalClearanceStatus } from '../../types/usi';
 import {
-  ARJUN_AUDIT_TRAIL,
-  ARJUN_DOCUMENTS,
-  ARJUN_TIMELINE,
   AVAILABLE_COACHES,
   buildDefaultPerformanceMetrics,
   buildGenericSignals,
@@ -37,6 +30,21 @@ const STEPS = [
   { num: 6, label: 'Complete' },
 ];
 
+const SPORT_POSITIONS: Record<string, { discipline: string; positions: string[] }> = {
+  Football: {
+    discipline: '11v11 Men',
+    positions: ['Forward', 'Midfielder', 'Defender', 'Goalkeeper'],
+  },
+  Athletics: {
+    discipline: 'Track & Field',
+    positions: ['100m / 200m Sprint', '400m Hurdles', 'Javelin Throw', 'Long Jump', '800m / 1500m'],
+  },
+  'Field Hockey': {
+    discipline: 'Men FIH Pro',
+    positions: ['Drag Flicker', 'Center Half', 'Inside Forward', 'Fullback', 'Goalkeeper'],
+  },
+};
+
 export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
   isOpen,
   onClose,
@@ -54,6 +62,8 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
   const [athleteId, setAthleteId] = useState('ATH-1194');
   const [contactEmail, setContactEmail] = useState('karanveer.d@nhpp-sports.org');
   const [contactPhone, setContactPhone] = useState('+91 98204 55190');
+  const [heightCm, setHeightCm] = useState<number>(180);
+  const [weightKg, setWeightKg] = useState<number>(74.5);
 
   // Step 2: Sport & Squad
   const [sport, setSport] = useState('Football');
@@ -62,6 +72,8 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
   const [program, setProgram] = useState("Senior Men's Program");
   const [squad, setSquad] = useState('Senior Squad');
   const [coach, setCoach] = useState('Vikram Sharma');
+  const [jerseyNumber, setJerseyNumber] = useState<number>(18);
+  const [initialReadiness, setInitialReadiness] = useState<number>(84);
 
   // Step 3: Documents
   const [docsUploaded, setDocsUploaded] = useState({
@@ -72,19 +84,40 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
 
   // Step 4: Medical
   const [medicalStatus, setMedicalStatus] =
-    useState<MedicalClearanceStatus>('Pending');
+    useState<MedicalClearanceStatus>('Cleared');
   const [medicalNotes, setMedicalNotes] = useState(
-    'Baseline pre-competition cardiac & musculoskeletal screening scheduled.'
+    'Baseline pre-competition cardiac & musculoskeletal screening verified.'
   );
 
   // Created Athlete Reference for Step 6
   const [createdAthlete, setCreatedAthlete] = useState<Athlete | null>(null);
 
+  useEffect(() => {
+    if (isOpen && step === 6) {
+      const randomNum = Math.floor(1200 + Math.random() * 700);
+      setStep(1);
+      setCreatedAthlete(null);
+      setAthleteId(`ATH-${randomNum}`);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleSportChange = (nextSport: string) => {
+    setSport(nextSport);
+    const meta = SPORT_POSITIONS[nextSport] || SPORT_POSITIONS.Football;
+    setDiscipline(meta.discipline);
+    setPosition(meta.positions[0]);
+    const matchingCoach = AVAILABLE_COACHES.find((c) => c.sport === nextSport);
+    if (matchingCoach) {
+      setCoach(matchingCoach.name);
+    }
+  };
 
   const resetFormForAnother = () => {
     const randomNum = Math.floor(1200 + Math.random() * 700);
     setFullName('');
+    setContactEmail('');
     setAthleteId(`ATH-${randomNum}`);
     setStep(1);
     setCreatedAthlete(null);
@@ -93,50 +126,122 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
   const handleFinalizeOnboarding = () => {
     const allDocsDone =
       docsUploaded.identity && docsUploaded.insurance && docsUploaded.agreement;
+    const cleanName = fullName.trim() || 'New Federation Athlete';
+    const filePrefix = cleanName.replace(/\s+/g, '_');
+    const birthYear = Number(dob.split('-')[0]) || 2003;
+    const computedAge = Math.max(15, Math.min(45, 2026 - birthYear));
+    const selectedCoachObj = AVAILABLE_COACHES.find((c) => c.name === coach);
+    const cleanEmail =
+      contactEmail.trim() ||
+      `${cleanName.toLowerCase().replace(/\s+/g, '.')}@nhpp-sports.org`;
+
+    const customDocs: Athlete['documents'] = [
+      {
+        id: `doc-id-${Date.now()}`,
+        name: `Identity Document — ${filePrefix}_Passport_Verified.pdf`,
+        category: 'Identity',
+        status: docsUploaded.identity ? 'Verified' : 'Pending Review',
+        uploadedBy: 'Federation Admin',
+        lastUpdated: 'Today',
+        expiry: '18 Apr 2032',
+        fileSize: '1.8 MB PDF',
+        notes: `National ID & Passport verified for ${cleanName}`,
+      },
+      {
+        id: `doc-ins-${Date.now() + 1}`,
+        name: `National Athlete Medical Insurance — ${filePrefix}.pdf`,
+        category: 'Insurance',
+        status: docsUploaded.insurance ? 'Verified' : 'Pending Review',
+        uploadedBy: 'Operations Team',
+        lastUpdated: 'Today',
+        expiry: '31 Mar 2027',
+        fileSize: '1.2 MB PDF',
+        notes: 'Federation comprehensive sports injury coverage',
+      },
+      {
+        id: `doc-agr-${Date.now() + 2}`,
+        name: `NHPP Code of Conduct & Anti-Doping — ${filePrefix}.pdf`,
+        category: 'Contracts',
+        status: docsUploaded.agreement ? 'Verified' : 'Pending Review',
+        uploadedBy: cleanName,
+        lastUpdated: 'Today',
+        expiry: '30 Sep 2027',
+        fileSize: '940 KB PDF',
+        notes: 'Signed athlete agreement and WADA compliance pledge',
+      },
+      {
+        id: `doc-med-${Date.now() + 3}`,
+        name: `Pre-Competition Cardiac & MSK Screening — ${filePrefix}.pdf`,
+        category: 'Medical',
+        status: medicalStatus === 'Cleared' ? 'Verified' : 'Pending Review',
+        uploadedBy: 'Dr. S. Patel',
+        lastUpdated: 'Today',
+        expiry: '28 Sep 2027',
+        fileSize: '2.1 MB PDF',
+        notes: medicalNotes,
+      },
+    ];
 
     const newAthlete: Athlete = {
       id: `ath-${Date.now()}`,
       athleteId: athleteId || 'ATH-1194',
-      name: fullName.trim() || 'New Federation Athlete',
+      name: cleanName,
       code: athleteId || 'ATH-1194',
       dob,
       gender,
       nationality,
-      email: contactEmail,
+      email: cleanEmail,
       phone: contactPhone,
-      emergencyContact: 'Verified Next-of-Kin (+91 98200 00001)',
+      emergencyContact: `Verified Next-of-Kin (${contactPhone})`,
       sport,
       discipline,
       program,
       squad,
       subSquad: squad,
       position,
-      jerseyNumber: 18,
-      age: 23,
-      heightCm: 180,
-      weightKg: 74.5,
+      jerseyNumber: Number(jerseyNumber) || 18,
+      age: computedAge,
+      heightCm: Number(heightCm) || 180,
+      weightKg: Number(weightKg) || 74.5,
       coach,
-      coachRole: 'Primary Coach',
-      readiness: 82,
+      coachRole: selectedCoachObj?.role || 'Primary Coach',
+      readiness: Number(initialReadiness) || 84,
       readinessDelta: +2,
-      injuryRisk: 'Low',
-      trainingLoad: 'Normal',
-      trainingLoadPct: 72,
+      injuryRisk: medicalStatus === 'Restricted' ? 'Moderate' : 'Low',
+      trainingLoad: medicalStatus === 'Restricted' ? 'Moderate' : 'Normal',
+      trainingLoadPct: 76,
       acuteLoadAu: 540,
-      chronicLoadAu: 520,
-      acwr: 1.04,
-      recovery: 84,
-      hrvMs: 70,
-      hrvBaselineMs: 68,
-      sleepHours: 7.8,
-      sleepFormatted: '7h 48m',
-      wellnessScore: 8.1,
-      sorenessScore: 2,
-      status: 'Ready',
-      trainingStatus: medicalStatus === 'Cleared' ? 'ACTIVE' : 'PENDING',
+      chronicLoadAu: 525,
+      acwr: 1.03,
+      recovery: Math.min(98, (Number(initialReadiness) || 84) + 2),
+      hrvMs: 71,
+      hrvBaselineMs: 69,
+      sleepHours: 7.9,
+      sleepFormatted: '7h 54m',
+      wellnessScore: 8.2,
+      sorenessScore: medicalStatus === 'Restricted' ? 4 : 2,
+      status:
+        medicalStatus === 'Restricted'
+          ? 'Restricted'
+          : Number(initialReadiness) < 70
+            ? 'Attention'
+            : Number(initialReadiness) < 80
+              ? 'Monitor'
+              : 'Ready',
+      trainingStatus:
+        medicalStatus === 'Restricted'
+          ? 'RESTRICTED'
+          : medicalStatus === 'Cleared'
+            ? 'ACTIVE'
+            : 'PENDING',
       verificationStatus: allDocsDone ? 'Verified' : 'Pending',
       medicalStatus,
-      profileCompletion: medicalStatus === 'Cleared' ? 100 : 92,
+      profileCompletion:
+        allDocsDone && medicalStatus === 'Cleared'
+          ? 100
+          : allDocsDone || medicalStatus === 'Cleared'
+            ? 92
+            : 84,
       profileCompletionBreakdown: {
         basicInfo: true,
         sportInfo: true,
@@ -146,42 +251,72 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
         emergencyContact: true,
       },
       lastUpdated: 'Just now',
-      riskSignals: ['Initial onboarding physiological baseline recorded'],
-      previousInjuryHistory: 'No prior injuries recorded at enrollment',
+      riskSignals: [
+        `Enrolled in ${sport} · ${squad} (${position})`,
+        `Initial readiness ${initialReadiness}/100 · Medical clearance: ${medicalStatus}`,
+      ],
+      previousInjuryHistory:
+        medicalNotes || 'No prior injuries recorded at enrollment',
       nutritionCompliancePct: 92,
       hydrationStatus: 'Optimal',
-      readinessHistory14d: [80, 80, 81, 81, 82, 81, 82, 82, 83, 82, 81, 82, 82, 82],
-      loadHistory14d: [480, 500, 0, 510, 520, 530, 300, 510, 520, 530, 540, 530, 535, 540],
-      aiSummary: `${fullName || 'Athlete'} was enrolled into ${squad} (${program}). Initial readiness baseline is 82/100; medical clearance is currently ${medicalStatus}.`,
-      keySignals: buildGenericSignals('7h 48m', 70, 540, 8.1),
-      performanceScore: 81,
-      aiPerformanceInsight:
-        'Initial onboarding testing battery complete; acceleration and CMJ metrics meet Senior Squad entry standards.',
-      performanceMetrics: buildDefaultPerformanceMetrics('4.25s', '48 cm', '19.5', '90%'),
-      documents: ARJUN_DOCUMENTS.slice(0, 4),
+      readinessHistory14d: Array.from({ length: 14 }, (_, i) =>
+        Math.max(55, Math.min(99, (Number(initialReadiness) || 84) - 2 + (i % 4)))
+      ),
+      loadHistory14d: [
+        480, 510, 0, 520, 535, 540, 310, 515, 525, 530, 545, 530, 535, 540,
+      ],
+      aiSummary: `${cleanName} (${athleteId}) is enrolled in ${sport} · ${squad} (${program}) as a ${position} under Coach ${coach}. Initial readiness is ${initialReadiness}/100 and medical clearance is ${medicalStatus}.`,
+      keySignals: buildGenericSignals('7h 54m', 71, 540, 8.2),
+      performanceScore: 84,
+      aiPerformanceInsight: `${cleanName} completed initial ${sport} onboarding testing for ${squad}; baseline speed, power, and conditioning metrics are recorded.`,
+      performanceMetrics: buildDefaultPerformanceMetrics(
+        '4.22s',
+        '48.5 cm',
+        '19.4',
+        '92%'
+      ),
+      documents: customDocs,
       timeline: [
         {
           id: `tl-onb-${Date.now()}`,
-          date: '28 Sep',
+          date: 'Today',
           time: 'Just now',
-          title: 'Athlete profile enrolled in USI',
-          description: `Assigned to ${squad} under Coach ${coach}`,
+          title: `Athlete profile enrolled: ${cleanName}`,
+          description: `${sport} · ${position} · Assigned to ${squad} under Coach ${coach}`,
           category: 'Administrative',
           actor: 'Performance Director',
-          detailNotes: `Completed 6-step federation onboarding workflow with ID ${athleteId}.`,
+          detailNotes: `Completed 6-step federation onboarding workflow with ID ${athleteId}. Medical status: ${medicalStatus}. Note: ${medicalNotes}`,
         },
-        ...ARJUN_TIMELINE.slice(2, 4),
+        {
+          id: `tl-med-${Date.now() + 1}`,
+          date: 'Today',
+          time: 'Just now',
+          title: `Initial medical intake (${medicalStatus})`,
+          description: medicalNotes,
+          category: 'Medical',
+          actor: 'Dr. S. Patel',
+          detailNotes: `Initial onboarding medical status set to ${medicalStatus}.`,
+        },
       ],
       auditTrail: [
         {
           id: `aud-onb-${Date.now()}`,
           timestamp: 'Today · Just now',
           role: 'Performance Director',
-          action: `Created athlete profile (${athleteId}) via Onboarding Workflow`,
+          action: `Created athlete profile for ${cleanName} (${athleteId}) in ${sport} · ${squad}`,
         },
-        ...ARJUN_AUDIT_TRAIL,
       ],
-      recentSessions: [],
+      recentSessions: [
+        {
+          sessionId: `sess-init-${Date.now()}`,
+          title: `${sport} ${squad} Onboarding Baseline Session`,
+          date: 'Today',
+          rpe: 6,
+          loadAu: 540,
+          highSpeedMeters: 420,
+          compliance: 'Completed',
+        },
+      ],
       medicalNote: medicalNotes,
     };
 
@@ -323,7 +458,7 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-slate-400 mb-1">
-                    Contact Information (Email / Phone)
+                    Contact Email
                   </label>
                   <input
                     type="text"
@@ -331,6 +466,42 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
                     onChange={(e) => setContactEmail(e.target.value)}
                     className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
                   />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    Contact Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 mb-1">
+                      Height (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={heightCm}
+                      onChange={(e) => setHeightCm(Number(e.target.value))}
+                      className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">
+                      Weight (kg)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={weightKg}
+                      onChange={(e) => setWeightKg(Number(e.target.value))}
+                      className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -347,7 +518,7 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
                   <label className="block text-slate-400 mb-1">Sport</label>
                   <select
                     value={sport}
-                    onChange={(e) => setSport(e.target.value)}
+                    onChange={(e) => handleSportChange(e.target.value)}
                     className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
                   >
                     <option value="Football">Football</option>
@@ -371,10 +542,13 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
                     onChange={(e) => setPosition(e.target.value)}
                     className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
                   >
-                    <option value="Forward">Forward</option>
-                    <option value="Midfielder">Midfielder</option>
-                    <option value="Defender">Defender</option>
-                    <option value="Goalkeeper">Goalkeeper</option>
+                    {(SPORT_POSITIONS[sport]?.positions || SPORT_POSITIONS.Football.positions).map(
+                      (pos) => (
+                        <option key={pos} value={pos}>
+                          {pos}
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
                 <div>
@@ -414,6 +588,30 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    Jersey / Bib Number
+                  </label>
+                  <input
+                    type="number"
+                    value={jerseyNumber}
+                    onChange={(e) => setJerseyNumber(Number(e.target.value))}
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    Initial Readiness Baseline (0–100)
+                  </label>
+                  <input
+                    type="number"
+                    min={40}
+                    max={100}
+                    value={initialReadiness}
+                    onChange={(e) => setInitialReadiness(Number(e.target.value))}
+                    className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 font-mono text-sky-400"
+                  />
                 </div>
               </div>
             </div>

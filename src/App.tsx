@@ -182,6 +182,7 @@ export default function App() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('Performance Director');
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isSidebarCompact, setIsSidebarCompact] = useState(false);
 
   // Iteration 5: AI Copilot & AI-Native Operations Shared State
   const [aiMessages, setAiMessages] = useState<AICopilotMessage[]>(
@@ -484,6 +485,89 @@ export default function App() {
 
   const handleSubmitNewInjury = (newInjury: Injury) => {
     setInjuries((prev) => [newInjury, ...prev]);
+    const newRehabPlan: RehabPlanRecord = {
+      id: `rehab-${Date.now()}`,
+      injuryId: newInjury.id,
+      athleteId: newInjury.athleteId,
+      athleteName: newInjury.athleteName,
+      title: `${newInjury.diagnosis} (${newInjury.bodyRegionDisplay}) — 5-Stage RTP Protocol`,
+      currentStage: newInjury.rtpStage,
+      totalStages: 5,
+      progressPct: newInjury.rehabProgressPct,
+      trackStatus: 'On Track',
+      currentFocus: 'Acute pain modulation & isometric tissue loading',
+      nextMilestone: 'Pain ≤ 2/10 & bilateral isometric symmetry ≥ 85%',
+      targetDate: newInjury.estimatedRtpDate,
+      stages: [
+        {
+          stageNumber: 1,
+          title: 'Pain Reduction & Acute Management',
+          status: 'Current',
+          objectives: ['Control acute inflammation', 'Pain-free isometric activation'],
+          exercises: ['Isometric Hold 5x45s', 'Cryotherapy & Compression'],
+          tests: ['VAS Pain ≤ 3/10', 'Range of Motion Screen'],
+          completionCriteria: ['Zero rest pain', 'Cleared for Stage 2 loading'],
+          assignedProfessional: newInjury.leadClinician,
+        },
+        {
+          stageNumber: 2,
+          title: 'Strength & Neuromuscular Restoration',
+          status: 'Pending',
+          objectives: ['Restore eccentric strength', 'Lumbopelvic control'],
+          exercises: ['Eccentric RDL', 'Single-Leg Bridge Progression'],
+          tests: ['Handheld Dynamometry ≥ 85%'],
+          completionCriteria: ['Pain-free eccentric loading'],
+          assignedProfessional: newInjury.leadClinician,
+        },
+        {
+          stageNumber: 3,
+          title: 'Sport-Specific Conditioning',
+          status: 'Pending',
+          objectives: ['Progressive linear running', 'Sub-maximal acceleration'],
+          exercises: ['Nordic Hamstring Protocol', ' Tempo Runs (70% Vmax)'],
+          tests: ['Isokinetic Symmetry ≥ 90%', 'GPS Linear Run Tolerance'],
+          completionCriteria: ['Zero 24h post-load soreness'],
+          assignedProfessional: newInjury.leadClinician,
+        },
+        {
+          stageNumber: 4,
+          title: 'Full Squad Training Integration',
+          status: 'Pending',
+          objectives: ['High-speed running >85% Vmax', 'Multi-directional drills'],
+          exercises: ['Full Team Tactical Possession', 'Max Velocity Exposure'],
+          tests: ['Repeated Sprint Ability', 'CMJ Force-Plate Symmetry'],
+          completionCriteria: ['Full session completion without restriction'],
+          assignedProfessional: newInjury.leadClinician,
+        },
+        {
+          stageNumber: 5,
+          title: 'Return to Competition',
+          status: 'Pending',
+          objectives: ['Full match eligibility', 'Secondary injury prevention'],
+          exercises: ['Pre-Activation Maintenance', 'Match Minute Progression'],
+          tests: ['Chief Medical Officer Final Clearance'],
+          completionCriteria: ['All 5 RTP Gate Criteria Verified'],
+          assignedProfessional: newInjury.leadClinician,
+        },
+      ],
+      sessions: [
+        {
+          id: `rsess-init-${Date.now()}`,
+          injuryId: newInjury.id,
+          athleteId: newInjury.athleteId,
+          date: newInjury.onsetDate,
+          professional: newInjury.leadClinician,
+          focus: 'Initial Clinical Assessment & Acute Protection',
+          exercises: ['Baseline Isometric Screen', 'Acute Offloading'],
+          targetLoad: '120 AU (Low)',
+          painBefore: newInjury.painScore,
+          painAfter: Math.max(1, newInjury.painScore - 1),
+          notes: newInjury.initialAssessment,
+          status: 'Completed',
+        },
+      ],
+    };
+    setRehabPlans((prev) => [newRehabPlan, ...prev]);
     setMedicalAlerts((prev) => [
       {
         id: `ma-${Date.now()}`,
@@ -1256,6 +1340,8 @@ export default function App() {
           viewportMode={viewportMode}
           isMobileDrawerOpen={isMobileDrawerOpen}
           onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
+          isCompact={isSidebarCompact}
+          onToggleCompact={setIsSidebarCompact}
         />
 
         {/* Main Content Area */}
@@ -1276,6 +1362,7 @@ export default function App() {
             pendingAIActionsCount={pendingAIActionsCount}
             onResetDemoState={handleResetDemoState}
             viewportMode={viewportMode}
+            isSidebarOpen={!isSidebarCompact}
             onChangeViewportMode={(mode) => {
               setViewportMode(mode);
               setIsMobileDrawerOpen(false);
@@ -1569,6 +1656,51 @@ export default function App() {
                   )
                 );
               }}
+              onUpdateBodyComposition={(
+                athleteId,
+                weightKg,
+                bodyFatPct,
+                leanMassKg,
+                statusLabel
+              ) => {
+                const targetAth =
+                  athletes.find((a) => a.id === athleteId) || athletes[0];
+                const hM = (targetAth.heightCm || 178) / 100;
+                const nextBmi = Number((weightKg / (hM * hM)).toFixed(1));
+                setBodyComposition((prev) => ({
+                  athleteId: targetAth.id,
+                  athleteName: targetAth.name,
+                  weightKg,
+                  bodyFatPct,
+                  leanMassKg,
+                  bmi: nextBmi,
+                  statusLabel,
+                  aiObservation: `${targetAth.name}'s updated DEXA & anthropometric scan (${weightKg} kg, ${bodyFatPct}% BF, ${leanMassKg} kg lean mass) is classified as ${statusLabel}.`,
+                  history8w: [
+                    ...prev.history8w.slice(1),
+                    {
+                      week: 'Now',
+                      weightKg,
+                      bodyFatPct,
+                      leanMassKg,
+                      bmi: nextBmi,
+                    },
+                  ],
+                }));
+                setNutritionPlans((prev) =>
+                  prev.map((p) =>
+                    p.athleteId === athleteId
+                      ? { ...p, bodyCompStatus: statusLabel }
+                      : p
+                  )
+                );
+                updateAthleteWithAudit(
+                  athleteId,
+                  { weightKg },
+                  `Logged Body Composition Scan: ${weightKg}kg · ${bodyFatPct}% BF · ${leanMassKg}kg Lean Mass (${statusLabel})`,
+                  `Updated body composition for ${targetAth.name} (${weightKg} kg · ${bodyFatPct}% BF) ✓`
+                );
+              }}
               onOpenAthlete360={(athleteId) => {
                 setActiveAthlete360Id(athleteId);
                 setActiveNav('athlete-360');
@@ -1594,14 +1726,108 @@ export default function App() {
                 setAssessmentPrograms((prev) => [prog, ...prev]);
               }}
               onSaveTestResult={(res) => {
-                setTestResults((prev) =>
-                  prev.map((r) => (r.id === res.id ? res : r))
-                );
-                updateAthleteWithAudit(
-                  res.athleteId,
-                  {},
-                  `Validated Assessment Result: ${res.testName} (${res.currentResult} ${res.unit})`
-                );
+                setTestResults((prev) => {
+                  const exists = prev.some((r) => r.id === res.id);
+                  if (exists) {
+                    return prev.map((r) => (r.id === res.id ? res : r));
+                  }
+                  return [res, ...prev];
+                });
+                const targetAth = athletes.find((a) => a.id === res.athleteId);
+                if (targetAth) {
+                  const nextPm = { ...targetAth.performanceMetrics };
+                  const formattedVal =
+                    res.unit === 'sec'
+                      ? `${res.currentResult}s`
+                      : `${res.currentResult} ${res.unit}`;
+                  const lowerName = res.testName.toLowerCase();
+                  if (lowerName.includes('30m') || lowerName.includes('sprint')) {
+                    nextPm.sprint30m = {
+                      ...nextPm.sprint30m,
+                      current: formattedVal,
+                      personalBest: `${res.personalBest}s`,
+                      cycles: [
+                        ...nextPm.sprint30m.cycles.slice(1),
+                        {
+                          cycle: 'Sep',
+                          value: res.currentResult,
+                          squadAvg: res.squadAverage,
+                          benchmark: res.programBenchmark,
+                        },
+                      ],
+                    };
+                  } else if (
+                    lowerName.includes('jump') ||
+                    lowerName.includes('cmj')
+                  ) {
+                    nextPm.cmj = {
+                      ...nextPm.cmj,
+                      current: `${res.currentResult} cm`,
+                      personalBest: `${res.personalBest} cm`,
+                      cycles: [
+                        ...nextPm.cmj.cycles.slice(1),
+                        {
+                          cycle: 'Sep',
+                          value: res.currentResult,
+                          squadAvg: res.squadAverage,
+                          benchmark: res.programBenchmark,
+                        },
+                      ],
+                    };
+                  } else if (
+                    lowerName.includes('yo-yo') ||
+                    lowerName.includes('vo2') ||
+                    lowerName.includes('endurance')
+                  ) {
+                    nextPm.yoYo = {
+                      ...nextPm.yoYo,
+                      current: `${res.currentResult}`,
+                      personalBest: `${res.personalBest}`,
+                      cycles: [
+                        ...nextPm.yoYo.cycles.slice(1),
+                        {
+                          cycle: 'Sep',
+                          value: res.currentResult,
+                          squadAvg: res.squadAverage,
+                          benchmark: res.programBenchmark,
+                        },
+                      ],
+                    };
+                  } else {
+                    nextPm.strength = {
+                      ...nextPm.strength,
+                      current: formattedVal,
+                      personalBest: `${res.personalBest} ${res.unit}`,
+                      cycles: [
+                        ...nextPm.strength.cycles.slice(1),
+                        {
+                          cycle: 'Sep',
+                          value: res.currentResult,
+                          squadAvg: res.squadAverage,
+                          benchmark: res.programBenchmark,
+                        },
+                      ],
+                    };
+                  }
+                  updateAthleteWithAudit(
+                    res.athleteId,
+                    {
+                      performanceMetrics: nextPm,
+                      performanceScore: Math.min(
+                        99,
+                        targetAth.performanceScore + 1
+                      ),
+                    },
+                    `Validated Assessment Result: ${res.testName} (${res.currentResult} ${res.unit})`,
+                    undefined,
+                    {
+                      title: `Assessment validated: ${res.testName}`,
+                      description: `Result: ${res.currentResult} ${res.unit} (Benchmark: ${res.programBenchmark} ${res.unit})`,
+                      category: 'Assessment',
+                      detailNotes: `Validated field test result for ${res.testName}: ${res.currentResult} ${res.unit}.`,
+                    }
+                  );
+                }
               }}
               onOpenAthlete360={(athleteId) => {
                 setActiveAthlete360Id(athleteId);
@@ -1941,8 +2167,150 @@ export default function App() {
         onClose={() => setIsOnboardingOpen(false)}
         onCreateAthlete={(newAth) => {
           setAthletes((prev) => [newAth, ...prev]);
+          setActiveAthlete360Id(newAth.id);
+          // Seed contextual Nutrition Plan, Hydration Logs, Supplements, and Assessment Results for the newly created athlete
+          const targetCal = Math.round((newAth.weightKg || 74) * 38);
+          const targetProt = Math.round((newAth.weightKg || 74) * 2.2);
+          const targetCarb = Math.round((newAth.weightKg || 74) * 5.0);
+          const targetFat = Math.round((newAth.weightKg || 74) * 1.1);
+          const seededPlan: NutritionPlan = {
+            id: `nplan-${newAth.id}`,
+            athleteId: newAth.id,
+            athleteName: newAth.name,
+            sport: newAth.sport,
+            squad: newAth.squad.includes('U23') ? 'U23' : 'Senior Squad',
+            planName: `${newAth.sport} Performance & Recovery Plan`,
+            goal: 'Performance + Recovery',
+            trainingPhase: 'Onboarding Baseline Block',
+            targetCalories: targetCal,
+            currentCalories: Math.round(targetCal * 0.92),
+            targetProteinG: targetProt,
+            currentProteinG: Math.round(targetProt * 0.94),
+            targetCarbsG: targetCarb,
+            currentCarbsG: Math.round(targetCarb * 0.91),
+            targetFatG: targetFat,
+            currentFatG: Math.round(targetFat * 0.93),
+            targetHydrationL: 3.5,
+            currentHydrationL: 3.1,
+            mealFrequency: 6,
+            startDate: 'Today',
+            endDate: '31 Oct 2026',
+            compliancePct: newAth.nutritionCompliancePct || 92,
+            hydrationCompliancePct: 89,
+            supplementCompliancePct: 96,
+            bodyCompStatus: 'Stable',
+            status: 'On Track',
+            compliance7d: INITIAL_NUTRITION_PLANS[0].compliance7d,
+            meals: INITIAL_NUTRITION_PLANS[0].meals.map((m, idx) => ({
+              ...m,
+              id: `meal-${newAth.id}-${idx}`,
+            })),
+          };
+          setNutritionPlans((prev) => [seededPlan, ...prev]);
+          setHydrationLogs((prev) => [
+            {
+              id: `hlog-${newAth.id}-1`,
+              athleteId: newAth.id,
+              time: '07:30',
+              amountMl: 750,
+              beverageType: 'Morning Electrolyte Solution',
+            },
+            {
+              id: `hlog-${newAth.id}-2`,
+              athleteId: newAth.id,
+              time: '11:15',
+              amountMl: 1200,
+              beverageType: 'Intra-Session Isotonic Drink',
+            },
+            {
+              id: `hlog-${newAth.id}-3`,
+              athleteId: newAth.id,
+              time: '15:30',
+              amountMl: 1150,
+              beverageType: 'Post-Training Recovery Water',
+            },
+            ...prev,
+          ]);
+          setSupplements((prev) => [
+            {
+              id: `supp-${newAth.id}-1`,
+              athleteId: newAth.id,
+              name: 'Whey Isolate Protein (Batch Tested)',
+              purpose: 'Recovery',
+              dosage: '30g post-session',
+              schedule: 'Within 20m post-training',
+              compliancePct: 96,
+              status: 'Active',
+            },
+            {
+              id: `supp-${newAth.id}-2`,
+              athleteId: newAth.id,
+              name: 'Electrolyte & Sodium Complex',
+              purpose: 'Hydration',
+              dosage: '1 sachet (750ml)',
+              schedule: 'Pre & Intra Pitch Session',
+              compliancePct: 94,
+              status: 'Active',
+            },
+            ...prev,
+          ]);
+          setTestResults((prev) => [
+            {
+              id: `tr-${newAth.id}-30m`,
+              testId: 'test-30m',
+              testName: '30m Sprint',
+              category: 'Speed',
+              unit: 'sec',
+              athleteId: newAth.id,
+              athleteName: newAth.name,
+              squad: newAth.squad.includes('U23') ? 'U23' : 'Senior Squad',
+              currentResult: 4.22,
+              previousResult: 4.27,
+              personalBest: 4.20,
+              squadAverage: 4.28,
+              programBenchmark: 4.25,
+              nationalBenchmark: 4.18,
+              lowerIsBetter: true,
+              improvementPct: 1.2,
+              progressionStatus: 'Improving',
+              cycleHistory: [
+                { cycle: 'May', value: 4.29, squadAvg: 4.3, benchmark: 4.25 },
+                { cycle: 'Jul', value: 4.27, squadAvg: 4.29, benchmark: 4.25 },
+                { cycle: 'Sep', value: 4.22, squadAvg: 4.28, benchmark: 4.25 },
+              ],
+              fieldStatus: 'Completed',
+              validated: true,
+            },
+            {
+              id: `tr-${newAth.id}-cmj`,
+              testId: 'test-cmj',
+              testName: 'Countermovement Jump',
+              category: 'Power',
+              unit: 'cm',
+              athleteId: newAth.id,
+              athleteName: newAth.name,
+              squad: newAth.squad.includes('U23') ? 'U23' : 'Senior Squad',
+              currentResult: 48.5,
+              previousResult: 47.0,
+              personalBest: 48.5,
+              squadAverage: 45.8,
+              programBenchmark: 46.0,
+              nationalBenchmark: 49.5,
+              lowerIsBetter: false,
+              improvementPct: 3.2,
+              progressionStatus: 'Improving',
+              cycleHistory: [
+                { cycle: 'May', value: 46.2, squadAvg: 45.5, benchmark: 46.0 },
+                { cycle: 'Jul', value: 47.0, squadAvg: 45.6, benchmark: 46.0 },
+                { cycle: 'Sep', value: 48.5, squadAvg: 45.8, benchmark: 46.0 },
+              ],
+              fieldStatus: 'Completed',
+              validated: true,
+            },
+            ...prev,
+          ]);
           triggerToast(
-            `Athlete Profile Created: ${newAth.name} (${newAth.athleteId})`
+            `Athlete Profile Created: ${newAth.name} (${newAth.athleteId}) — Synced across all modules ✓`
           );
         }}
         onViewCreatedAthlete={(ath) => handleOpenFullAthlete360(ath)}

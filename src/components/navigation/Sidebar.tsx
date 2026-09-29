@@ -31,6 +31,8 @@ interface SidebarProps {
   viewportMode?: ViewportMode;
   isMobileDrawerOpen?: boolean;
   onCloseMobileDrawer?: () => void;
+  isCompact?: boolean;
+  onToggleCompact?: (next: boolean) => void;
 }
 
 interface NavGroup {
@@ -56,6 +58,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   viewportMode = 'desktop',
   isMobileDrawerOpen = false,
   onCloseMobileDrawer,
+  isCompact: controlledIsCompact,
+  onToggleCompact,
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     athletes: false,
@@ -66,7 +70,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     'assessments-tid': false,
     'analytics-bi': false,
   });
-  const [isCompact, setIsCompact] = useState(false);
+  const [internalCompact, setInternalCompact] = useState(false);
+
+  const isCompact =
+    controlledIsCompact !== undefined ? controlledIsCompact : internalCompact;
+
+  const setIsCompact = (next: boolean) => {
+    setInternalCompact(next);
+    if (onToggleCompact) {
+      onToggleCompact(next);
+    }
+  };
 
   React.useEffect(() => {
     if (viewportMode === 'tablet') {

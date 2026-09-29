@@ -1,13 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  AlertTriangle,
   Bot,
   Check,
   CheckCircle2,
-  ShieldCheck,
-  Sparkles,
-  UserCheck,
-  UserPlus,
   X,
 } from 'lucide-react';
 import { Athlete, CoachProfile } from '../../types/usi';
@@ -39,6 +34,18 @@ export const CoachAssignmentModal: React.FC<CoachAssignmentModalProps> = ({
   const [assignmentRole, setAssignmentRole] = useState('Primary Coach');
   const [startDate, setStartDate] = useState('28 Sep 2026');
   const [assignedSuccess, setAssignedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (athlete) {
+      const currentMatch =
+        AVAILABLE_COACHES.find((c) => c.name === athlete.coach) ||
+        AVAILABLE_COACHES.find((c) => c.sport === athlete.sport) ||
+        AVAILABLE_COACHES[0];
+      setSelectedCoach(currentMatch);
+      setAssignmentRole(athlete.coachRole || 'Primary Coach');
+      setAssignedSuccess(false);
+    }
+  }, [athlete]);
 
   if (!athlete) return null;
 
@@ -204,6 +211,15 @@ export const AthleteApprovalModal: React.FC<AthleteApprovalModalProps> = ({
     'review'
   );
   const [reason, setReason] = useState('Missing proof of insurance.');
+
+  useEffect(() => {
+    if (athlete) {
+      setMode('review');
+      setReason(
+        athlete.verificationNotes || 'Missing proof of insurance.'
+      );
+    }
+  }, [athlete]);
 
   if (!athlete) return null;
 
@@ -442,20 +458,20 @@ export const AiAthleteAssistanceDrawer: React.FC<
 
           <div className="p-4 rounded-md bg-[#0B101B] border border-slate-800 space-y-2.5">
             <div className="font-bold text-slate-100 uppercase tracking-wide">
-              Primary Contributing Factors
+              Primary Contributing Factors ({athlete.name})
             </div>
             <ol className="space-y-2 text-slate-300 list-decimal list-inside">
               <li>
-                <strong>Recovery decline:</strong> Morning HRV rMSSD ({athlete.hrvMs} ms) is depressed -14% below rolling baseline.
+                <strong>Autonomic & HRV status:</strong> Morning HRV rMSSD ({athlete.hrvMs} ms vs {athlete.hrvBaselineMs} ms baseline) with {athlete.recovery}% recovery index.
               </li>
               <li>
-                <strong>Increased acute workload:</strong> Acute load ({athlete.acuteLoadAu} AU) spiked +22% over the last 72 hours.
+                <strong>Acute workload profile:</strong> Acute load ({athlete.acuteLoadAu} AU vs {athlete.chronicLoadAu} AU chronic, ACWR {athlete.acwr.toFixed(2)}).
               </li>
               <li>
-                <strong>Reduced sleep consistency:</strong> Averaging {athlete.sleepFormatted} over 3 nights (↓ 11%).
+                <strong>Sleep & subjective wellness:</strong> Averaging {athlete.sleepFormatted} sleep (Wellness {athlete.wellnessScore}/10, Soreness {athlete.sorenessScore}/10).
               </li>
               <li>
-                <strong>Recent hamstring complaint:</strong> Discomfort reported on 24 Sep (Pain 4/10) with prior injury history.
+                <strong>Clinical & clearance context:</strong> Medical clearance is <strong>{athlete.medicalStatus}</strong> — {athlete.medicalNote || 'Cleared for full squad operations.'}
               </li>
             </ol>
           </div>
@@ -466,7 +482,7 @@ export const AiAthleteAssistanceDrawer: React.FC<
                 READY-TO-SEND BRIEF FOR COACH {athlete.coach.toUpperCase()}
               </div>
               <p className="text-slate-200 leading-relaxed">
-                "{athlete.name} ({athlete.athleteId}) is cleared for tactical walk-through and low-impact technical drills today, but high-speed running (&gt;21 km/h) should be capped at 75% volume pending afternoon physio review."
+                "{athlete.name} ({athlete.athleteId} · {athlete.position}) is currently at Readiness {athlete.readiness}/100 ({athlete.trainingStatus}, Medical: {athlete.medicalStatus}). {athlete.readiness < 75 || athlete.medicalStatus !== 'Cleared' ? 'Recommend capping high-speed running at 75–85% volume and monitoring post-session soreness.' : 'Cleared for full tactical and physical training intensity today.'}"
               </p>
             </div>
           )}
@@ -476,7 +492,9 @@ export const AiAthleteAssistanceDrawer: React.FC<
               Suggested Operational Action
             </div>
             <p className="text-sm font-semibold text-slate-100">
-              "Review tomorrow's high-intensity training exposure."
+              {athlete.readiness < 75 || athlete.medicalStatus !== 'Cleared'
+                ? `"Review tomorrow's high-intensity training exposure for ${athlete.name}."`
+                : `"Maintain prescribed ${athlete.squad} training progression and post-session fueling for ${athlete.name}."`}
             </p>
             <p className="text-[11px] text-slate-400 pt-1">
               Note: AI insights synthesize telemetry signals to support human decision-makers and do not constitute a clinical diagnosis.
@@ -494,7 +512,7 @@ export const AiAthleteAssistanceDrawer: React.FC<
           <button
             onClick={() => {
               onApplySuggestedAction(
-                `Logged AI readiness review & capped tomorrow's high-intensity exposure for ${athlete.name}`
+                `Logged AI readiness review & operational directive for ${athlete.name}`
               );
               onClose();
             }}
@@ -521,14 +539,37 @@ interface EditAthleteProfileModalProps {
 export const EditAthleteProfileModal: React.FC<
   EditAthleteProfileModalProps
 > = ({ athlete, onClose, onSaveProfile }) => {
-  if (!athlete) return null;
-
-  const [position, setPosition] = useState(athlete.position);
-  const [squad, setSquad] = useState(athlete.squad);
-  const [emergencyContact, setEmergencyContact] = useState(
-    athlete.emergencyContact
+  const [name, setName] = useState(athlete?.name || '');
+  const [sport, setSport] = useState(athlete?.sport || 'Football');
+  const [position, setPosition] = useState(athlete?.position || 'Forward');
+  const [squad, setSquad] = useState(athlete?.squad || 'Senior Squad');
+  const [trainingStatus, setTrainingStatus] = useState<Athlete['trainingStatus']>(
+    athlete?.trainingStatus || 'ACTIVE'
   );
-  const [medicalStatus, setMedicalStatus] = useState(athlete.medicalStatus);
+  const [readiness, setReadiness] = useState<number>(athlete?.readiness || 80);
+  const [emergencyContact, setEmergencyContact] = useState(
+    athlete?.emergencyContact || ''
+  );
+  const [medicalStatus, setMedicalStatus] = useState<Athlete['medicalStatus']>(
+    athlete?.medicalStatus || 'Cleared'
+  );
+  const [medicalNote, setMedicalNote] = useState(athlete?.medicalNote || '');
+
+  useEffect(() => {
+    if (athlete) {
+      setName(athlete.name);
+      setSport(athlete.sport);
+      setPosition(athlete.position);
+      setSquad(athlete.squad);
+      setTrainingStatus(athlete.trainingStatus);
+      setReadiness(athlete.readiness);
+      setEmergencyContact(athlete.emergencyContact);
+      setMedicalStatus(athlete.medicalStatus);
+      setMedicalNote(athlete.medicalNote || '');
+    }
+  }, [athlete]);
+
+  if (!athlete) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -536,7 +577,7 @@ export const EditAthleteProfileModal: React.FC<
         onClick={onClose}
         className="fixed inset-0 bg-black/75 backdrop-blur-[1px]"
       />
-      <div className="relative w-full max-w-lg bg-[#0F1623] border border-slate-700 rounded-lg shadow-2xl overflow-hidden z-10">
+      <div className="relative w-full max-w-lg bg-[#0F1623] border border-slate-700 rounded-lg shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col">
         <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div>
             <div className="text-xs font-mono text-sky-400">
@@ -554,57 +595,123 @@ export const EditAthleteProfileModal: React.FC<
           </button>
         </div>
 
-        <div className="p-5 space-y-3.5 text-xs">
-          <div>
-            <label className="block text-slate-400 mb-1">Position</label>
-            <select
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-            >
-              <option value="Forward">Forward</option>
-              <option value="Midfielder">Midfielder</option>
-              <option value="Defender">Defender</option>
-              <option value="Goalkeeper">Goalkeeper</option>
-            </select>
-          </div>
+        <div className="p-5 space-y-3.5 text-xs overflow-y-auto flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-400 mb-1">Full Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              />
+            </div>
 
-          <div>
-            <label className="block text-slate-400 mb-1">Squad</label>
-            <select
-              value={squad}
-              onChange={(e) => setSquad(e.target.value)}
-              className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-            >
-              <option value="Senior Squad">Senior Squad</option>
-              <option value="U23">U23</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-slate-400 mb-1">Sport</label>
+              <select
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              >
+                <option value="Football">Football</option>
+                <option value="Athletics">Athletics</option>
+                <option value="Field Hockey">Field Hockey</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-slate-400 mb-1">Medical Clearance</label>
-            <select
-              value={medicalStatus}
-              onChange={(e) =>
-                setMedicalStatus(e.target.value as Athlete['medicalStatus'])
-              }
-              className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-            >
-              <option value="Cleared">Cleared</option>
-              <option value="Pending">Pending</option>
-              <option value="Restricted">Restricted</option>
-              <option value="Expired">Expired</option>
-            </select>
+            <div>
+              <label className="block text-slate-400 mb-1">Position / Event</label>
+              <input
+                type="text"
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">Squad</label>
+              <select
+                value={squad}
+                onChange={(e) => setSquad(e.target.value)}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              >
+                <option value="Senior Squad">Senior Squad</option>
+                <option value="U23">U23</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">Training Status</label>
+              <select
+                value={trainingStatus}
+                onChange={(e) =>
+                  setTrainingStatus(e.target.value as Athlete['trainingStatus'])
+                }
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="RESTRICTED">RESTRICTED</option>
+                <option value="INJURED">INJURED</option>
+                <option value="IN REHAB">IN REHAB</option>
+                <option value="RETURN TO PLAY">RETURN TO PLAY</option>
+                <option value="PENDING">PENDING</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">Medical Clearance</label>
+              <select
+                value={medicalStatus}
+                onChange={(e) =>
+                  setMedicalStatus(e.target.value as Athlete['medicalStatus'])
+                }
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              >
+                <option value="Cleared">Cleared</option>
+                <option value="Pending">Pending</option>
+                <option value="Restricted">Restricted</option>
+                <option value="Expired">Expired</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">
+                Readiness Score (0–100)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={readiness}
+                onChange={(e) => setReadiness(Number(e.target.value))}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 font-mono text-sky-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">
+                Emergency Contact
+              </label>
+              <input
+                type="text"
+                value={emergencyContact}
+                onChange={(e) => setEmergencyContact(e.target.value)}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-slate-400 mb-1">
-              Emergency Contact
+              Operational Medical / Readiness Note
             </label>
             <input
               type="text"
-              value={emergencyContact}
-              onChange={(e) => setEmergencyContact(e.target.value)}
+              value={medicalNote}
+              onChange={(e) => setMedicalNote(e.target.value)}
               className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
             />
           </div>
@@ -632,19 +739,38 @@ export const EditAthleteProfileModal: React.FC<
                 100,
                 Math.round((completedCount / 6) * 100)
               );
+              const clampedReadiness = Math.max(
+                1,
+                Math.min(100, Number(readiness) || athlete.readiness)
+              );
+              const nextStatus: Athlete['status'] =
+                medicalStatus === 'Restricted' || trainingStatus === 'RESTRICTED'
+                  ? 'Restricted'
+                  : clampedReadiness < 68 || trainingStatus === 'INJURED'
+                    ? 'Attention'
+                    : clampedReadiness < 80
+                      ? 'Monitor'
+                      : 'Ready';
 
               onSaveProfile(
                 athlete.id,
                 {
+                  name: name.trim() || athlete.name,
+                  sport,
                   position,
                   squad,
+                  trainingStatus,
                   medicalStatus,
+                  readiness: clampedReadiness,
+                  status: nextStatus,
                   emergencyContact,
+                  medicalNote,
+                  aiSummary: `${name.trim() || athlete.name} (${athlete.athleteId}) in ${sport} · ${squad} (${position}) is currently ${trainingStatus} with Readiness ${clampedReadiness}/100 and ${medicalStatus} medical clearance. ${medicalNote}`,
                   profileCompletionBreakdown: updatedBreakdown,
                   profileCompletion: newPct,
                   lastUpdated: 'Just now',
                 },
-                `Updated athlete profile & medical status (${newPct}% complete)`
+                `Updated athlete profile for ${name.trim() || athlete.name}: ${sport} · ${position} · ${squad} · Readiness ${clampedReadiness} · Medical ${medicalStatus} (${newPct}% complete)`
               );
               onClose();
             }}

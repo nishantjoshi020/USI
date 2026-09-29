@@ -124,14 +124,23 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
   const [showStaleSimulation, setShowStaleSimulation] = useState(false);
 
   const activeAthlete =
-    athletes.find((a) => a.id === activeAthleteId) || athletes[0];
+    athletes.find((a) => a.id === activeAthleteId) ||
+    athletes[0] || {
+      id: 'ath-arjun-mehta',
+      name: 'Arjun Mehta',
+      squad: 'Senior Squad',
+    };
 
-  const pendingActionsCount = actionItems.filter(
+  const pendingActionsCount = (actionItems || []).filter(
     (a) => a.status === 'Pending Review'
   ).length;
-  const activeRiskCount = riskSignals.filter(
+  const activeRiskCount = (riskSignals || []).filter(
     (r) => r.feedbackStatus !== 'Dismissed'
   ).length;
+  const activeRulesCount = (automationRules || []).filter(
+    (r) => r.enabled
+  ).length;
+
   const roleBehavior =
     AI_ROLE_BEHAVIOR_MATRIX[selectedRole] ||
     AI_ROLE_BEHAVIOR_MATRIX['Athlete'] || {

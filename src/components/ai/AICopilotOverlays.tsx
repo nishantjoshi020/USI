@@ -617,7 +617,7 @@ export const GlobalAICopilotSlideOver: React.FC<
               CURRENT CONTEXT
             </span>
             <span className="font-semibold text-slate-100">
-              {activeAthlete.name}
+              {activeAthlete?.name || 'Arjun Mehta'}
             </span>{' '}
             <span className="text-slate-400">
               · {context.sport} · {context.squad}

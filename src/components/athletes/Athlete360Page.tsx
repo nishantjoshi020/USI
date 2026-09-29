@@ -140,6 +140,39 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
   const [showAssessmentDetailModal, setShowAssessmentDetailModal] =
     useState(false);
 
+  // Interactive Modals for Athlete 360 Tabs (Documents, Training, Sports Science)
+  const [isUploadDocModalOpen, setIsUploadDocModalOpen] = useState(false);
+  const [newDocName, setNewDocName] = useState(
+    'Cardiac & Musculoskeletal Clearance Certificate'
+  );
+  const [newDocCategory, setNewDocCategory] =
+    useState<DocumentCategory>('Medical');
+  const [newDocStatus, setNewDocStatus] = useState<
+    'Verified' | 'Pending Review'
+  >('Verified');
+  const [newDocExpiry, setNewDocExpiry] = useState('30 Sep 2027');
+  const [newDocNotes, setNewDocNotes] = useState(
+    'Annual federation compliance verification'
+  );
+
+  const [isLogSessionModalOpen, setIsLogSessionModalOpen] = useState(false);
+  const [newSessTitle, setNewSessTitle] = useState(
+    'High-Intensity Tactical Conditioning'
+  );
+  const [newSessRpe, setNewSessRpe] = useState<number>(7);
+  const [newSessLoadAu, setNewSessLoadAu] = useState<number>(560);
+  const [newSessHsrMeters, setNewSessHsrMeters] = useState<number>(480);
+
+  const [isLogWellnessModalOpen, setIsLogWellnessModalOpen] = useState(false);
+  const [checkinHrv, setCheckinHrv] = useState<number>(athlete.hrvMs);
+  const [checkinSleep, setCheckinSleep] = useState<number>(athlete.sleepHours);
+  const [checkinWellness, setCheckinWellness] = useState<number>(
+    athlete.wellnessScore
+  );
+  const [checkinSoreness, setCheckinSoreness] = useState<number>(
+    athlete.sorenessScore
+  );
+
   const getTabsForRole = (role: UserRole): Athlete360TabId[] => {
     switch (role) {
       case 'Athlete':
@@ -1069,25 +1102,14 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
 
             <button
               onClick={() => {
-                const newDoc: AthleteDocument = {
-                  id: `doc-${Date.now()}`,
-                  name: 'Supplemental ECG & Blood Panel Clearance',
-                  category: 'Medical',
-                  status: 'Verified',
-                  expiry: '28 Sep 2027',
-                  uploadedBy: 'Performance Director',
-                  lastUpdated: 'Today',
-                  fileSize: '1.6 MB PDF',
-                };
-                onUpdateAthlete(
-                  athlete.id,
-                  {
-                    documents: [newDoc, ...athlete.documents],
-                    lastUpdated: 'Just now',
-                  },
-                  'Uploaded new Medical Clearance document',
-                  'Uploaded and verified new athlete document'
+                setNewDocName(
+                  `${athlete.name} — Supplemental Medical & Compliance Clearance`
                 );
+                setNewDocCategory('Medical');
+                setNewDocStatus('Verified');
+                setNewDocExpiry('28 Sep 2027');
+                setNewDocNotes(`Uploaded for ${athlete.name} (${athlete.athleteId})`);
+                setIsUploadDocModalOpen(true);
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
             >
@@ -1203,7 +1225,25 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
           </div>
 
           {activeTab === 'Training' && (
-            <div className="space-y-4 text-xs">
+            <div className="space-y-5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-slate-400 leading-relaxed">
+                  Individual microcycle periodisation, prescribed pitch/gym sessions, velocity-based strength progression, and sRPE workload caps for <strong>{athlete.name}</strong>.
+                </p>
+                <button
+                  onClick={() => {
+                    setNewSessTitle(`${athlete.sport} ${athlete.squad} Tactical & Speed Session`);
+                    setNewSessRpe(7);
+                    setNewSessLoadAu(athlete.acuteLoadAu || 540);
+                    setNewSessHsrMeters(460);
+                    setIsLogSessionModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs shrink-0"
+                >
+                  + Log Training Session
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
                   <span className="text-slate-400 block">Current Training Status</span>
@@ -1224,9 +1264,78 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                   </span>
                 </div>
               </div>
-              <p className="text-slate-400 leading-relaxed">
-                This module connects {athlete.name}'s individual microcycle periodisation, prescribed pitch/gym sessions, velocity-based strength progression, and sRPE workload caps.
-              </p>
+
+              {/* 14-Day Training Load Trend & Recent Sessions */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-6 p-4 rounded bg-[#0B101B] border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-200 uppercase">
+                      14-Day Daily Workload Exposure (AU)
+                    </span>
+                    <span className="font-mono text-[11px] text-amber-300">
+                      Load Ratio: {athlete.trainingLoadPct}%
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-14 gap-1.5 items-end h-28 pt-4">
+                    {athlete.loadHistory14d.map((val, idx) => {
+                      const pct = Math.min(100, Math.max(8, Math.round((val / 800) * 100)));
+                      return (
+                        <div key={idx} className="flex flex-col items-center gap-1 h-full justify-end">
+                          <span className="text-[9px] font-mono text-slate-400">
+                            {val > 0 ? val : 'R'}
+                          </span>
+                          <div
+                            style={{ height: `${pct}%` }}
+                            className={`w-full rounded-t ${
+                              val > 650
+                                ? 'bg-amber-400'
+                                : val === 0
+                                  ? 'bg-slate-800'
+                                  : 'bg-sky-500'
+                            }`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-6 p-4 rounded bg-[#0B101B] border border-slate-800 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-200 uppercase">
+                      Logged Athlete Sessions ({athlete.recentSessions.length})
+                    </span>
+                    {onNavigateModule && (
+                      <button
+                        onClick={() => onNavigateModule('sessions')}
+                        className="text-[11px] text-sky-400 hover:underline font-medium"
+                      >
+                        Squad Schedule →
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    {athlete.recentSessions.map((sess) => (
+                      <div
+                        key={sess.sessionId}
+                        className="p-2.5 rounded bg-[#0F1623] border border-slate-800 flex items-center justify-between gap-2"
+                      >
+                        <div>
+                          <div className="font-semibold text-slate-100">
+                            {sess.title}
+                          </div>
+                          <div className="font-mono text-[11px] text-slate-400">
+                            sRPE {sess.rpe}/10 · High-Speed Running: {sess.highSpeedMeters}m
+                          </div>
+                        </div>
+                        <span className="font-mono font-bold text-sky-400 shrink-0">
+                          {sess.loadAu} AU
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1421,24 +1530,84 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
           )}
 
           {activeTab === 'Sports Science' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
-                <span className="text-slate-400 block">Morning HRV (rMSSD)</span>
-                <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
-                  {athlete.hrvMs} ms (Baseline {athlete.hrvBaselineMs} ms)
-                </span>
+            <div className="space-y-4 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-slate-400">
+                  Autonomic heart rate variability (rMSSD), sleep architecture, subjective wellness, and 14-day readiness trajectory for <strong>{athlete.name}</strong>.
+                </p>
+                <button
+                  onClick={() => {
+                    setCheckinHrv(athlete.hrvMs);
+                    setCheckinSleep(athlete.sleepHours);
+                    setCheckinWellness(athlete.wellnessScore);
+                    setCheckinSoreness(athlete.sorenessScore);
+                    setIsLogWellnessModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+                >
+                  + Log Wellness & HRV Check-In
+                </button>
               </div>
-              <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
-                <span className="text-slate-400 block">Sleep Consistency</span>
-                <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
-                  {athlete.sleepFormatted}
-                </span>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Morning HRV (rMSSD)</span>
+                  <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
+                    {athlete.hrvMs} ms (Baseline {athlete.hrvBaselineMs} ms)
+                  </span>
+                </div>
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Sleep Consistency</span>
+                  <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
+                    {athlete.sleepFormatted}
+                  </span>
+                </div>
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Subjective Wellness</span>
+                  <span className="text-lg font-mono font-bold text-emerald-400 mt-1 block">
+                    {athlete.wellnessScore} / 10
+                  </span>
+                </div>
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Muscle Soreness</span>
+                  <span className="text-lg font-mono font-bold text-amber-300 mt-1 block">
+                    {athlete.sorenessScore} / 10
+                  </span>
+                </div>
               </div>
-              <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
-                <span className="text-slate-400 block">Subjective Wellness</span>
-                <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
-                  {athlete.wellnessScore} / 10
-                </span>
+
+              {/* 14-Day Readiness Trend */}
+              <div className="p-4 rounded bg-[#0B101B] border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200 uppercase">
+                    14-Day Readiness Score Trajectory (0–100)
+                  </span>
+                  <span className="font-mono text-emerald-400 font-bold">
+                    Current: {athlete.readiness} / 100
+                  </span>
+                </div>
+                <div className="grid grid-cols-14 gap-1.5 items-end h-24 pt-3">
+                  {athlete.readinessHistory14d.map((rVal, idx) => (
+                    <div
+                      key={idx}
+                      className="flex flex-col items-center gap-1 h-full justify-end"
+                    >
+                      <span className="text-[9px] font-mono text-slate-300">
+                        {rVal}
+                      </span>
+                      <div
+                        style={{ height: `${rVal}%` }}
+                        className={`w-full rounded-t ${
+                          rVal >= 80
+                            ? 'bg-emerald-500'
+                            : rVal >= 65
+                              ? 'bg-amber-400'
+                              : 'bg-rose-500'
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -1446,9 +1615,17 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
           {activeTab === 'Nutrition' && (
             <div className="space-y-4 text-xs">
               {(() => {
-                const plan =
-                  nutritionPlans.find((p) => p.athleteId === athlete.id) ||
-                  nutritionPlans[0];
+                const plan = nutritionPlans.find(
+                  (p) => p.athleteId === athlete.id
+                );
+                const athSupps = supplements.filter(
+                  (s) => s.athleteId === athlete.id
+                );
+                const activeSuppCount =
+                  athSupps.length > 0 ? athSupps.length : supplements.length;
+                const matchesBodyComp =
+                  bodyComposition && bodyComposition.athleteId === athlete.id;
+
                 return (
                   <>
                     <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
@@ -1457,7 +1634,9 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                           Nutrition Plan
                         </span>
                         <strong className="text-sky-300 font-bold mt-1 block">
-                          {plan ? `${plan.planName} (${plan.goal})` : 'Performance Plan'}
+                          {plan
+                            ? `${plan.planName} (${plan.goal})`
+                            : `${athlete.sport} Fueling Plan`}
                         </strong>
                       </div>
                       <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800">
@@ -1467,7 +1646,7 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                         <strong className="font-mono text-slate-100 mt-1 block">
                           {plan
                             ? `${plan.targetCalories} kcal · ${plan.targetProteinG}g P`
-                            : '2,850 kcal · 165g P'}
+                            : `${Math.round(athlete.weightKg * 38)} kcal · ${Math.round(athlete.weightKg * 2.2)}g P`}
                         </strong>
                       </div>
                       <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800">
@@ -1475,7 +1654,9 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                           Compliance
                         </span>
                         <strong className="font-mono text-emerald-400 text-sm mt-1 block">
-                          {plan ? `${plan.compliancePct}%` : `${athlete.nutritionCompliancePct}%`}
+                          {plan
+                            ? `${plan.compliancePct}%`
+                            : `${athlete.nutritionCompliancePct}%`}
                         </strong>
                       </div>
                       <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800">
@@ -1485,7 +1666,7 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                         <strong className="font-mono text-amber-300 text-sm mt-1 block">
                           {plan
                             ? `${plan.currentHydrationL}L / ${plan.targetHydrationL}L (${plan.hydrationCompliancePct}%)`
-                            : '2.8L / 3.5L (74%)'}
+                            : `3.1L / 3.5L (${athlete.hydrationStatus})`}
                         </strong>
                       </div>
                       <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800">
@@ -1493,7 +1674,7 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                           Supplements
                         </span>
                         <strong className="font-mono text-emerald-300 mt-1 block">
-                          {plan ? `${plan.supplementCompliancePct}%` : '96%'} ({supplements.length} Active)
+                          {plan ? `${plan.supplementCompliancePct}%` : '95%'} ({activeSuppCount} Active)
                         </strong>
                       </div>
                       <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800">
@@ -1501,9 +1682,9 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                           Body Composition
                         </span>
                         <strong className="font-mono text-slate-100 mt-1 block">
-                          {bodyComposition
+                          {matchesBodyComp && bodyComposition
                             ? `${bodyComposition.weightKg}kg · ${bodyComposition.bodyFatPct}% BF (${bodyComposition.statusLabel})`
-                            : `${athlete.weightKg}kg · Stable`}
+                            : `${athlete.weightKg}kg · ${athlete.heightCm}cm (Stable)`}
                         </strong>
                       </div>
                     </div>
@@ -1526,30 +1707,74 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
 
           {activeTab === 'Assessments' && (
             <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {testResults
-                  .filter((r) => r.athleteId === athlete.id)
-                  .map((res) => (
-                    <div
-                      key={res.id}
-                      className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-1"
-                    >
-                      <div className="flex justify-between">
-                        <strong className="text-slate-100">{res.testName}</strong>
-                        <span className="font-mono text-emerald-400">
-                          ▲ {res.progressionStatus}
-                        </span>
+              {(() => {
+                const athResults = testResults.filter(
+                  (r) => r.athleteId === athlete.id
+                );
+                const displayItems =
+                  athResults.length > 0
+                    ? athResults.map((res) => ({
+                        id: res.id,
+                        name: res.testName,
+                        status: res.progressionStatus,
+                        current: `${res.currentResult} ${res.unit}`,
+                        sub: `Benchmark: ${res.programBenchmark} ${res.unit} · Squad Avg: ${res.squadAverage} ${res.unit}`,
+                      }))
+                    : [
+                        {
+                          id: 'pm-30m',
+                          name: athlete.performanceMetrics.sprint30m.label,
+                          status: 'Improving',
+                          current: athlete.performanceMetrics.sprint30m.current,
+                          sub: `Benchmark: ${athlete.performanceMetrics.sprint30m.benchmark} · Squad Avg: ${athlete.performanceMetrics.sprint30m.squadAvg}`,
+                        },
+                        {
+                          id: 'pm-cmj',
+                          name: athlete.performanceMetrics.cmj.label,
+                          status: 'Improving',
+                          current: athlete.performanceMetrics.cmj.current,
+                          sub: `Benchmark: ${athlete.performanceMetrics.cmj.benchmark} · Squad Avg: ${athlete.performanceMetrics.cmj.squadAvg}`,
+                        },
+                        {
+                          id: 'pm-yoyo',
+                          name: athlete.performanceMetrics.yoYo.label,
+                          status: 'Improving',
+                          current: athlete.performanceMetrics.yoYo.current,
+                          sub: `Benchmark: ${athlete.performanceMetrics.yoYo.benchmark} · Squad Avg: ${athlete.performanceMetrics.yoYo.squadAvg}`,
+                        },
+                        {
+                          id: 'pm-str',
+                          name: athlete.performanceMetrics.strength.label,
+                          status: 'Stable',
+                          current: athlete.performanceMetrics.strength.current,
+                          sub: `Benchmark: ${athlete.performanceMetrics.strength.benchmark} · Squad Avg: ${athlete.performanceMetrics.strength.squadAvg}`,
+                        },
+                      ];
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {displayItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-1"
+                      >
+                        <div className="flex justify-between">
+                          <strong className="text-slate-100">{item.name}</strong>
+                          <span className="font-mono text-emerald-400">
+                            ▲ {item.status}
+                          </span>
+                        </div>
+                        <div className="font-mono text-base font-bold text-sky-400">
+                          {item.current}
+                        </div>
+                        <div className="font-mono text-[11px] text-slate-400">
+                          {item.sub}
+                        </div>
                       </div>
-                      <div className="font-mono text-base font-bold text-sky-400">
-                        {res.currentResult} {res.unit}
-                      </div>
-                      <div className="font-mono text-[11px] text-slate-400">
-                        Benchmark: {res.programBenchmark} {res.unit} · Squad Avg:{' '}
-                        {res.squadAverage} {res.unit}
-                      </div>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab('Performance')}
@@ -1761,6 +1986,410 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
               )}
             </div>
           </aside>
+        </div>
+      )}
+      {/* ========================================================= */}
+      {/* UPLOAD DOCUMENT MODAL, LOG SESSION MODAL, WELLNESS MODAL  */}
+      {/* ========================================================= */}
+      {isUploadDocModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsUploadDocModalOpen(false)}
+            className="fixed inset-0 bg-black/75"
+          />
+          <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-sm text-slate-100 uppercase">
+                Upload Document — {athlete.name}
+              </span>
+              <button
+                onClick={() => setIsUploadDocModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Document Title
+                </label>
+                <input
+                  type="text"
+                  value={newDocName}
+                  onChange={(e) => setNewDocName(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">Category</label>
+                  <select
+                    value={newDocCategory}
+                    onChange={(e) =>
+                      setNewDocCategory(e.target.value as DocumentCategory)
+                    }
+                    className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                  >
+                    <option value="Identity">Identity</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Contracts">Contracts</option>
+                    <option value="Certifications">Certifications</option>
+                    <option value="Performance">Performance</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    Verification Status
+                  </label>
+                  <select
+                    value={newDocStatus}
+                    onChange={(e) =>
+                      setNewDocStatus(
+                        e.target.value as 'Verified' | 'Pending Review'
+                      )
+                    }
+                    className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                  >
+                    <option value="Verified">Verified</option>
+                    <option value="Pending Review">Pending Review</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Expiry Date</label>
+                <input
+                  type="text"
+                  value={newDocExpiry}
+                  onChange={(e) => setNewDocExpiry(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">Notes</label>
+                <input
+                  type="text"
+                  value={newDocNotes}
+                  onChange={(e) => setNewDocNotes(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsUploadDocModalOpen(false)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const newDoc: AthleteDocument = {
+                    id: `doc-${Date.now()}`,
+                    name: newDocName.trim() || 'Compliance Document.pdf',
+                    category: newDocCategory,
+                    status: newDocStatus,
+                    expiry: newDocExpiry,
+                    uploadedBy: selectedRole,
+                    lastUpdated: 'Today',
+                    fileSize: '1.6 MB PDF',
+                    notes: newDocNotes,
+                  };
+                  const updatedBreakdown = {
+                    ...athlete.profileCompletionBreakdown,
+                    documents: true,
+                  };
+                  const totalTrue =
+                    Object.values(updatedBreakdown).filter(Boolean).length;
+                  const newPct = Math.min(
+                    100,
+                    Math.round((totalTrue / 6) * 100)
+                  );
+                  onUpdateAthlete(
+                    athlete.id,
+                    {
+                      documents: [newDoc, ...athlete.documents],
+                      profileCompletionBreakdown: updatedBreakdown,
+                      profileCompletion: newPct,
+                      lastUpdated: 'Just now',
+                    },
+                    `Uploaded ${newDoc.category} document: ${newDoc.name}`,
+                    `Uploaded "${newDoc.name}" for ${athlete.name} ✓`
+                  );
+                  setIsUploadDocModalOpen(false);
+                }}
+                className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+              >
+                Upload & Save Document
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLogSessionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsLogSessionModalOpen(false)}
+            className="fixed inset-0 bg-black/75"
+          />
+          <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-sm text-slate-100 uppercase">
+                Log Training Session — {athlete.name}
+              </span>
+              <button
+                onClick={() => setIsLogSessionModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Session Title
+                </label>
+                <input
+                  type="text"
+                  value={newSessTitle}
+                  onChange={(e) => setNewSessTitle(e.target.value)}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    sRPE (1–10)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={newSessRpe}
+                    onChange={(e) => setNewSessRpe(Number(e.target.value))}
+                    className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    Load (AU)
+                  </label>
+                  <input
+                    type="number"
+                    step={10}
+                    value={newSessLoadAu}
+                    onChange={(e) => setNewSessLoadAu(Number(e.target.value))}
+                    className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">
+                    HSR Distance (m)
+                  </label>
+                  <input
+                    type="number"
+                    step={20}
+                    value={newSessHsrMeters}
+                    onChange={(e) =>
+                      setNewSessHsrMeters(Number(e.target.value))
+                    }
+                    className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsLogSessionModalOpen(false)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const newSessItem = {
+                    sessionId: `sess-${Date.now()}`,
+                    title: newSessTitle.trim() || 'Squad Training Session',
+                    rpe: newSessRpe,
+                    loadAu: newSessLoadAu,
+                    highSpeedMeters: newSessHsrMeters,
+                  };
+                  const nextAcute = Math.round(
+                    (athlete.acuteLoadAu * 6 + newSessLoadAu) / 7
+                  );
+                  const nextAcwr = Number(
+                    (nextAcute / (athlete.chronicLoadAu || 540)).toFixed(2)
+                  );
+                  const nextLoadPct = Math.min(
+                    100,
+                    Math.round((nextAcute / 680) * 100)
+                  );
+                  onUpdateAthlete(
+                    athlete.id,
+                    {
+                      recentSessions: [newSessItem, ...athlete.recentSessions],
+                      acuteLoadAu: nextAcute,
+                      acwr: nextAcwr,
+                      trainingLoadPct: nextLoadPct,
+                      loadHistory14d: [
+                        ...athlete.loadHistory14d.slice(1),
+                        newSessLoadAu,
+                      ],
+                      lastUpdated: 'Just now',
+                    },
+                    `Logged training session: ${newSessItem.title} (${newSessLoadAu} AU · sRPE ${newSessRpe})`,
+                    `Logged session "${newSessItem.title}" (${newSessLoadAu} AU) for ${athlete.name} ✓`
+                  );
+                  setIsLogSessionModalOpen(false);
+                }}
+                className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+              >
+                Save Training Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLogWellnessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsLogWellnessModalOpen(false)}
+            className="fixed inset-0 bg-black/75"
+          />
+          <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="font-bold text-sm text-slate-100 uppercase">
+                Log Morning Wellness & HRV — {athlete.name}
+              </span>
+              <button
+                onClick={() => setIsLogWellnessModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Morning HRV (ms)
+                </label>
+                <input
+                  type="number"
+                  value={checkinHrv}
+                  onChange={(e) => setCheckinHrv(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Sleep Duration (hours)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={checkinSleep}
+                  onChange={(e) => setCheckinSleep(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Wellness Score (1–10)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min={1}
+                  max={10}
+                  value={checkinWellness}
+                  onChange={(e) => setCheckinWellness(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1">
+                  Muscle Soreness (1–10)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={checkinSoreness}
+                  onChange={(e) => setCheckinSoreness(Number(e.target.value))}
+                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsLogWellnessModalOpen(false)}
+                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const hrs = Math.floor(checkinSleep);
+                  const mins = Math.round((checkinSleep - hrs) * 60);
+                  const formattedSleep = `${hrs}h ${mins}m`;
+                  const nextReadiness = Math.min(
+                    99,
+                    Math.max(
+                      45,
+                      Math.round(
+                        (checkinHrv / (athlete.hrvBaselineMs || 70)) * 45 +
+                          checkinWellness * 4.5 -
+                          checkinSoreness * 1.5
+                      )
+                    )
+                  );
+                  const nextRecovery = Math.min(99, nextReadiness + 3);
+                  const updatedSignals = athlete.keySignals.map((sig) => {
+                    if (sig.id === 'sleep')
+                      return { ...sig, value: formattedSleep };
+                    if (sig.id === 'hrv')
+                      return { ...sig, value: `${checkinHrv} ms` };
+                    if (sig.id === 'wellness')
+                      return { ...sig, value: `${checkinWellness} / 10` };
+                    return sig;
+                  });
+                  onUpdateAthlete(
+                    athlete.id,
+                    {
+                      hrvMs: checkinHrv,
+                      sleepHours: checkinSleep,
+                      sleepFormatted: formattedSleep,
+                      wellnessScore: checkinWellness,
+                      sorenessScore: checkinSoreness,
+                      readiness: nextReadiness,
+                      recovery: nextRecovery,
+                      readinessHistory14d: [
+                        ...athlete.readinessHistory14d.slice(1),
+                        nextReadiness,
+                      ],
+                      keySignals: updatedSignals,
+                      lastUpdated: 'Just now',
+                    },
+                    `Logged Morning Wellness & HRV Check-In (HRV ${checkinHrv}ms, Sleep ${formattedSleep}, Readiness ${nextReadiness}/100)`,
+                    `Updated Sports Science telemetry for ${athlete.name} — Readiness ${nextReadiness}/100 ✓`
+                  );
+                  setIsLogWellnessModalOpen(false);
+                }}
+                className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+              >
+                Save Check-In Telemetry
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

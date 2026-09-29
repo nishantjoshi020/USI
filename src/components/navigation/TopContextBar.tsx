@@ -1,17 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
+  Activity,
   Bell,
   Bot,
-  ChevronDown,
-  ShieldCheck,
   Building2,
-  Trophy,
+  ChevronDown,
+  ClipboardList,
+  Compass,
+  Crown,
+  Flame,
+  HeartPulse,
+  Landmark,
   Layers,
-  Users,
-  Monitor,
-  Tablet,
-  Smartphone,
+  Medal,
   Menu,
+  Monitor,
+  ShieldCheck,
+  Smartphone,
+  Tablet,
+  Target,
+  Trophy,
+  User,
+  UserCheck,
+  Users,
+  Utensils,
+  Wrench,
+  Zap,
 } from 'lucide-react';
 import { HierarchyContext, UserRole } from '../../types/usi';
 import { CONTEXT_OPTIONS, ROLE_DESCRIPTIONS } from '../../data/mockData';
@@ -33,6 +47,7 @@ interface TopContextBarProps {
   viewportMode?: ViewportMode;
   onChangeViewportMode?: (mode: ViewportMode) => void;
   onToggleMobileSidebar?: () => void;
+  isSidebarOpen?: boolean;
 }
 
 const ROLES: UserRole[] = [
@@ -46,6 +61,167 @@ const ROLES: UserRole[] = [
   'Operations Team',
 ];
 
+/* Dynamic Custom Sport & Context Icons to convey full information in Icon-Only Mode */
+const renderSportIcon = (sport: string) => {
+  switch (sport) {
+    case 'Football':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4 text-emerald-400 shrink-0"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polygon points="12 7 16.5 10.2 14.8 15.5 9.2 15.5 7.5 10.2 12 7" />
+          <line x1="12" y1="2" x2="12" y2="7" />
+          <line x1="21.5" y1="8.9" x2="16.5" y2="10.2" />
+          <line x1="17.9" y1="20.1" x2="14.8" y2="15.5" />
+          <line x1="6.1" y1="20.1" x2="9.2" y2="15.5" />
+          <line x1="2.5" y1="8.9" x2="7.5" y2="10.2" />
+        </svg>
+      );
+    case 'Field Hockey':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4 text-cyan-400 shrink-0"
+        >
+          {/* Hockey stick 1 */}
+          <path d="M4 3l11 14c1.5 2 4 2 5 0.5 0.8-1.2 0.2-2.8-1.2-3.2" />
+          {/* Hockey stick 2 crossed */}
+          <path d="M20 3L9 17c-1.5 2-4 2-5 0.5-0.8-1.2-0.2-2.8 1.2-3.2" />
+          {/* Hockey ball */}
+          <circle cx="12" cy="20" r="2" fill="currentColor" />
+        </svg>
+      );
+    case 'Athletics':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4 text-amber-400 shrink-0"
+        >
+          <circle cx="15" cy="4" r="2" />
+          <path d="M10.5 9.5L7 11l-2 4" />
+          <path d="M10.5 9.5l4 2.5 3.5-2" />
+          <path d="M14.5 12l-2.5 4.5 4 3.5" />
+          <path d="M12 16.5l-4.5 1-2.5 3.5" />
+        </svg>
+      );
+    case 'Swimming':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4 text-sky-400 shrink-0"
+        >
+          <circle cx="16" cy="7" r="2" />
+          <path d="M6 12l5-3 4 2 3-2" />
+          <path d="M2 16c1.5 1 3.5 1 5 0s3.5-1 5 0 3.5 1 5 0 3.5-1 5 0" />
+          <path d="M2 20c1.5 1 3.5 1 5 0s3.5-1 5 0 3.5 1 5 0 3.5-1 5 0" />
+        </svg>
+      );
+    case 'Badminton':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4 text-rose-400 shrink-0"
+        >
+          <path d="M6 18a3 3 0 1 0 4.2 4.2l1.8-1.8-4.2-4.2-1.8 1.8z" />
+          <path d="M10.2 20.4L21 9l-5-1-2-5-11.4 10.8" />
+          <line x1="8" y1="12" x2="15" y2="16" />
+          <line x1="12" y1="8" x2="16" y2="15" />
+        </svg>
+      );
+    default:
+      return <Trophy className="w-4 h-4 text-emerald-400 shrink-0" />;
+  }
+};
+
+const renderFederationIcon = (fed: string) => {
+  if (fed.includes('Olympic')) {
+    return <Medal className="w-4 h-4 text-amber-400 shrink-0" />;
+  }
+  if (fed.includes('Academy')) {
+    return <Landmark className="w-4 h-4 text-violet-400 shrink-0" />;
+  }
+  return <Building2 className="w-4 h-4 text-sky-400 shrink-0" />;
+};
+
+const renderProgramIcon = (prog: string) => {
+  if (prog.includes('Women')) {
+    return <Crown className="w-4 h-4 text-fuchsia-400 shrink-0" />;
+  }
+  if (prog.includes('U-23')) {
+    return <Flame className="w-4 h-4 text-amber-400 shrink-0" />;
+  }
+  if (prog.includes('U-19')) {
+    return <Compass className="w-4 h-4 text-emerald-400 shrink-0" />;
+  }
+  return <Layers className="w-4 h-4 text-sky-400 shrink-0" />;
+};
+
+const renderSquadIcon = (squad: string) => {
+  if (squad.includes('Rehabilitation') || squad.includes('RTP')) {
+    return <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" />;
+  }
+  if (squad.includes('Match Day')) {
+    return <Target className="w-4 h-4 text-emerald-400 shrink-0" />;
+  }
+  if (squad.includes('U23')) {
+    return <Zap className="w-4 h-4 text-indigo-400 shrink-0" />;
+  }
+  if (squad === 'Senior Squad') {
+    return <UserCheck className="w-4 h-4 text-sky-400 shrink-0" />;
+  }
+  return <Users className="w-4 h-4 text-amber-400 shrink-0" />;
+};
+
+const renderRoleIcon = (role: UserRole) => {
+  switch (role) {
+    case 'Performance Director':
+      return <ShieldCheck className="w-3.5 h-3.5 text-sky-300 shrink-0" />;
+    case 'Coach':
+      return <ClipboardList className="w-3.5 h-3.5 text-emerald-300 shrink-0" />;
+    case 'Sports Scientist':
+      return <Activity className="w-3.5 h-3.5 text-cyan-300 shrink-0" />;
+    case 'Physiotherapist':
+      return <HeartPulse className="w-3.5 h-3.5 text-rose-300 shrink-0" />;
+    case 'Nutritionist':
+      return <Utensils className="w-3.5 h-3.5 text-amber-300 shrink-0" />;
+    case 'Federation Admin':
+      return <Building2 className="w-3.5 h-3.5 text-violet-300 shrink-0" />;
+    case 'Athlete':
+      return <User className="w-3.5 h-3.5 text-sky-300 shrink-0" />;
+    case 'Operations Team':
+      return <Wrench className="w-3.5 h-3.5 text-orange-300 shrink-0" />;
+    default:
+      return <User className="w-3.5 h-3.5 text-sky-300 shrink-0" />;
+  }
+};
+
 export const TopContextBar: React.FC<TopContextBarProps> = ({
   context,
   onUpdateContext,
@@ -58,6 +234,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
   viewportMode = 'desktop',
   onChangeViewportMode,
   onToggleMobileSidebar,
+  isSidebarOpen = true,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<
     | 'federation'
@@ -66,6 +243,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
     | 'squad'
     | 'mobile-context'
     | 'role'
+    | 'viewport'
     | null
   >(null);
 
@@ -83,6 +261,8 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
 
   const isMobile = viewportMode === 'mobile';
   const isTablet = viewportMode === 'tablet';
+  // When sidebar is open (or on mobile), use expressive icon-only layout; when sidebar is closed, show full text labels
+  const isIconOnly = isSidebarOpen || isMobile;
 
   return (
     <header
@@ -92,7 +272,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
       } flex items-center justify-between sticky top-0 z-20`}
     >
       {/* Left: Global Hierarchy Context Filters */}
-      <div className="flex items-center gap-1 min-w-0 flex-1">
+      <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {/* Sidebar Drawer Trigger for Mobile & Tablet */}
         {(isMobile || isTablet) && onToggleMobileSidebar && (
           <button
@@ -113,13 +293,17 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                   openDropdown === 'mobile-context' ? null : 'mobile-context'
                 )
               }
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+              title={`${context.federation} / ${context.sport} / ${context.program} / ${context.squad}`}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
             >
-              <Trophy className="w-3 h-3 text-emerald-400 shrink-0" />
-              <span className="text-[11px] font-semibold text-slate-100 truncate max-w-[105px]">
-                {context.sport} · {context.squad.replace("Senior Men's ", '')}
-              </span>
-              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              {renderFederationIcon(context.federation)}
+              <span className="text-slate-700 text-[10px]">/</span>
+              {renderSportIcon(context.sport)}
+              <span className="text-slate-700 text-[10px]">/</span>
+              {renderProgramIcon(context.program)}
+              <span className="text-slate-700 text-[10px]">/</span>
+              {renderSquadIcon(context.squad)}
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
             </button>
 
             {openDropdown === 'mobile-context' && (
@@ -212,18 +396,21 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                     openDropdown === 'federation' ? null : 'federation'
                   )
                 }
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+                title={`Federation: ${context.federation}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
               >
-                <Building2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span
-                  className={`text-[11px] font-semibold text-slate-100 truncate ${
-                    isTablet
-                      ? 'max-w-[95px]'
-                      : 'max-w-[160px] xl:max-w-[220px]'
-                  }`}
-                >
-                  {context.federation}
-                </span>
+                {renderFederationIcon(context.federation)}
+                {!isIconOnly && (
+                  <span
+                    className={`text-[11px] font-semibold text-slate-100 truncate ${
+                      isTablet
+                        ? 'max-w-[90px]'
+                        : 'max-w-[140px] xl:max-w-[205px]'
+                    }`}
+                  >
+                    {context.federation}
+                  </span>
+                )}
                 <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
 
@@ -245,7 +432,10 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                           : 'text-slate-300 hover:bg-slate-800/70'
                       }`}
                     >
-                      <span>{fed}</span>
+                      <span className="flex items-center gap-2">
+                        {renderFederationIcon(fed)}
+                        <span>{fed}</span>
+                      </span>
                       {context.federation === fed && (
                         <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                       )}
@@ -263,17 +453,20 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                 onClick={() =>
                   setOpenDropdown(openDropdown === 'sport' ? null : 'sport')
                 }
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+                title={`Sport: ${context.sport}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
               >
-                <Trophy className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="text-[11px] font-semibold text-slate-100">
-                  {context.sport}
-                </span>
+                {renderSportIcon(context.sport)}
+                {!isIconOnly && (
+                  <span className="text-[11px] font-semibold text-slate-100">
+                    {context.sport}
+                  </span>
+                )}
                 <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
 
               {openDropdown === 'sport' && (
-                <div className="absolute left-0 mt-1.5 w-48 bg-[#0F1623] border border-slate-700 rounded-md shadow-xl py-1 z-50">
+                <div className="absolute left-0 mt-1.5 w-52 bg-[#0F1623] border border-slate-700 rounded-md shadow-xl py-1 z-50">
                   <div className="px-3 py-1.5 text-[11px] font-medium text-slate-400 border-b border-slate-800">
                     Select Federation Sport
                   </div>
@@ -290,7 +483,10 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                           : 'text-slate-300 hover:bg-slate-800/70'
                       }`}
                     >
-                      <span>{sport}</span>
+                      <span className="flex items-center gap-2">
+                        {renderSportIcon(sport)}
+                        <span>{sport}</span>
+                      </span>
                       {context.sport === sport && (
                         <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                       )}
@@ -308,18 +504,21 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                 onClick={() =>
                   setOpenDropdown(openDropdown === 'program' ? null : 'program')
                 }
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+                title={`Program: ${context.program}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
               >
-                <Layers className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span
-                  className={`text-[11px] font-semibold text-slate-100 truncate ${
-                    isTablet
-                      ? 'max-w-[85px]'
-                      : 'max-w-[120px] xl:max-w-[165px]'
-                  }`}
-                >
-                  {context.program}
-                </span>
+                {renderProgramIcon(context.program)}
+                {!isIconOnly && (
+                  <span
+                    className={`text-[11px] font-semibold text-slate-100 truncate ${
+                      isTablet
+                        ? 'max-w-[80px]'
+                        : 'max-w-[115px] xl:max-w-[160px]'
+                    }`}
+                  >
+                    {context.program}
+                  </span>
+                )}
                 <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
 
@@ -341,7 +540,10 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                           : 'text-slate-300 hover:bg-slate-800/70'
                       }`}
                     >
-                      <span>{prog}</span>
+                      <span className="flex items-center gap-2">
+                        {renderProgramIcon(prog)}
+                        <span>{prog}</span>
+                      </span>
                       {context.program === prog && (
                         <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                       )}
@@ -359,18 +561,21 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                 onClick={() =>
                   setOpenDropdown(openDropdown === 'squad' ? null : 'squad')
                 }
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+                title={`Squad: ${context.squad}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
               >
-                <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span
-                  className={`text-[11px] font-semibold text-slate-100 truncate ${
-                    isTablet
-                      ? 'max-w-[85px]'
-                      : 'max-w-[115px] xl:max-w-[155px]'
-                  }`}
-                >
-                  {context.squad}
-                </span>
+                {renderSquadIcon(context.squad)}
+                {!isIconOnly && (
+                  <span
+                    className={`text-[11px] font-semibold text-slate-100 truncate ${
+                      isTablet
+                        ? 'max-w-[85px]'
+                        : 'max-w-[120px] xl:max-w-[165px]'
+                    }`}
+                  >
+                    {context.squad}
+                  </span>
+                )}
                 <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
 
@@ -392,7 +597,10 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                           : 'text-slate-300 hover:bg-slate-800/70'
                       }`}
                     >
-                      <span>{sq}</span>
+                      <span className="flex items-center gap-2">
+                        {renderSquadIcon(sq)}
+                        <span>{sq}</span>
+                      </span>
                       {context.squad === sq && (
                         <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                       )}
@@ -412,10 +620,10 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
           <button
             onClick={onOpenAICopilot}
             title="Open Context-Aware USI AI Copilot"
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-[11px] font-semibold text-sky-300 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-[11px] font-semibold text-sky-300 transition-colors whitespace-nowrap"
           >
-            <Bot className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            {!isMobile && <span>AI Copilot</span>}
+            <Bot className="w-4 h-4 text-sky-400 shrink-0" />
+            {!isIconOnly && <span>AI Copilot</span>}
             {pendingAIActionsCount > 0 && (
               <span className="px-1 py-0.5 rounded bg-sky-500 text-slate-950 font-mono text-[9px] font-bold leading-none">
                 {pendingAIActionsCount}
@@ -430,7 +638,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
           title="Operational Notifications"
           className="relative p-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-slate-300 hover:text-white transition-colors"
         >
-          <Bell className="w-3.5 h-3.5" />
+          <Bell className="w-4 h-4" />
           {unreadNotificationsCount > 0 && (
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white font-mono text-[9px] font-bold flex items-center justify-center tabular-nums">
               {unreadNotificationsCount}
@@ -445,15 +653,12 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
               setOpenDropdown(openDropdown === 'role' ? null : 'role')
             }
             title={`Active Role View: ${selectedRole}`}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
           >
-            <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-[10px] font-mono font-bold text-sky-300 shrink-0">
-              {selectedRole
-                .split(' ')
-                .map((w) => w[0])
-                .join('')}
+            <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center shrink-0">
+              {renderRoleIcon(selectedRole)}
             </div>
-            {!isMobile && (
+            {!isIconOnly && (
               <span
                 className={`text-[11px] font-semibold text-slate-100 truncate ${
                   isTablet ? 'max-w-[85px]' : 'max-w-[120px]'
@@ -495,11 +700,12 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <span
-                          className={`text-xs font-semibold ${
+                          className={`text-xs font-semibold flex items-center gap-2 ${
                             active ? 'text-sky-300' : 'text-slate-200'
                           }`}
                         >
-                          {role}
+                          {renderRoleIcon(role)}
+                          <span>{role}</span>
                         </span>
                         <span className="text-[10px] font-mono text-slate-400">
                           {meta.clearance.split('·')[0]}
@@ -516,51 +722,120 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
           )}
         </div>
 
-        {/* Viewport Switcher (Desktop / Tablet / Mobile) next to Role Switcher */}
+        {/* Screen / Viewport Switcher Dropdown (styled like Role Switcher) */}
         {onChangeViewportMode && (
-          <div
-            className="flex items-center p-0.5 rounded-md bg-[#0F1623] border border-slate-800 shrink-0"
-            title="Switch Responsive Viewport Mode (Desktop / Tablet / Mobile)"
-          >
-            {(
-              [
-                {
-                  id: 'desktop' as const,
-                  label: 'Desktop',
-                  icon: Monitor,
-                },
-                {
-                  id: 'tablet' as const,
-                  label: 'Tablet',
-                  icon: Tablet,
-                },
-                {
-                  id: 'mobile' as const,
-                  label: 'Mobile',
-                  icon: Smartphone,
-                },
-              ] as const
-            ).map((item) => {
-              const Icon = item.icon;
-              const active = viewportMode === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onChangeViewportMode(item.id)}
-                  title={`${item.label} View`}
-                  className={`flex items-center gap-1 px-1.5 py-1 rounded text-[10px] font-semibold transition-colors ${
-                    active
-                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                      : 'text-slate-400 hover:text-slate-200 border border-transparent'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  {!isMobile && !isTablet && (
-                    <span className="hidden xl:inline">{item.label}</span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="relative">
+            <button
+              onClick={() =>
+                setOpenDropdown(
+                  openDropdown === 'viewport' ? null : 'viewport'
+                )
+              }
+              title={`Active Screen View: ${
+                viewportMode === 'desktop'
+                  ? 'Desktop'
+                  : viewportMode === 'tablet'
+                    ? 'Tablet'
+                    : 'Mobile'
+              }`}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
+            >
+              <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 shrink-0">
+                {viewportMode === 'desktop' ? (
+                  <Monitor className="w-3.5 h-3.5" />
+                ) : viewportMode === 'tablet' ? (
+                  <Tablet className="w-3.5 h-3.5" />
+                ) : (
+                  <Smartphone className="w-3.5 h-3.5" />
+                )}
+              </div>
+              {!isIconOnly && (
+                <span className="text-[11px] font-semibold text-slate-100">
+                  {viewportMode === 'desktop'
+                    ? 'Desktop'
+                    : viewportMode === 'tablet'
+                      ? 'Tablet'
+                      : 'Mobile'}
+                </span>
+              )}
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+            </button>
+
+            {openDropdown === 'viewport' && (
+              <div className="absolute right-0 mt-1.5 w-64 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50">
+                <div className="px-3.5 py-2 border-b border-slate-800">
+                  <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Monitor className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Responsive Screen Switcher</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Switch active screen layout while preserving full feature parity.
+                  </p>
+                </div>
+
+                <div className="py-1">
+                  {(
+                    [
+                      {
+                        id: 'desktop' as const,
+                        label: 'Desktop',
+                        spec: 'Full Width',
+                        desc: 'Multi-column command center & expanded sidebar',
+                        icon: Monitor,
+                      },
+                      {
+                        id: 'tablet' as const,
+                        label: 'Tablet',
+                        spec: '834px Slate',
+                        desc: 'Compact icon-rail sidebar & adaptive 2–3 col grids',
+                        icon: Tablet,
+                      },
+                      {
+                        id: 'mobile' as const,
+                        label: 'Mobile',
+                        spec: '430px Handheld',
+                        desc: 'Slide-over drawer, bottom dock & stacked cards',
+                        icon: Smartphone,
+                      },
+                    ] as const
+                  ).map((item) => {
+                    const Icon = item.icon;
+                    const active = viewportMode === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onChangeViewportMode(item.id);
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full text-left px-3.5 py-2 transition-colors ${
+                          active
+                            ? 'bg-sky-500/15 border-l-2 border-sky-400'
+                            : 'hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`text-xs font-semibold flex items-center gap-1.5 ${
+                              active ? 'text-sky-300' : 'text-slate-200'
+                            }`}
+                          >
+                            <Icon className="w-3.5 h-3.5 text-sky-400" />
+                            <span>{item.label}</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {item.spec}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                          {item.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

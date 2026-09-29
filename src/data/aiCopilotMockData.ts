@@ -552,6 +552,93 @@ export const INITIAL_COPILOT_MESSAGES: AICopilotMessage[] = [
   },
 ];
 
+export function buildDynamicEvidenceBundle(
+  athlete: Athlete
+): AIEvidenceBundle {
+  if (athlete.id === 'ath-arjun-mehta' && athlete.readiness === 62) {
+    return ARJUN_EVIDENCE_BUNDLE;
+  }
+  const loadDeltaPct =
+    athlete.chronicLoadAu > 0
+      ? Math.round(
+          ((athlete.acuteLoadAu - athlete.chronicLoadAu) /
+            athlete.chronicLoadAu) *
+            100
+        )
+      : 0;
+  const hrvDeltaPct =
+    athlete.hrvBaselineMs > 0
+      ? Math.round(
+          ((athlete.hrvMs - athlete.hrvBaselineMs) / athlete.hrvBaselineMs) *
+            100
+        )
+      : 0;
+
+  return {
+    id: `ev-${athlete.id}-${Date.now()}`,
+    title: `${athlete.name} — Multi-Factor Readiness & Telemetry Evidence`,
+    subjectLabel: `${athlete.name} (${athlete.athleteId}) · ${athlete.sport} · ${athlete.squad}`,
+    confidence: 'High',
+    generatedAt: `Updated ${athlete.lastUpdated}`,
+    metrics: [
+      {
+        domain: 'Training',
+        label: 'Acute Workload vs Chronic',
+        deltaOrValue: `${loadDeltaPct >= 0 ? '+' : ''}${loadDeltaPct}% acute load`,
+        detail: `${athlete.acuteLoadAu} AU acute vs ${athlete.chronicLoadAu} AU chronic baseline (ACWR ${athlete.acwr.toFixed(2)})`,
+        tone: athlete.acwr > 1.2 ? 'rose' : athlete.acwr > 1.08 ? 'amber' : 'emerald',
+      },
+      {
+        domain: 'Recovery',
+        label: 'Composite Recovery Index',
+        deltaOrValue: `${athlete.recovery}%`,
+        detail: `Readiness ${athlete.readiness}/100 (${athlete.readinessDelta >= 0 ? '+' : ''}${athlete.readinessDelta} delta)`,
+        tone: athlete.recovery < 68 ? 'rose' : athlete.recovery < 78 ? 'amber' : 'emerald',
+      },
+      {
+        domain: 'HRV',
+        label: 'Morning HRV (rMSSD)',
+        deltaOrValue: `${hrvDeltaPct >= 0 ? '+' : ''}${hrvDeltaPct}%`,
+        detail: `${athlete.hrvMs} ms today vs ${athlete.hrvBaselineMs} ms individual baseline`,
+        tone: hrvDeltaPct <= -10 ? 'rose' : hrvDeltaPct < 0 ? 'amber' : 'emerald',
+      },
+      {
+        domain: 'Sleep',
+        label: 'Sleep & Subjective Soreness',
+        deltaOrValue: `${athlete.sleepFormatted} · Soreness ${athlete.sorenessScore}/10`,
+        detail: `Wellness score ${athlete.wellnessScore}/10 · Status: ${athlete.status}`,
+        tone: athlete.sorenessScore >= 5 ? 'rose' : athlete.sorenessScore >= 3 ? 'amber' : 'emerald',
+      },
+      {
+        domain: 'Medical',
+        label: 'Active Medical Context',
+        deltaOrValue: `Clearance: ${athlete.medicalStatus}`,
+        detail: athlete.medicalNote || 'No active clinical restrictions recorded.',
+        tone:
+          athlete.medicalStatus === 'Cleared'
+            ? 'emerald'
+            : athlete.medicalStatus === 'Restricted'
+              ? 'rose'
+              : 'amber',
+      },
+      {
+        domain: 'Nutrition',
+        label: 'Hydration & Fueling Compliance',
+        deltaOrValue: `Hydration: ${athlete.hydrationStatus}`,
+        detail: `Nutrition plan adherence: ${athlete.nutritionCompliancePct}%`,
+        tone:
+          athlete.hydrationStatus === 'Optimal'
+            ? 'emerald'
+            : athlete.hydrationStatus === 'Monitor'
+              ? 'amber'
+              : 'rose',
+      },
+    ],
+    clinicalDisclaimer:
+      'Advisory Intelligence Only: USI AI synthesizes cross-module telemetry to assist sports professionals. AI cannot independently diagnose, clear, or override clinical medical decisions.',
+  };
+}
+
 /**
  * Deterministic, context-aware, role-aware & session-memory-aware AI reasoning generator
  */
@@ -559,6 +646,7 @@ export function buildCopilotResponse(
   rawQuery: string,
   context: {
     athlete: Athlete;
+    allAthletes?: Athlete[];
     squad: string;
     sport: string;
     role: UserRole;
@@ -574,6 +662,9 @@ export function buildCopilotResponse(
     hour: '2-digit',
     minute: '2-digit',
   });
+  const activeAth = context.athlete;
+  const activeBundle = buildDynamicEvidenceBundle(activeAth);
+  const roster = context.allAthletes || [];
 
   // 1. UNCERTAINTY / ERROR STATE (Section 27)
   if (
@@ -886,9 +977,28 @@ export function buildCopilotResponse(
     q.includes('why is his readiness low') ||
     q.includes("why is arjun's readiness low") ||
     q.includes('why is readiness low') ||
-    q.includes("explain today's readiness changes")
+    q.includes("explain today's readiness changes") ||
+    q.includes('recovery baseline')
   ) {
-    const targetName = context.athlete?.name || 'Arjun Mehta';
+    const targetName = activeAth?.name || 'Arjun Mehta';
+    const isArjun = activeAth?.id === 'ath-arjun-mehta' && activeAth.readiness === 62;
+    const hrvDiffPct =
+      activeAth.hrvBaselineMs > 0
+        ? Math.round(
+            ((activeAth.hrvMs - activeAth.hrvBaselineMs) /
+              activeAth.hrvBaselineMs) *
+              100
+          )
+        : -14;
+    const loadDiffPct =
+      activeAth.chronicLoadAu > 0
+        ? Math.round(
+            ((activeAth.acuteLoadAu - activeAth.chronicLoadAu) /
+              activeAth.chronicLoadAu) *
+              100
+          )
+        : 22;
+
     return {
       nextFilterTopic: null,
       message: {
@@ -902,22 +1012,60 @@ export function buildCopilotResponse(
           role: context.role,
           moduleName: context.moduleName,
         },
-        answerTitle: `${targetName.toUpperCase()} — READINESS DECLINE EXPLANATION`,
-        answerStatement: 'Readiness declined from 81 → 62 over 7 days.',
+        answerTitle: `${targetName.toUpperCase()} — READINESS & RECOVERY EXPLANATION`,
+        answerStatement: isArjun
+          ? 'Readiness declined from 81 → 62 over 7 days.'
+          : `${targetName}'s current composite readiness is ${activeAth.readiness}/100 (${activeAth.readinessDelta >= 0 ? '+' : ''}${activeAth.readinessDelta} 7-day shift) with ${activeAth.recovery}% recovery index.`,
         confidence: 'High',
         safetyClass: 'RECOMMENDATION',
-        evidenceSummary: [
-          { label: 'Sleep', value: '↓ 11% (6h 10m avg)', tone: 'amber' },
-          { label: 'HRV', value: '↓ 14% (58 ms vs 67 ms)', tone: 'rose' },
-          { label: 'Recovery', value: '↓ 8% (64% score)', tone: 'amber' },
-          { label: 'Acute Load', value: '↑ 22% (742 AU)', tone: 'rose' },
-          { label: 'Recent Hamstring Injury', value: 'Active (Stage 3/5)', tone: 'rose' },
-        ],
-        evidenceBundle: ARJUN_EVIDENCE_BUNDLE,
-        interpretation:
-          'The decline appears primarily associated with increased workload and reduced recovery indicators.',
+        evidenceSummary: isArjun
+          ? [
+              { label: 'Sleep', value: '↓ 11% (6h 10m avg)', tone: 'amber' },
+              { label: 'HRV', value: '↓ 14% (58 ms vs 67 ms)', tone: 'rose' },
+              { label: 'Recovery', value: '↓ 8% (64% score)', tone: 'amber' },
+              { label: 'Acute Load', value: '↑ 22% (742 AU)', tone: 'rose' },
+              { label: 'Recent Hamstring Injury', value: 'Active (Stage 3/5)', tone: 'rose' },
+            ]
+          : [
+              {
+                label: 'Sleep',
+                value: `${activeAth.sleepFormatted} (Wellness ${activeAth.wellnessScore}/10)`,
+                tone: activeAth.sleepHours < 7 ? 'amber' : 'emerald',
+              },
+              {
+                label: 'HRV',
+                value: `${hrvDiffPct >= 0 ? '+' : ''}${hrvDiffPct}% (${activeAth.hrvMs} ms vs ${activeAth.hrvBaselineMs} ms)`,
+                tone: hrvDiffPct < -8 ? 'rose' : hrvDiffPct < 0 ? 'amber' : 'emerald',
+              },
+              {
+                label: 'Recovery',
+                value: `${activeAth.recovery}% (Soreness ${activeAth.sorenessScore}/10)`,
+                tone: activeAth.recovery < 70 ? 'amber' : 'emerald',
+              },
+              {
+                label: 'Acute Load',
+                value: `${loadDiffPct >= 0 ? '+' : ''}${loadDiffPct}% (${activeAth.acuteLoadAu} AU · ACWR ${activeAth.acwr.toFixed(2)})`,
+                tone: activeAth.acwr > 1.2 ? 'rose' : 'sky',
+              },
+              {
+                label: 'Medical Status',
+                value: activeAth.medicalStatus,
+                tone:
+                  activeAth.medicalStatus === 'Cleared'
+                    ? 'emerald'
+                    : activeAth.medicalStatus === 'Restricted'
+                      ? 'rose'
+                      : 'amber',
+              },
+            ],
+        evidenceBundle: activeBundle,
+        interpretation: isArjun
+          ? 'The decline appears primarily associated with increased workload and reduced recovery indicators.'
+          : activeAth.aiSummary,
         recommendation:
-          'Review high-intensity exposure before the next session.',
+          activeAth.readiness < 75
+            ? `Review high-intensity exposure for ${targetName} before the next session.`
+            : `${targetName} is cleared for prescribed training volume under ${activeAth.coach}.`,
         actions: [
           {
             id: `act-rd-tr-${Date.now()}`,
@@ -927,16 +1075,16 @@ export function buildCopilotResponse(
           },
           {
             id: `act-rd-ath-${Date.now()}`,
-            label: 'Open Athlete 360',
+            label: `Open ${targetName} 360`,
             safetyClass: 'INFORMATIONAL',
             actionType: 'open-athlete-360',
-            targetAthleteId: context.athlete?.id || 'ath-arjun-mehta',
+            targetAthleteId: activeAth?.id || 'ath-arjun-mehta',
           },
         ],
         followUpSuggestions: [
           "Should we modify tomorrow's high-intensity session for athletes at elevated risk?",
           'Why is Arjun restricted?',
-          'Prepare Coach Brief for Arjun Mehta',
+          `Prepare Coach Brief for ${targetName}`,
         ],
       },
     };
@@ -1472,27 +1620,53 @@ export function buildCopilotResponse(
   }
 
   // DEFAULT CONTEXTUAL INTELLIGENCE RESPONSE
+  const loadDiff =
+    activeAth.chronicLoadAu > 0
+      ? Math.round(
+          ((activeAth.acuteLoadAu - activeAth.chronicLoadAu) /
+            activeAth.chronicLoadAu) *
+            100
+        )
+      : 0;
   return {
     nextFilterTopic: null,
     message: {
       id: `ai-${Date.now()}`,
       sender: 'ai',
       timestamp: nowTime,
-      answerTitle: `OPERATIONAL ANALYSIS — ${context.athlete.name.toUpperCase()} & ${context.squad.toUpperCase()}`,
-      answerStatement: `Analyzed "${rawQuery}" across ${context.sport} · ${context.squad} under ${context.role} permissions. ${context.athlete.name} is currently at Readiness ${context.athlete.readiness} (${context.athlete.injuryRisk} Risk) with acute load +22%.`,
+      answerTitle: `OPERATIONAL ANALYSIS — ${activeAth.name.toUpperCase()} & ${context.squad.toUpperCase()}`,
+      answerStatement: `Analyzed "${rawQuery}" across ${context.sport} · ${context.squad} under ${context.role} permissions. ${activeAth.name} is currently at Readiness ${activeAth.readiness}/100 (${activeAth.injuryRisk} Risk) with acute load ${loadDiff >= 0 ? '+' : ''}${loadDiff}% (${activeAth.acuteLoadAu} AU) and medical clearance ${activeAth.medicalStatus}.`,
       confidence: 'High',
       safetyClass: 'RECOMMENDATION',
       evidenceSummary: [
-        { label: 'Current Athlete', value: `${context.athlete.name} (Readiness ${context.athlete.readiness})`, tone: 'amber' },
-        { label: 'Workload Delta', value: '+22% Acute Load', tone: 'rose' },
-        { label: 'Medical Status', value: 'Restricted (RTP Stage 3/5)', tone: 'rose' },
+        {
+          label: 'Current Athlete',
+          value: `${activeAth.name} (Readiness ${activeAth.readiness})`,
+          tone: activeAth.readiness < 70 ? 'rose' : activeAth.readiness < 80 ? 'amber' : 'emerald',
+        },
+        {
+          label: 'Workload Delta',
+          value: `${loadDiff >= 0 ? '+' : ''}${loadDiff}% (${activeAth.acuteLoadAu} AU)`,
+          tone: activeAth.acwr > 1.2 ? 'rose' : 'sky',
+        },
+        {
+          label: 'Medical Status',
+          value: `${activeAth.medicalStatus} (${activeAth.trainingStatus})`,
+          tone:
+            activeAth.medicalStatus === 'Cleared'
+              ? 'emerald'
+              : activeAth.medicalStatus === 'Restricted'
+                ? 'rose'
+                : 'amber',
+        },
         { label: 'Active Role Lens', value: context.role, tone: 'sky' },
       ],
-      evidenceBundle: ARJUN_EVIDENCE_BUNDLE,
-      interpretation:
-        'Cross-module telemetry indicates elevated soft-tissue load combined with incomplete autonomic recovery (-14% HRV, -11% sleep).',
+      evidenceBundle: activeBundle,
+      interpretation: activeAth.aiSummary,
       recommendation:
-        'Review proposed training modifications for tomorrow’s high-intensity session or inspect full clinical evidence.',
+        activeAth.readiness < 75 || activeAth.medicalStatus !== 'Cleared'
+          ? `Review proposed training modifications for ${activeAth.name} or inspect full clinical and physiological evidence.`
+          : `${activeAth.name} is operating within target workload and readiness thresholds (${activeAth.nutritionCompliancePct}% nutrition adherence).`,
       actions: [
         {
           id: `act-def-mod-${Date.now()}`,
@@ -1502,10 +1676,10 @@ export function buildCopilotResponse(
         },
         {
           id: `act-def-ath-${Date.now()}`,
-          label: 'Review Athlete 360',
+          label: `Review ${activeAth.name} 360`,
           safetyClass: 'INFORMATIONAL',
           actionType: 'open-athlete-360',
-          targetAthleteId: context.athlete.id,
+          targetAthleteId: activeAth.id,
         },
       ],
       followUpSuggestions: [
