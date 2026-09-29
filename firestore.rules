@@ -1,0 +1,438 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // 1. GLOBAL SAFETY NET (Default-Deny Catch-All)
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // 2. PRIMITIVE HELPERS
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidShortId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // =========================================================================
+    // 3. VALIDATION BLUEPRINTS (Anti-Update-Gap)
+    // =========================================================================
+
+    function isValidAthleteRecord(data) {
+      return data.keys().hasAll([
+        'ownerId',
+        'athleteId',
+        'name',
+        'sport',
+        'squad',
+        'position',
+        'readiness',
+        'recovery',
+        'fatigue',
+        'acwr',
+        'weeklyLoad',
+        'medicalStatus',
+        'availability',
+        'riskLevel',
+        'hydrationLitres',
+        'nutritionCompliancePct',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId',
+        'athleteId',
+        'name',
+        'sport',
+        'squad',
+        'position',
+        'readiness',
+        'recovery',
+        'fatigue',
+        'acwr',
+        'weeklyLoad',
+        'medicalStatus',
+        'availability',
+        'riskLevel',
+        'hydrationLitres',
+        'nutritionCompliancePct',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      isValidShortId(data.athleteId) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+      data.sport is string && data.sport.size() >= 1 && data.sport.size() <= 80 &&
+      data.squad is string && data.squad.size() >= 1 && data.squad.size() <= 80 &&
+      data.position is string && data.position.size() >= 1 && data.position.size() <= 80 &&
+      data.readiness is number && data.readiness >= 0 && data.readiness <= 100 &&
+      data.recovery is number && data.recovery >= 0 && data.recovery <= 100 &&
+      data.fatigue is number && data.fatigue >= 0 && data.fatigue <= 100 &&
+      data.acwr is number && data.acwr >= 0 && data.acwr <= 5 &&
+      data.weeklyLoad is number && data.weeklyLoad >= 0 && data.weeklyLoad <= 20000 &&
+      data.medicalStatus is string && data.medicalStatus.size() >= 1 && data.medicalStatus.size() <= 32 &&
+      (data.medicalStatus == 'Cleared' || data.medicalStatus == 'Modified' || data.medicalStatus == 'Restricted' || data.medicalStatus == 'Injured') &&
+      data.availability is string && data.availability.size() >= 1 && data.availability.size() <= 32 &&
+      (data.availability == 'Available' || data.availability == 'Modified' || data.availability == 'Unavailable') &&
+      data.riskLevel is string && data.riskLevel.size() >= 1 && data.riskLevel.size() <= 32 &&
+      (data.riskLevel == 'Low' || data.riskLevel == 'Moderate' || data.riskLevel == 'Elevated' || data.riskLevel == 'High') &&
+      data.hydrationLitres is number && data.hydrationLitres >= 0 && data.hydrationLitres <= 20 &&
+      data.nutritionCompliancePct is number && data.nutritionCompliancePct >= 0 && data.nutritionCompliancePct <= 100 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidTrainingSessionRecord(data) {
+      return data.keys().hasAll([
+        'ownerId',
+        'sessionId',
+        'title',
+        'type',
+        'squad',
+        'date',
+        'startTime',
+        'durationMin',
+        'plannedLoad',
+        'venue',
+        'venueAddress',
+        'venuePlaceId',
+        'venueLat',
+        'venueLng',
+        'venueMapsUri',
+        'sessionStatus',
+        'coach',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId',
+        'sessionId',
+        'title',
+        'type',
+        'squad',
+        'date',
+        'startTime',
+        'durationMin',
+        'plannedLoad',
+        'venue',
+        'venueAddress',
+        'venuePlaceId',
+        'venueLat',
+        'venueLng',
+        'venueMapsUri',
+        'sessionStatus',
+        'coach',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      isValidShortId(data.sessionId) &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+      data.type is string && data.type.size() >= 1 && data.type.size() <= 64 &&
+      data.squad is string && data.squad.size() >= 1 && data.squad.size() <= 80 &&
+      data.date is string && data.date.size() >= 1 && data.date.size() <= 40 &&
+      data.startTime is string && data.startTime.size() >= 1 && data.startTime.size() <= 20 &&
+      data.durationMin is number && data.durationMin >= 5 && data.durationMin <= 600 &&
+      data.plannedLoad is string && data.plannedLoad.size() >= 1 && data.plannedLoad.size() <= 20 &&
+      (data.plannedLoad == 'Low' || data.plannedLoad == 'Medium' || data.plannedLoad == 'High') &&
+      data.venue is string && data.venue.size() >= 1 && data.venue.size() <= 200 &&
+      data.venueAddress is string && data.venueAddress.size() <= 300 &&
+      data.venuePlaceId is string && data.venuePlaceId.size() <= 128 &&
+      data.venueLat is number && data.venueLat >= -90 && data.venueLat <= 90 &&
+      data.venueLng is number && data.venueLng >= -180 && data.venueLng <= 180 &&
+      data.venueMapsUri is string && data.venueMapsUri.size() <= 500 &&
+      data.sessionStatus is string && data.sessionStatus.size() >= 1 && data.sessionStatus.size() <= 32 &&
+      (data.sessionStatus == 'Draft' || data.sessionStatus == 'Scheduled' || data.sessionStatus == 'In Progress' || data.sessionStatus == 'Completed' || data.sessionStatus == 'Archived') &&
+      data.coach is string && data.coach.size() >= 1 && data.coach.size() <= 120 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidInjuryRecord(data) {
+      return data.keys().hasAll([
+        'ownerId',
+        'injuryId',
+        'athleteId',
+        'athleteName',
+        'diagnosis',
+        'bodyArea',
+        'side',
+        'severity',
+        'injuryStatus',
+        'rtpStage',
+        'painScore',
+        'physiotherapist',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId',
+        'injuryId',
+        'athleteId',
+        'athleteName',
+        'diagnosis',
+        'bodyArea',
+        'side',
+        'severity',
+        'injuryStatus',
+        'rtpStage',
+        'painScore',
+        'physiotherapist',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      isValidShortId(data.injuryId) &&
+      isValidShortId(data.athleteId) &&
+      data.athleteName is string && data.athleteName.size() >= 1 && data.athleteName.size() <= 120 &&
+      data.diagnosis is string && data.diagnosis.size() >= 1 && data.diagnosis.size() <= 200 &&
+      data.bodyArea is string && data.bodyArea.size() >= 1 && data.bodyArea.size() <= 80 &&
+      data.side is string && data.side.size() >= 1 && data.side.size() <= 20 &&
+      (data.side == 'Left' || data.side == 'Right' || data.side == 'Bilateral' || data.side == 'Central') &&
+      data.severity is string && data.severity.size() >= 1 && data.severity.size() <= 20 &&
+      (data.severity == 'Minor' || data.severity == 'Moderate' || data.severity == 'Severe') &&
+      data.injuryStatus is string && data.injuryStatus.size() >= 1 && data.injuryStatus.size() <= 20 &&
+      (data.injuryStatus == 'Active' || data.injuryStatus == 'Rehab' || data.injuryStatus == 'RTP' || data.injuryStatus == 'Cleared' || data.injuryStatus == 'Closed') &&
+      data.rtpStage is number && data.rtpStage >= 1 && data.rtpStage <= 5 &&
+      data.painScore is number && data.painScore >= 0 && data.painScore <= 10 &&
+      data.physiotherapist is string && data.physiotherapist.size() >= 1 && data.physiotherapist.size() <= 120 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidAICopilotMessageRecord(data) {
+      return data.keys().hasAll([
+        'ownerId',
+        'messageId',
+        'role',
+        'timestamp',
+        'content',
+        'confidence',
+        'sourceModality',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId',
+        'messageId',
+        'role',
+        'timestamp',
+        'content',
+        'confidence',
+        'sourceModality',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      isValidShortId(data.messageId) &&
+      data.role is string && data.role.size() >= 1 && data.role.size() <= 20 &&
+      (data.role == 'user' || data.role == 'assistant') &&
+      data.timestamp is string && data.timestamp.size() >= 1 && data.timestamp.size() <= 40 &&
+      data.content is string && data.content.size() >= 1 && data.content.size() <= 8000 &&
+      data.confidence is string && data.confidence.size() >= 1 && data.confidence.size() <= 20 &&
+      (data.confidence == 'High' || data.confidence == 'Medium' || data.confidence == 'Low') &&
+      data.sourceModality is string && data.sourceModality.size() >= 1 && data.sourceModality.size() <= 20 &&
+      (data.sourceModality == 'text' || data.sourceModality == 'voice' || data.sourceModality == 'maps') &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidAuditEventRecord(data) {
+      return data.keys().hasAll([
+        'ownerId',
+        'eventId',
+        'module',
+        'action',
+        'actorRole',
+        'timestampLabel',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId',
+        'eventId',
+        'module',
+        'action',
+        'actorRole',
+        'timestampLabel',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      isValidShortId(data.eventId) &&
+      data.module is string && data.module.size() >= 1 && data.module.size() <= 64 &&
+      data.action is string && data.action.size() >= 1 && data.action.size() <= 300 &&
+      data.actorRole is string && data.actorRole.size() >= 1 && data.actorRole.size() <= 80 &&
+      data.timestampLabel is string && data.timestampLabel.size() >= 1 && data.timestampLabel.size() <= 40 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // =========================================================================
+    // 4. COLLECTION MATCH BLOCKS
+    // =========================================================================
+
+    match /athletes/{athleteId} {
+      allow get: if isVerified() && isValidShortId(athleteId) && existing().ownerId == request.auth.uid;
+      allow list: if isVerified() && existing().ownerId == request.auth.uid;
+      allow create: if isVerified() &&
+        isValidShortId(athleteId) &&
+        isValidAthleteRecord(incoming()) &&
+        incoming().athleteId == athleteId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() &&
+        isValidShortId(athleteId) &&
+        isValidAthleteRecord(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().athleteId == existing().athleteId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Update Readiness, Load, and Risk Signals
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'readiness', 'recovery', 'fatigue', 'acwr', 'weeklyLoad', 'riskLevel', 'updatedAt'
+          ]) ||
+          // Action 2: Update Medical Status and Availability
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'medicalStatus', 'availability', 'riskLevel', 'updatedAt'
+          ]) ||
+          // Action 3: Update Nutrition & Hydration
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'hydrationLitres', 'nutritionCompliancePct', 'recovery', 'readiness', 'updatedAt'
+          ]) ||
+          // Action 4: Full Profile Synchronization / Demo Reset
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'sport', 'squad', 'position', 'readiness', 'recovery', 'fatigue',
+            'acwr', 'weeklyLoad', 'medicalStatus', 'availability', 'riskLevel',
+            'hydrationLitres', 'nutritionCompliancePct', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerified() && isValidShortId(athleteId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /training_sessions/{sessionId} {
+      allow get: if isVerified() && isValidShortId(sessionId) && existing().ownerId == request.auth.uid;
+      allow list: if isVerified() && existing().ownerId == request.auth.uid;
+      allow create: if isVerified() &&
+        isValidShortId(sessionId) &&
+        isValidTrainingSessionRecord(incoming()) &&
+        incoming().sessionId == sessionId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() &&
+        isValidShortId(sessionId) &&
+        isValidTrainingSessionRecord(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().sessionId == existing().sessionId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        existing().sessionStatus != 'Archived' && (
+          // Action 1: Assign Google Maps Venue
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'venue', 'venueAddress', 'venuePlaceId', 'venueLat', 'venueLng', 'venueMapsUri', 'updatedAt'
+          ]) ||
+          // Action 2: Modify Load, Duration, or Status
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'type', 'squad', 'date', 'startTime', 'durationMin', 'plannedLoad',
+            'venue', 'venueAddress', 'venuePlaceId', 'venueLat', 'venueLng', 'venueMapsUri',
+            'sessionStatus', 'coach', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerified() && isValidShortId(sessionId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /injuries/{injuryId} {
+      allow get: if isVerified() && isValidShortId(injuryId) && existing().ownerId == request.auth.uid;
+      allow list: if isVerified() && existing().ownerId == request.auth.uid;
+      allow create: if isVerified() &&
+        isValidShortId(injuryId) &&
+        isValidInjuryRecord(incoming()) &&
+        incoming().injuryId == injuryId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/athletes/$(incoming().athleteId)) &&
+        get(/databases/$(database)/documents/athletes/$(incoming().athleteId)).data.ownerId == request.auth.uid;
+      allow update: if isVerified() &&
+        isValidShortId(injuryId) &&
+        isValidInjuryRecord(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().injuryId == existing().injuryId &&
+        incoming().athleteId == existing().athleteId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        existing().injuryStatus != 'Closed' && (
+          // Action 1: Advance Return-to-Play Stage or Update Rehab Status
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'injuryStatus', 'rtpStage', 'painScore', 'severity', 'diagnosis', 'physiotherapist', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerified() && isValidShortId(injuryId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /ai_messages/{messageId} {
+      allow get: if isVerified() && isValidShortId(messageId) && existing().ownerId == request.auth.uid;
+      allow list: if isVerified() && existing().ownerId == request.auth.uid;
+      allow create: if isVerified() &&
+        isValidShortId(messageId) &&
+        isValidAICopilotMessageRecord(incoming()) &&
+        incoming().messageId == messageId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() &&
+        isValidShortId(messageId) &&
+        isValidAICopilotMessageRecord(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().messageId == existing().messageId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'content', 'confidence', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidShortId(messageId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /audit_events/{eventId} {
+      allow get: if isVerified() && isValidShortId(eventId) && existing().ownerId == request.auth.uid;
+      allow list: if isVerified() && existing().ownerId == request.auth.uid;
+      allow create: if isVerified() &&
+        isValidShortId(eventId) &&
+        isValidAuditEventRecord(incoming()) &&
+        incoming().eventId == eventId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update, delete: if false;
+    }
+  }
+}

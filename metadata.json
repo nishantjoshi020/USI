@@ -1,0 +1,6 @@
+{
+  "name": "Unified Sports Interface (USI)",
+  "description": "AI-native enterprise Athlete Management System (AMS) for national federations, Olympic programs, and high-performance sports organizations.",
+  "requestFramePermissions": ["microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

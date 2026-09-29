@@ -1,0 +1,535 @@
+{
+  "entities": {
+    "AthleteRecord": {
+      "title": "AthleteRecord",
+      "description": "Persistent athlete readiness, load, medical clearance, and nutrition record owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the record owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteId": {
+          "type": "string",
+          "description": "Unique identifier of the athlete.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the athlete.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "sport": {
+          "type": "string",
+          "description": "Sport discipline.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "squad": {
+          "type": "string",
+          "description": "Assigned squad name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "position": {
+          "type": "string",
+          "description": "Playing position or event.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "readiness": {
+          "type": "number",
+          "description": "Readiness score from 0 to 100."
+        },
+        "recovery": {
+          "type": "number",
+          "description": "Recovery score from 0 to 100."
+        },
+        "fatigue": {
+          "type": "number",
+          "description": "Fatigue score from 0 to 100."
+        },
+        "acwr": {
+          "type": "number",
+          "description": "Acute:Chronic Workload Ratio."
+        },
+        "weeklyLoad": {
+          "type": "number",
+          "description": "Weekly training load in arbitrary units (AU)."
+        },
+        "medicalStatus": {
+          "type": "string",
+          "description": "Medical clearance status.",
+          "enum": ["Cleared", "Modified", "Restricted", "Injured"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "availability": {
+          "type": "string",
+          "description": "Training and match availability.",
+          "enum": ["Available", "Modified", "Unavailable"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "riskLevel": {
+          "type": "string",
+          "description": "AI composite risk level.",
+          "enum": ["Low", "Moderate", "Elevated", "High"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "hydrationLitres": {
+          "type": "number",
+          "description": "Daily hydration intake in litres."
+        },
+        "nutritionCompliancePct": {
+          "type": "number",
+          "description": "Nutrition plan compliance percentage."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when record was last updated."
+        }
+      },
+      "required": [
+        "ownerId",
+        "athleteId",
+        "name",
+        "sport",
+        "squad",
+        "position",
+        "readiness",
+        "recovery",
+        "fatigue",
+        "acwr",
+        "weeklyLoad",
+        "medicalStatus",
+        "availability",
+        "riskLevel",
+        "hydrationLitres",
+        "nutritionCompliancePct",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TrainingSessionRecord": {
+      "title": "TrainingSessionRecord",
+      "description": "Training session schedule, load target, and Google Maps venue details.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the record owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Unique identifier of the training session.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Session title.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "type": {
+          "type": "string",
+          "description": "Session category.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "squad": {
+          "type": "string",
+          "description": "Target squad.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "date": {
+          "type": "string",
+          "description": "Session date string.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Session start time.",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "durationMin": {
+          "type": "number",
+          "description": "Duration in minutes."
+        },
+        "plannedLoad": {
+          "type": "string",
+          "description": "Planned load intensity.",
+          "enum": ["Low", "Medium", "High"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "venue": {
+          "type": "string",
+          "description": "Venue display name.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "venueAddress": {
+          "type": "string",
+          "description": "Formatted address from Google Maps Places API.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "venuePlaceId": {
+          "type": "string",
+          "description": "Google Maps Place ID.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "venueLat": {
+          "type": "number",
+          "description": "Venue latitude coordinate."
+        },
+        "venueLng": {
+          "type": "number",
+          "description": "Venue longitude coordinate."
+        },
+        "venueMapsUri": {
+          "type": "string",
+          "description": "Official Google Maps URI for the venue.",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "sessionStatus": {
+          "type": "string",
+          "description": "Lifecycle status of the training session.",
+          "enum": ["Draft", "Scheduled", "In Progress", "Completed", "Archived"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "coach": {
+          "type": "string",
+          "description": "Lead coach name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "sessionId",
+        "title",
+        "type",
+        "squad",
+        "date",
+        "startTime",
+        "durationMin",
+        "plannedLoad",
+        "venue",
+        "venueAddress",
+        "venuePlaceId",
+        "venueLat",
+        "venueLng",
+        "venueMapsUri",
+        "sessionStatus",
+        "coach",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InjuryRecord": {
+      "title": "InjuryRecord",
+      "description": "Medical injury case, rehabilitation progress, and Return-to-Play stage.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the record owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "injuryId": {
+          "type": "string",
+          "description": "Unique identifier of the injury record.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteId": {
+          "type": "string",
+          "description": "Referenced athlete ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteName": {
+          "type": "string",
+          "description": "Full name of the injured athlete.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "Clinical diagnosis.",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "bodyArea": {
+          "type": "string",
+          "description": "Anatomical region.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "side": {
+          "type": "string",
+          "description": "Anatomical side.",
+          "enum": ["Left", "Right", "Bilateral", "Central"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "severity": {
+          "type": "string",
+          "description": "Clinical severity.",
+          "enum": ["Minor", "Moderate", "Severe"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "injuryStatus": {
+          "type": "string",
+          "description": "Case workflow status.",
+          "enum": ["Active", "Rehab", "RTP", "Cleared", "Closed"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "rtpStage": {
+          "type": "number",
+          "description": "Return-to-Play stage from 1 to 5."
+        },
+        "painScore": {
+          "type": "number",
+          "description": "Pain VAS score from 0 to 10."
+        },
+        "physiotherapist": {
+          "type": "string",
+          "description": "Assigned physiotherapist.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "injuryId",
+        "athleteId",
+        "athleteName",
+        "diagnosis",
+        "bodyArea",
+        "side",
+        "severity",
+        "injuryStatus",
+        "rtpStage",
+        "painScore",
+        "physiotherapist",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AICopilotMessageRecord": {
+      "title": "AICopilotMessageRecord",
+      "description": "Persisted AI Copilot chat or voice conversation message.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the conversation owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "messageId": {
+          "type": "string",
+          "description": "Unique message identifier.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "description": "Message sender role.",
+          "enum": ["user", "assistant"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Human-readable time label.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "content": {
+          "type": "string",
+          "description": "Message text content.",
+          "minLength": 1,
+          "maxLength": 8000
+        },
+        "confidence": {
+          "type": "string",
+          "description": "AI confidence rating.",
+          "enum": ["High", "Medium", "Low"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "sourceModality": {
+          "type": "string",
+          "description": "Whether message originated from text chat, live voice, or maps grounding.",
+          "enum": ["text", "voice", "maps"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "messageId",
+        "role",
+        "timestamp",
+        "content",
+        "confidence",
+        "sourceModality",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AuditEventRecord": {
+      "title": "AuditEventRecord",
+      "description": "Immutable operational and AI governance audit log entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the workspace owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "eventId": {
+          "type": "string",
+          "description": "Unique audit event ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "module": {
+          "type": "string",
+          "description": "USI module name.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "action": {
+          "type": "string",
+          "description": "Description of the consequential action.",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "actorRole": {
+          "type": "string",
+          "description": "Role that performed or approved the action.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "timestampLabel": {
+          "type": "string",
+          "description": "Display timestamp label.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "eventId",
+        "module",
+        "action",
+        "actorRole",
+        "timestampLabel",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/athletes/{athleteId}": {
+      "schema": { "$ref": "#/entities/AthleteRecord" },
+      "description": "Stores athlete readiness, workload, medical clearance, and hydration records per authenticated user workspace."
+    },
+    "/training_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/TrainingSessionRecord" },
+      "description": "Stores scheduled training sessions including Google Maps venue metadata."
+    },
+    "/injuries/{injuryId}": {
+      "schema": { "$ref": "#/entities/InjuryRecord" },
+      "description": "Stores medical injury cases, rehabilitation status, and Return-to-Play stages linked to athletes."
+    },
+    "/ai_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/AICopilotMessageRecord" },
+      "description": "Stores AI Copilot chat, voice conversation transcripts, and Google Maps grounded responses."
+    },
+    "/audit_events/{eventId}": {
+      "schema": { "$ref": "#/entities/AuditEventRecord" },
+      "description": "Stores immutable cross-module and AI governance audit trail events."
+    }
+  }
+}
