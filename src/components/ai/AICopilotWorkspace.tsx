@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -132,9 +132,18 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
   const activeRiskCount = riskSignals.filter(
     (r) => r.feedbackStatus !== 'Dismissed'
   ).length;
-  const activeRulesCount = automationRules.filter((r) => r.enabled).length;
-
-  const roleBehavior = AI_ROLE_BEHAVIOR_MATRIX[selectedRole];
+  const roleBehavior =
+    AI_ROLE_BEHAVIOR_MATRIX[selectedRole] ||
+    AI_ROLE_BEHAVIOR_MATRIX['Athlete'] || {
+      focus:
+        'Personal readiness indicators, daily training schedule, recovery metrics, and subjective wellness logs.',
+      allowedApprovals: [
+        'Submit daily morning wellness survey & RPE scores',
+        'Log personal hydration & post-workout nutrition intake',
+      ],
+      restrictedScope:
+        'Restricted to personal biometric records and assigned training plans only.',
+    };
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -910,7 +919,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                   Primary Operational Focus
                 </div>
                 <p className="text-slate-200 font-medium mt-0.5">
-                  {roleBehavior.focus}
+                  {roleBehavior?.focus || 'Operational context management'}
                 </p>
               </div>
 
@@ -919,7 +928,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                   Permitted AI-Assisted Approvals
                 </div>
                 <ul className="mt-1 space-y-1 text-[11px] text-slate-300">
-                  {roleBehavior.allowedApprovals.map((app, i) => (
+                  {(roleBehavior?.allowedApprovals || []).map((app, i) => (
                     <li key={i} className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span>{app}</span>
@@ -933,7 +942,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                   Role Permission Boundary
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  {roleBehavior.restrictedScope}
+                  {roleBehavior?.restrictedScope || 'Restricted to authenticated role scope.'}
                 </p>
               </div>
             </div>

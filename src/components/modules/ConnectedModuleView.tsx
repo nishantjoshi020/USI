@@ -213,15 +213,10 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
         </button>
       </div>
 
-      {/* Contextual Connected Data Table based on active module */}
-      {(activeNav === 'athlete-registry' ||
-        activeNav === 'enrollment' ||
-        activeNav === 'verification' ||
-        activeNav === 'readiness' ||
-        activeNav === 'fatigue' ||
-        activeNav === 'gps-wearables' ||
-        activeNav === 'recovery' ||
-        activeNav === 'nutrition') && (
+      {/* Contextual Connected Data Table based on active module (Universal fallback to prevent any blank state) */}
+      {!['sessions', 'periodisation', 'exercises', 'workload',
+         'injury-intelligence', 'injury-register', 'rehabilitation', 'return-to-play',
+         'assessments-tid', 'analytics-bi', 'ai-copilot', 'settings'].includes(activeNav) && (
         <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5">
           <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
             <div className="flex items-center gap-2">
