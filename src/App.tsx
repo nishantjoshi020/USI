@@ -74,6 +74,7 @@ import { TopContextBar } from './components/navigation/TopContextBar';
 import { KpiFilterKey, KpiGrid } from './components/command-center/KpiGrid';
 import { RoleDashboardBanner } from './components/command-center/RoleDashboardBanner';
 import { RoleSpecificAnalyticsView } from './components/command-center/RoleSpecificAnalyticsView';
+import { PersonaSpecializedSections } from './components/command-center/PersonaSpecializedSections';
 import { ReadinessAndAlertSection } from './components/command-center/ReadinessAndAlertSection';
 import { TrainingAndInjurySection } from './components/command-center/TrainingAndInjurySection';
 import { AthleteAttentionTable } from './components/command-center/AthleteAttentionTable';
@@ -1168,6 +1169,7 @@ export default function App() {
         onSelectNav={handleSelectNav}
         attentionCount={18}
         activeInjuryCount={injuries.length}
+        selectedRole={selectedRole}
       />
 
       {/* Main Content Area */}
@@ -1252,50 +1254,62 @@ export default function App() {
                 onNavigateSection={(sec) => setActiveNav(sec as any)}
               />
 
-              {/* 7. ATHLETE READINESS SECTION & 8. AI OPERATIONAL ALERT */}
-              <ReadinessAndAlertSection
-                selectedReadinessTier={selectedReadinessTier}
-                onSelectReadinessTier={handleSelectReadinessTier}
-                onViewAthletesRegistry={() => setActiveNav('athlete-registry')}
-                onReviewRiskAthletes={handleReviewRiskAthletes}
-                onOpenRiskFactorsModal={() => setIsRiskModalOpen(true)}
+              {/* Specialized Persona Hubs for Athlete, Nutritionist, Operations, Federation Admin */}
+              <PersonaSpecializedSections
+                selectedRole={selectedRole}
+                onTriggerToast={triggerToast}
+                onNavigateSection={(sec) => setActiveNav(sec as any)}
               />
 
-              {/* 9. TODAY'S TRAINING OPERATIONS & 10. INJURY INTELLIGENCE */}
-              <TrainingAndInjurySection
-                onSelectSession={(sess) => setSelectedSession(sess)}
-                onSelectInjuryAthlete={(athleteId) => {
-                  const foundInj = injuries.find(
-                    (i) => i.athleteId === athleteId
-                  );
-                  if (foundInj) {
-                    setSelectedInjuryDrawerId(foundInj.id);
-                  } else {
-                    setDrawerAthleteId(athleteId);
-                  }
-                }}
-                onViewInjuryIntelligence={() =>
-                  setActiveNav('injury-intelligence')
-                }
-              />
+              {/* Standard Tactical & Clinical Squad Sections (Hidden for Athlete, Nutritionist, Operations, Federation Admin) */}
+              {['Performance Director', 'Coach', 'Sports Scientist', 'Physiotherapist'].includes(selectedRole) && (
+                <>
+                  {/* 7. ATHLETE READINESS SECTION & 8. AI OPERATIONAL ALERT */}
+                  <ReadinessAndAlertSection
+                    selectedReadinessTier={selectedReadinessTier}
+                    onSelectReadinessTier={handleSelectReadinessTier}
+                    onViewAthletesRegistry={() => setActiveNav('athlete-registry')}
+                    onReviewRiskAthletes={handleReviewRiskAthletes}
+                    onOpenRiskFactorsModal={() => setIsRiskModalOpen(true)}
+                  />
 
-              {/* 11. ATHLETES REQUIRING ATTENTION TABLE */}
-              <AthleteAttentionTable
-                athletes={athletes}
-                selectedAthleteId={drawerAthleteId}
-                onSelectAthlete={(athlete) => setDrawerAthleteId(athlete.id)}
-                statusFilter={tableStatusFilter}
-                onChangeStatusFilter={setTableStatusFilter}
-              />
+                  {/* 9. TODAY'S TRAINING OPERATIONS & 10. INJURY INTELLIGENCE */}
+                  <TrainingAndInjurySection
+                    onSelectSession={(sess) => setSelectedSession(sess)}
+                    onSelectInjuryAthlete={(athleteId) => {
+                      const foundInj = injuries.find(
+                        (i) => i.athleteId === athleteId
+                      );
+                      if (foundInj) {
+                        setSelectedInjuryDrawerId(foundInj.id);
+                      } else {
+                        setDrawerAthleteId(athleteId);
+                      }
+                    }}
+                    onViewInjuryIntelligence={() =>
+                      setActiveNav('injury-intelligence')
+                    }
+                  />
 
-              {/* 12. AI RECOMMENDATIONS & 13. ANALYTICS PREVIEW */}
-              <AiRecommendationsAndAnalytics
-                recommendations={recommendations}
-                onApplyRecommendation={handleApplyRecommendation}
-                onReviewRecommendation={handleReviewRecommendation}
-                analyticsSeries={ANALYTICS_14D_SERIES}
-                onOpenAnalyticsModule={() => setActiveNav('analytics-bi')}
-              />
+                  {/* 11. ATHLETES REQUIRING ATTENTION TABLE */}
+                  <AthleteAttentionTable
+                    athletes={athletes}
+                    selectedAthleteId={drawerAthleteId}
+                    onSelectAthlete={(athlete) => setDrawerAthleteId(athlete.id)}
+                    statusFilter={tableStatusFilter}
+                    onChangeStatusFilter={setTableStatusFilter}
+                  />
+
+                  {/* 12. AI RECOMMENDATIONS & 13. ANALYTICS PREVIEW */}
+                  <AiRecommendationsAndAnalytics
+                    recommendations={recommendations}
+                    onApplyRecommendation={handleApplyRecommendation}
+                    onReviewRecommendation={handleReviewRecommendation}
+                    analyticsSeries={ANALYTICS_14D_SERIES}
+                    onOpenAnalyticsModule={() => setActiveNav('analytics-bi')}
+                  />
+                </>
+              )}
             </>
           ) : activeNav === 'athlete-registry' ? (
             <AthleteRegistryPage
