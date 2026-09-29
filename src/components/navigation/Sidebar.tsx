@@ -16,13 +16,14 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
-import { NavItemId } from '../../types/usi';
+import { NavItemId, UserRole } from '../../types/usi';
 
 interface SidebarProps {
   activeNav: NavItemId;
   onSelectNav: (nav: NavItemId) => void;
   attentionCount: number;
   activeInjuryCount: number;
+  selectedRole?: UserRole;
 }
 
 interface NavGroup {
@@ -44,7 +45,79 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectNav,
   attentionCount,
   activeInjuryCount,
+  selectedRole = 'Performance Director',
 }) => {
+  const ROLE_NAV_PERMISSIONS: Record<UserRole, string[]> = {
+    'Performance Director': [
+      'command-center',
+      'athletes',
+      'training',
+      'medical',
+      'sports-science',
+      'nutrition',
+      'assessments-tid',
+      'analytics-bi',
+      'ai-copilot',
+      'settings',
+    ],
+    Coach: [
+      'command-center',
+      'athletes',
+      'training',
+      'sports-science',
+      'assessments-tid',
+      'analytics-bi',
+      'ai-copilot',
+    ],
+    'Sports Scientist': [
+      'command-center',
+      'athletes',
+      'training',
+      'sports-science',
+      'nutrition',
+      'assessments-tid',
+      'analytics-bi',
+      'ai-copilot',
+    ],
+    Physiotherapist: [
+      'command-center',
+      'athletes',
+      'medical',
+      'sports-science',
+      'assessments-tid',
+      'ai-copilot',
+    ],
+    Nutritionist: [
+      'command-center',
+      'athletes',
+      'nutrition',
+      'sports-science',
+      'analytics-bi',
+      'ai-copilot',
+    ],
+    'Federation Admin': [
+      'command-center',
+      'athletes',
+      'analytics-bi',
+      'ai-copilot',
+      'settings',
+    ],
+    Athlete: [
+      'command-center',
+      'training',
+      'nutrition',
+      'sports-science',
+      'ai-copilot',
+    ],
+    'Operations Team': [
+      'command-center',
+      'training',
+      'analytics-bi',
+      'ai-copilot',
+      'settings',
+    ],
+  };
+
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     athletes: false,
     training: false,
@@ -222,7 +295,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Scroll Area */}
       <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-1">
-        {navGroups.map((group) => {
+        {navGroups
+          .filter((group) =>
+            selectedRole && ROLE_NAV_PERMISSIONS[selectedRole]
+              ? ROLE_NAV_PERMISSIONS[selectedRole].includes(group.id)
+              : true
+          )
+          .map((group) => {
           const Icon = group.icon;
           const hasChildren = Boolean(group.children && group.children.length > 0);
           const isChildActive = group.children?.some((c) => c.id === activeNav);
@@ -355,11 +434,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {!isCompact && (
         <div className="p-3 border-t border-slate-800/90 bg-[#0B101B]">
           <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Data Flow Pipeline</span>
-            <span className="font-mono text-emerald-400">Live Sync</span>
+            <span>Role Lens:</span>
+            <span className="font-mono text-sky-400 font-semibold">{selectedRole}</span>
           </div>
-          <div className="mt-1 text-[11px] text-slate-500 truncate">
-            Data → Intelligence → Action
+          <div className="mt-1 text-[10px] text-slate-500 truncate">
+            Restricted to role-specific scope
           </div>
         </div>
       )}
