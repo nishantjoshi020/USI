@@ -543,12 +543,22 @@ export interface AIRecommendation {
 
 export interface AppNotification {
   id: string;
-  category: 'AI Risk Alert' | 'Medical' | 'Training' | 'Assessment';
+  category:
+    | 'AI Risk Alert'
+    | 'Medical'
+    | 'Training'
+    | 'Assessment'
+    | 'Nutrition'
+    | 'Governance'
+    | 'Operations'
+    | 'Science';
   title: string;
   description: string;
   timestamp: string;
   read: boolean;
   severity: 'high' | 'medium' | 'info';
+  roles?: UserRole[];
+  actionLabel?: string;
   linkedAthleteId?: string;
   linkedSessionId?: string;
   targetNav?: NavItemId;
@@ -892,7 +902,11 @@ export interface AICopilotActionButton {
     | 'open-medical-module'
     | 'open-assessments-module'
     | 'open-analytics-module'
+    | 'open-nutrition-module'
+    | 'open-registry-module'
+    | 'open-readiness-module'
     | 'open-risk-centre'
+    | 'open-action-centre'
     | 'open-report-preview'
     | 'open-coach-brief'
     | 'open-ai-summary'
@@ -948,13 +962,20 @@ export interface AIActionCentreItem {
   id: string;
   priority: 'High' | 'Medium' | 'Low';
   safetyClass: AIActionSafetyClass;
-  source: 'AI Workload & Readiness Engine' | 'AI Medical Risk Monitor' | 'AI Assessment & TID Engine' | 'AI Nutrition Monitor';
+  source:
+    | 'AI Workload & Readiness Engine'
+    | 'AI Medical Risk Monitor'
+    | 'AI Assessment & TID Engine'
+    | 'AI Nutrition Monitor'
+    | 'AI Governance & Compliance Engine'
+    | 'AI Facility & Operations Engine';
   affectedAthleteId?: string;
   affectedAthleteName: string;
   squad: string;
   recommendation: string;
   detail: string;
   approverRole: string;
+  targetRoles?: UserRole[];
   status: AIActionStatus;
   confidence: AIConfidenceLevel;
   createdAt: string;
@@ -979,6 +1000,7 @@ export interface AIRiskSignalCard {
   confidence: AIConfidenceLevel;
   recommendedAction: string;
   targetNav: NavItemId;
+  targetRoles?: UserRole[];
   feedbackStatus?: 'Helpful' | 'Not Relevant' | 'Dismissed';
   dismissReason?: 'Not relevant' | 'Already addressed' | 'Incorrect data' | 'Other';
   evidenceBundle: AIEvidenceBundle;

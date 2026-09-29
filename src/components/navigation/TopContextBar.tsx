@@ -260,7 +260,6 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
             </div>
           )}
         </div>
-
         {/* Active Athlete Quick Focus / Switcher */}
         {athletes && athletes.length > 0 && (
           <div className="relative min-w-0">

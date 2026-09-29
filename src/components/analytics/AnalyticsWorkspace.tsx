@@ -128,11 +128,19 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
     'idle' | 'generating' | 'ready'
   >('idle');
 
-  const arjun =
-    athletes.find((a) => a.id === 'ath-arjun-mehta') || athletes[0];
-  const arjunPlan =
-    nutritionPlans.find((p) => p.athleteId === 'ath-arjun-mehta') ||
+  const [selectedAnalyticsAthleteId, setSelectedAnalyticsAthleteId] =
+    useState<string>('ath-arjun-mehta');
+
+  const activeAthlete =
+    athletes.find((a) => a.id === selectedAnalyticsAthleteId) ||
+    athletes.find((a) => a.id === 'ath-arjun-mehta') ||
+    athletes[0];
+  const activeAthletePlan =
+    nutritionPlans.find((p) => p.athleteId === activeAthlete.id) ||
     nutritionPlans[0];
+  const activeAthleteInjuries = injuries.filter(
+    (i) => i.athleteId === activeAthlete.id
+  );
 
   const handleSelectLevel = (level: AnalyticsHierarchyLevel) => {
     const map: Record<AnalyticsHierarchyLevel, AnalyticsSubTab> = {
@@ -236,15 +244,46 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
         { label: 'Nutrition Compliance', value: '84%', sub: 'Mean squad adherence' },
       ];
     }
-    // Athlete Level (Arjun Mehta)
+    // Athlete Level (Dynamic Selected Athlete)
+    const activeInj = activeAthleteInjuries[0];
     return [
-      { label: 'Readiness (Arjun Mehta)', value: `${arjun.readiness}%`, sub: 'Monitor Tier (-7% vs 7d)' },
-      { label: 'Training Load', value: '↑ 22%', sub: `${arjun.acuteLoadAu} AU · ACWR ${arjun.acwr}` },
-      { label: 'Recovery', value: '↓ 8%', sub: `Composite ${arjun.recovery}% · HRV ${arjun.hrvMs}ms` },
-      { label: 'Injury Status', value: 'Stage 3/5', sub: 'Left Hamstring Rehab (68%)' },
-      { label: 'Nutrition & Hydration', value: `${arjunPlan.compliancePct}%`, sub: `Hydration ${arjunPlan.hydrationCompliancePct}% (2.8L/3.5L)` },
-      { label: 'Performance Score', value: `${arjun.performanceScore}`, sub: 'Talent Index 82 (High Alignment)' },
-      { label: 'Assessments (30m / CMJ)', value: '4.21s / 48cm', sub: 'Both Above Benchmark ✓' },
+      {
+        label: `Readiness (${activeAthlete.name})`,
+        value: `${activeAthlete.readiness}%`,
+        sub: `${activeAthlete.status} Tier (${activeAthlete.readinessDelta >= 0 ? '+' : ''}${activeAthlete.readinessDelta}% vs 7d)`,
+      },
+      {
+        label: 'Training Load',
+        value: `${activeAthlete.trainingLoad}`,
+        sub: `${activeAthlete.acuteLoadAu} AU · ACWR ${activeAthlete.acwr.toFixed(2)}`,
+      },
+      {
+        label: 'Recovery',
+        value: `${activeAthlete.recovery}%`,
+        sub: `HRV ${activeAthlete.hrvMs}ms · Sleep ${activeAthlete.sleepFormatted}`,
+      },
+      {
+        label: 'Injury Status',
+        value: activeInj ? activeInj.stage.split('(')[0].trim() : 'Cleared',
+        sub: activeInj
+          ? `${activeInj.bodyPart} (${activeInj.rehabCompliancePct}% comp.)`
+          : 'No active time-loss pathology',
+      },
+      {
+        label: 'Nutrition & Hydration',
+        value: `${activeAthletePlan?.compliancePct ?? activeAthlete.nutritionCompliancePct}%`,
+        sub: `Hydration ${activeAthletePlan?.hydrationCompliancePct ?? 85}% (${activeAthletePlan?.hydrationIntakeL ?? activeAthlete.hydrationLiters}L/${activeAthletePlan?.hydrationTargetL ?? activeAthlete.hydrationTargetLiters}L)`,
+      },
+      {
+        label: 'Performance Score',
+        value: `${activeAthlete.performanceScore}`,
+        sub: `Talent Index ${activeAthlete.talentIndex} (${activeAthlete.pathwayStage})`,
+      },
+      {
+        label: 'Assessments (30m / CMJ)',
+        value: `${activeAthlete.performanceMetrics.sprint30m.current} / ${activeAthlete.performanceMetrics.cmj.current}`,
+        sub: `Yo-Yo ${activeAthlete.performanceMetrics.yoYoIr2.current}`,
+      },
     ];
   };
 
@@ -285,10 +324,13 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
         };
       case 'Athlete':
         return {
-          where: "Federation / Football / Senior Men's Program / Senior Squad / Arjun Mehta",
-          what: 'Integrated 360° telemetry for Arjun Mehta (ATH-1042)',
-          changed: 'Training load ↑ 22%, Recovery ↓ 8%, Hydration 74%, 30m Sprint improved to 4.21s',
-          why: 'Active Stage 3 hamstring rehab + elevated load requires pre-session review',
+          where: `Federation / ${activeAthlete.sport} / ${activeAthlete.program} / ${activeAthlete.squad} / ${activeAthlete.name}`,
+          what: `Integrated 360° telemetry for ${activeAthlete.name} (${activeAthlete.athleteId})`,
+          changed: `Readiness ${activeAthlete.readiness}%, Load ${activeAthlete.acuteLoadAu} AU, Hydration ${activeAthletePlan?.hydrationCompliancePct ?? 82}%, 30m Sprint ${activeAthlete.performanceMetrics.sprint30m.current}`,
+          why:
+            activeAthleteInjuries.length > 0
+              ? `Active ${activeAthleteInjuries[0].bodyPart} rehab + ${activeAthlete.trainingLoad} load requires pre-session review`
+              : `Maintaining ${activeAthlete.status} readiness and optimal neuromuscular output`,
           next: 'Use [Review Training], [Review Medical], or [Review Recovery] in the AI Cross-Module Insight',
         };
     }
@@ -362,7 +404,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                     },
                     {
                       level: 'Athlete' as AnalyticsHierarchyLevel,
-                      label: 'Arjun Mehta',
+                      label: activeAthlete?.name || 'Arjun Mehta',
                     },
                   ]
                 : [
@@ -381,7 +423,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                     },
                     {
                       level: 'Athlete' as AnalyticsHierarchyLevel,
-                      label: 'Arjun Mehta',
+                      label: activeAthlete?.name || 'Arjun Mehta',
                     },
                   ]
             ).map((crumb, idx) => {
@@ -520,7 +562,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
             {/* Left: Interactive Hierarchy Drill-Down Cards */}
             <div className="xl:col-span-7 bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
                 <div>
                   <h2 className="text-sm font-bold text-slate-100 uppercase">
                     {currentLevel === 'Federation' &&
@@ -530,11 +572,29 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                     {currentLevel === 'Program' &&
                       "SENIOR MEN'S PROGRAM SQUAD BREAKDOWN (CLICK SENIOR SQUAD)"}
                     {currentLevel === 'Squad' &&
-                      'SENIOR SQUAD OPERATIONAL SIGNALS & ATHLETE ROSTER (CLICK ARJUN MEHTA)'}
+                      'SENIOR SQUAD OPERATIONAL SIGNALS & ATHLETE ROSTER (CLICK ANY ATHLETE)'}
                     {currentLevel === 'Athlete' &&
-                      'INTEGRATED ATHLETE INTELLIGENCE TIMELINE — ARJUN MEHTA'}
+                      `INTEGRATED ATHLETE INTELLIGENCE TIMELINE — ${activeAthlete.name.toUpperCase()}`}
                   </h2>
                 </div>
+                {currentLevel === 'Athlete' && selectedRole !== 'Athlete' && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-400 font-mono text-[11px]">
+                      Select Athlete:
+                    </span>
+                    <select
+                      value={activeAthlete.id}
+                      onChange={(e) => setSelectedAnalyticsAthleteId(e.target.value)}
+                      className="px-2.5 py-1 rounded bg-[#090D16] border border-slate-700 text-sky-300 font-semibold focus:outline-none focus:border-sky-500"
+                    >
+                      {athletes.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.position})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {currentLevel === 'Federation' && (
@@ -705,20 +765,23 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
                     <div className="font-bold text-slate-300 uppercase">
-                      Select Squad Athlete to Drill into Athlete Analytics:
+                      Select Squad Athlete to Drill into Athlete Analytics ({athletes.length}):
                     </div>
-                    {athletes.slice(0, 3).map((ath) => (
+                    {athletes.map((ath) => (
                       <button
                         key={ath.id}
-                        onClick={() => handleSelectLevel('Athlete')}
-                        className="w-full p-3 rounded bg-[#0B101B] border border-slate-800 hover:border-sky-500 flex items-center justify-between text-left"
+                        onClick={() => {
+                          setSelectedAnalyticsAthleteId(ath.id);
+                          handleSelectLevel('Athlete');
+                        }}
+                        className="w-full p-3 rounded bg-[#0B101B] border border-slate-800 hover:border-sky-500 flex items-center justify-between text-left transition-colors"
                       >
                         <div>
                           <strong className="text-slate-100">{ath.name}</strong>
                           <span className="ml-2 font-mono text-slate-400">
-                            {ath.athleteId} · Readiness {ath.readiness}% · Load{' '}
+                            {ath.athleteId} · {ath.position} · Readiness {ath.readiness}% · Load{' '}
                             {ath.trainingLoad}
                           </span>
                         </div>
@@ -731,7 +794,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                 </div>
               )}
 
-              {/* 26. ATHLETE ANALYTICS (ARJUN MEHTA CORRELATION TIMELINE) */}
+              {/* 26. ATHLETE ANALYTICS (DYNAMIC CORRELATION TIMELINE) */}
               {currentLevel === 'Athlete' && (
                 <div className="space-y-3 text-xs">
                   <div className="overflow-x-auto">
@@ -747,7 +810,41 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/70">
-                        {ARJUN_INTEGRATED_CORRELATION_TIMELINE.map((row) => (
+                        {(activeAthlete.id === 'ath-arjun-mehta'
+                          ? ARJUN_INTEGRATED_CORRELATION_TIMELINE
+                          : [
+                              {
+                                date: 'Today',
+                                training: `${activeAthlete.recentSessions[0]?.title || 'Squad Session'} (${activeAthlete.acuteLoadAu} AU)`,
+                                medical:
+                                  activeAthleteInjuries[0]
+                                    ? `${activeAthleteInjuries[0].bodyPart} — ${activeAthleteInjuries[0].stage}`
+                                    : `${activeAthlete.medicalStatus} (No restriction)`,
+                                recovery: `Readiness ${activeAthlete.readiness}% · HRV ${activeAthlete.hrvMs}ms · Sleep ${activeAthlete.sleepFormatted}`,
+                                assessment: `30m: ${activeAthlete.performanceMetrics.sprint30m.current} · CMJ: ${activeAthlete.performanceMetrics.cmj.current}`,
+                                nutrition: `Compliance ${activeAthletePlan?.compliancePct ?? activeAthlete.nutritionCompliancePct}% · Hydration ${activeAthletePlan?.hydrationIntakeL ?? activeAthlete.hydrationLiters}L`,
+                              },
+                              {
+                                date: '3 Days Ago',
+                                training: `${activeAthlete.recentSessions[1]?.title || 'Conditioning Block'} (${Math.round(activeAthlete.acuteLoadAu * 0.92)} AU)`,
+                                medical:
+                                  activeAthleteInjuries[0]
+                                    ? `Rehab compliance ${activeAthleteInjuries[0].rehabCompliancePct}%`
+                                    : 'Routine physio screening passed',
+                                recovery: `Readiness ${Math.min(99, activeAthlete.readiness + 3)}% · HRV ${activeAthlete.hrvMs + 2}ms`,
+                                assessment: `Yo-Yo IR2: ${activeAthlete.performanceMetrics.yoYoIr2.current}`,
+                                nutrition: `Macro Target ${activeAthletePlan?.caloriesTarget ?? activeAthlete.dailyCalorieTargetKcal} kcal met`,
+                              },
+                              {
+                                date: '7 Days Ago',
+                                training: `Microcycle Baseline Load (${activeAthlete.chronicLoadAu} AU)`,
+                                medical: 'Baseline musculoskeletal check verified',
+                                recovery: `Readiness ${Math.max(55, activeAthlete.readiness - activeAthlete.readinessDelta)}% · Baseline HRV ${activeAthlete.hrvBaselineMs}ms`,
+                                assessment: `Baseline 30m: ${activeAthlete.performanceMetrics.sprint30m.previous}`,
+                                nutrition: `Hydration Status: ${activeAthlete.hydrationStatus}`,
+                              },
+                            ]
+                        ).map((row) => (
                           <tr key={row.date} className="hover:bg-[#141D2E]">
                             <td className="py-2.5 px-2.5 font-mono font-bold text-sky-400">
                               {row.date}
@@ -861,13 +958,13 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
 
           {/* 31. AI CROSS-MODULE ANALYSIS & 28. AI PERFORMANCE INSIGHTS */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-            {/* 31. AI CROSS-MODULE INSIGHT (ARJUN MEHTA) */}
+            {/* 31. AI CROSS-MODULE INSIGHT (DYNAMIC ATHLETE) */}
             <div className="xl:col-span-6 bg-[#0F1623] border border-sky-500/40 rounded-lg p-5 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <Bot className="w-4 h-4 text-sky-400" />
                   <h3 className="text-sm font-bold text-slate-100 uppercase">
-                    AI CROSS-MODULE INSIGHT — ARJUN MEHTA
+                    AI CROSS-MODULE INSIGHT — {activeAthlete.name.toUpperCase()}
                   </h3>
                 </div>
                 <span className="px-2 py-0.5 rounded bg-sky-500/20 font-mono text-[10px] text-sky-300">
@@ -878,21 +975,44 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
               {/* 5 Correlated Signals */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                 {[
-                  { label: 'Training Load', val: '↑ 22%', color: 'text-amber-400' },
-                  { label: 'Recovery', val: '↓ 8%', color: 'text-rose-400' },
                   {
-                    label: 'Hydration Compliance',
-                    val: '74%',
-                    color: 'text-amber-300',
+                    label: 'Training Load',
+                    val: `${activeAthlete.trainingLoad} (${activeAthlete.acwr.toFixed(2)})`,
+                    color:
+                      activeAthlete.trainingLoad === 'High'
+                        ? 'text-amber-400'
+                        : 'text-emerald-400',
                   },
                   {
-                    label: 'Hamstring Injury',
-                    val: 'Active',
-                    color: 'text-rose-300',
+                    label: 'Recovery',
+                    val: `${activeAthlete.recovery}% (${activeAthlete.readinessDelta >= 0 ? '+' : ''}${activeAthlete.readinessDelta}%)`,
+                    color:
+                      activeAthlete.recovery < 70
+                        ? 'text-rose-400'
+                        : 'text-emerald-400',
+                  },
+                  {
+                    label: 'Hydration Compliance',
+                    val: `${activeAthletePlan?.hydrationCompliancePct ?? 84}%`,
+                    color:
+                      (activeAthletePlan?.hydrationCompliancePct ?? 84) < 80
+                        ? 'text-amber-300'
+                        : 'text-emerald-400',
+                  },
+                  {
+                    label: 'Medical Status',
+                    val:
+                      activeAthleteInjuries.length > 0
+                        ? `${activeAthleteInjuries[0].bodyPart} Active`
+                        : activeAthlete.medicalStatus,
+                    color:
+                      activeAthleteInjuries.length > 0
+                        ? 'text-rose-300'
+                        : 'text-emerald-400',
                   },
                   {
                     label: '30m Sprint',
-                    val: 'Improving',
+                    val: activeAthlete.performanceMetrics.sprint30m.current,
                     color: 'text-emerald-400',
                   },
                 ].map((sig) => (
@@ -915,7 +1035,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                   AI Interpretation (Advisory · Non-Diagnostic)
                 </div>
                 <p className="text-slate-100 leading-relaxed font-medium">
-                  "Performance output remains stable despite reduced recovery and elevated workload. However, the combination of active rehabilitation and high training exposure warrants review of upcoming high-intensity sessions."
+                  "{activeAthlete.aiSummary}"
                 </p>
               </div>
 
@@ -1097,7 +1217,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
               </div>
             </div>
 
-            {/* 3 Required Actions: [Preview] [Export] [Schedule] */}
+            {/* Actions: [Preview] [Save Report] [Export] [Schedule] */}
             <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-800">
               <button
                 onClick={() => {
@@ -1121,6 +1241,27 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
               </button>
               <button
                 onClick={() => {
+                  const savedRep: Report = {
+                    id: `rep-${Date.now()}`,
+                    reportName: reportName.trim() || 'Custom Performance Report',
+                    scope: reportScope,
+                    metrics: reportMetrics,
+                    dateRange: reportDateRange,
+                    filters: reportFilters,
+                    format: reportFormat,
+                    createdAt: 'Today · Saved',
+                    createdBy: selectedRole,
+                    status: 'Ready',
+                  };
+                  setPreviewReport(savedRep);
+                  onCreateReport(savedRep);
+                }}
+                className="px-3.5 py-2 rounded bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-semibold"
+              >
+                Save Report
+              </button>
+              <button
+                onClick={() => {
                   setExportFormat(reportFormat);
                   setExportState('idle');
                   setIsExportModalOpen(true);
@@ -1131,9 +1272,9 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
               </button>
               <button
                 onClick={() => {
-                  onCreateReport({
+                  const scheduledRep: Report = {
                     id: `rep-${Date.now()}`,
-                    reportName,
+                    reportName: reportName.trim() || 'Scheduled Performance Report',
                     scope: reportScope,
                     metrics: reportMetrics,
                     dateRange: reportDateRange,
@@ -1142,7 +1283,9 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                     createdAt: 'Scheduled Weekly',
                     createdBy: selectedRole,
                     status: 'Scheduled',
-                  });
+                  };
+                  setPreviewReport(scheduledRep);
+                  onCreateReport(scheduledRep);
                 }}
                 className="px-3.5 py-2 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-semibold"
               >

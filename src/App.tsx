@@ -1458,7 +1458,6 @@ export default function App() {
     activeNav === 'workload';
 
   const isLifecycleHubRoute = activeNav === 'athlete-lifecycle';
-
   const isSportsScienceRoute =
     activeNav === 'readiness' ||
     activeNav === 'fatigue' ||

@@ -33,6 +33,7 @@ import {
   NavItemId,
   UserRole,
 } from '../../types/usi';
+import { AI_ROLE_BEHAVIOR_MATRIX } from '../../data/aiCopilotMockData';
 
 /* =========================================================
  * 1. AI EVIDENCE DRAWER (SECTION 22: "Why am I seeing this?" / "View Evidence")
@@ -531,27 +532,38 @@ export const GlobalAICopilotSlideOver: React.FC<
 
   if (!isOpen) return null;
 
-  // Contextual Module Suggestion (Section 25)
+  const roleBehavior =
+    AI_ROLE_BEHAVIOR_MATRIX[selectedRole] ||
+    AI_ROLE_BEHAVIOR_MATRIX['Performance Director'];
+
+  // Contextual Module Suggestion (Section 25) + Persona Fallback
   const moduleShortcutMap: Record<string, string> = {
-    'command-center': 'Why are these athletes at risk?',
-    'athlete-360': 'Why is his readiness low?',
+    'command-center':
+      roleBehavior.promptChips[0] || 'Why are these athletes at risk?',
+    'athlete-360':
+      selectedRole === 'Athlete'
+        ? 'Explain my morning recovery telemetry and HRV baseline.'
+        : 'Why is his readiness low?',
     periodisation: 'Review high-risk athlete assignments.',
     sessions: 'Review high-risk athlete assignments.',
-    workload: 'Review high-risk athlete assignments.',
-    'injury-intelligence': 'Summarize active rehabilitation cases.',
-    'injury-register': 'Summarize active rehabilitation cases.',
-    rehabilitation: 'Summarize active rehabilitation cases.',
-    'return-to-play': 'Who needs RTP review?',
-    readiness: "Explain today's readiness changes.",
+    workload: 'Show me athletes with high workload and declining recovery.',
+    'injury-intelligence': 'Summarize active rehabilitation cases and RTP gate criteria.',
+    'injury-register': 'Summarize active rehabilitation cases and RTP gate criteria.',
+    rehabilitation: 'Why is Arjun restricted?',
+    'return-to-play': 'Who needs RTP review today?',
+    readiness:
+      'Analyze HRV suppression and CMJ neuromuscular fatigue across Senior Squad.',
     recovery: "Explain today's readiness changes.",
-    nutrition: 'Identify athletes with declining compliance.',
-    'assessments-tid': 'Show athletes below benchmark.',
-    'analytics-bi': 'Explain the largest changes this week.',
-    'analytics-federation': 'Explain the largest changes this week.',
+    nutrition:
+      'Identify athletes with declining nutrition and hydration compliance.',
+    'assessments-tid': 'Which 8 athletes are pending September assessment tests?',
+    'analytics-bi': 'Give me a performance overview of the federation.',
+    'analytics-federation': 'Give me a performance overview of the federation.',
   };
 
   const contextualPrompt =
     moduleShortcutMap[activeNav] ||
+    roleBehavior.promptChips[0] ||
     "Should we modify tomorrow's high-intensity session for athletes at elevated risk?";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -584,7 +596,7 @@ export const GlobalAICopilotSlideOver: React.FC<
                 </span>
               </div>
               <div className="text-[11px] text-slate-400">
-                Contextual Operational Intelligence
+                {roleBehavior.personaTitle}
               </div>
             </div>
           </div>
@@ -610,25 +622,48 @@ export const GlobalAICopilotSlideOver: React.FC<
           </div>
         </div>
 
-        {/* Context Indicator Bar (Section 3) */}
-        <div className="px-4 py-2.5 bg-[#0B101B] border-b border-slate-800 flex items-center justify-between text-xs">
-          <div>
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">
-              CURRENT CONTEXT
-            </span>
-            <span className="font-semibold text-slate-100">
-              {activeAthlete.name}
-            </span>{' '}
-            <span className="text-slate-400">
-              · {context.sport} · {context.squad}
-            </span>
+        {/* Context & Persona Need Indicator Bar */}
+        <div className="px-4 py-3 bg-[#0B101B] border-b border-slate-800 space-y-2.5 text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <span className="text-[10px] font-mono text-slate-400 uppercase block">
+                CURRENT CONTEXT · {selectedRole.toUpperCase()} LENS
+              </span>
+              <span className="font-semibold text-slate-100">
+                {activeAthlete?.name || 'Arjun Mehta'}
+              </span>{' '}
+              <span className="text-slate-400">
+                · {context.sport} · {context.squad}
+              </span>
+            </div>
+            <button
+              onClick={() => onSendQuery(contextualPrompt)}
+              className="px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-medium text-left"
+            >
+              Ask: "{contextualPrompt}"
+            </button>
           </div>
-          <button
-            onClick={() => onSendQuery(contextualPrompt)}
-            className="px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-medium"
-          >
-            Ask: "{contextualPrompt}"
-          </button>
+
+          <div className="p-2.5 rounded bg-[#0F1623] border border-sky-500/25 space-y-2">
+            <p className="text-[11px] text-slate-300 leading-snug">
+              {roleBehavior.activeNeedSummary}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {(roleBehavior.proactiveRecommendations || []).map((rec) => (
+                <button
+                  key={rec.id}
+                  type="button"
+                  onClick={() => onSendQuery(rec.queryPrompt)}
+                  className="px-2 py-1 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-sky-300 inline-flex items-center gap-1"
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-sky-400" />
+                  <span>
+                    {rec.metricBadge}: {rec.title}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Conversation Feed */}
@@ -770,25 +805,24 @@ export const GlobalAICopilotSlideOver: React.FC<
           className="p-3.5 border-t border-slate-800 bg-[#090D16] space-y-2"
         >
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {['/risk', '/readiness', '/training', '/injuries', '/report'].map(
-              (cmd) => (
-                <button
-                  key={cmd}
-                  type="button"
-                  onClick={() => onSendQuery(cmd)}
-                  className="px-2 py-0.5 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-800 font-mono text-[10px] text-sky-400"
-                >
-                  {cmd}
-                </button>
-              )
-            )}
+            {(roleBehavior.slashCommands || []).map((sc) => (
+              <button
+                key={sc.command}
+                type="button"
+                onClick={() => onSendQuery(sc.sampleQuery)}
+                title={sc.label}
+                className="px-2 py-0.5 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-800 font-mono text-[10px] text-sky-400 whitespace-nowrap"
+              >
+                {sc.command}
+              </button>
+            ))}
           </div>
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              placeholder="Ask USI anything about your athletes, squads or operations..."
+              placeholder={`Ask USI Copilot as ${selectedRole}...`}
               className="flex-1 px-3 py-2 rounded bg-[#0F1623] border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
             />
             <button

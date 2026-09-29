@@ -190,7 +190,6 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
             </button>
           </div>
         )}
-
         {/* Personal Schedule & Wellness Logging Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Today's Personal Schedule (7 Cols) */}
@@ -685,7 +684,6 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                 </div>
               </div>
             )}
-
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
