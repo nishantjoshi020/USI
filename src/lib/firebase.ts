@@ -160,19 +160,27 @@ export async function persistAthleteRecord(athlete: Athlete): Promise<void> {
     athlete.medicalStatus
   )
     ? athlete.medicalStatus
-    : 'Cleared';
+    : 'Restricted';
 
-  const validAvailability = ['Available', 'Modified', 'Unavailable'].includes(
-    athlete.availability
-  )
-    ? athlete.availability
-    : 'Available';
+  const validAvailability =
+    athlete.status === 'Ready'
+      ? 'Available'
+      : athlete.status === 'Unavailable'
+      ? 'Unavailable'
+      : 'Modified';
 
   const validRisk = ['Low', 'Moderate', 'Elevated', 'High'].includes(
-    athlete.riskLevel
+    athlete.injuryRisk
   )
-    ? athlete.riskLevel
+    ? athlete.injuryRisk
     : 'Low';
+
+  const fatigueVal =
+    athlete.trainingLoad === 'High'
+      ? 78
+      : athlete.trainingLoad === 'Moderate'
+      ? 52
+      : 30;
 
   try {
     const existingSnap = await getDocs(
@@ -196,20 +204,15 @@ export async function persistAthleteRecord(athlete: Athlete): Promise<void> {
       position: clampString(athlete.position, 1, 80, 'Player'),
       readiness: clampNumber(athlete.readiness, 0, 100, 75),
       recovery: clampNumber(athlete.recovery, 0, 100, 75),
-      fatigue: clampNumber(athlete.fatigue, 0, 100, 30),
+      fatigue: clampNumber(fatigueVal, 0, 100, 30),
       acwr: clampNumber(athlete.acwr, 0, 5, 1.0),
-      weeklyLoad: clampNumber(athlete.weeklyLoad, 0, 20000, 1800),
+      weeklyLoad: clampNumber(athlete.acuteLoadAu * 4, 0, 20000, 1800),
       medicalStatus: validMedical,
       availability: validAvailability,
       riskLevel: validRisk,
-      hydrationLitres: clampNumber(
-        athlete.nutrition?.hydrationLitres ?? 2.8,
-        0,
-        20,
-        2.8
-      ),
+      hydrationLitres: 2.8,
       nutritionCompliancePct: clampNumber(
-        athlete.nutrition?.compliancePct ?? 85,
+        athlete.nutritionCompliancePct ?? 85,
         0,
         100,
         85
@@ -223,13 +226,7 @@ export async function persistAthleteRecord(athlete: Athlete): Promise<void> {
 }
 
 export async function persistTrainingSessionRecord(
-  session: TrainingSession & {
-    venueAddress?: string;
-    venuePlaceId?: string;
-    venueLat?: number;
-    venueLng?: number;
-    venueMapsUri?: string;
-  }
+  session: TrainingSession
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user || !user.emailVerified) return;
@@ -237,20 +234,19 @@ export async function persistTrainingSessionRecord(
   const docId = `${sanitizeShortId(user.uid.slice(0, 20))}_${sanitizeShortId(session.id, 'ses-1')}`.slice(0, 64);
   const path = `training_sessions/${docId}`;
 
-  const validLoad = ['Low', 'Medium', 'High'].includes(session.plannedLoad)
-    ? session.plannedLoad
-    : 'Medium';
+  const validLoad =
+    session.intensity === 'High'
+      ? 'High'
+      : session.intensity === 'Low'
+      ? 'Low'
+      : 'Medium';
 
-  const rawStatus = session.sessionStatus || 'Scheduled';
-  const validStatus = [
-    'Draft',
-    'Scheduled',
-    'In Progress',
-    'Completed',
-    'Archived',
-  ].includes(rawStatus)
-    ? rawStatus
-    : 'Scheduled';
+  const validStatus =
+    session.status === 'Completed'
+      ? 'Completed'
+      : session.status === 'In Progress'
+      ? 'In Progress'
+      : 'Scheduled';
 
   try {
     const existingSnap = await getDocs(
@@ -269,18 +265,18 @@ export async function persistTrainingSessionRecord(
       ownerId: user.uid,
       sessionId: docId,
       title: clampString(session.title, 1, 160, 'Training Session'),
-      type: clampString(session.type, 1, 64, 'Conditioning'),
+      type: clampString(session.category, 1, 64, 'Conditioning'),
       squad: clampString(session.squad, 1, 80, 'Senior Squad'),
-      date: clampString(session.date, 1, 40, 'Today'),
-      startTime: clampString(session.startTime, 1, 20, '09:30'),
+      date: 'Today',
+      startTime: clampString(session.time, 1, 20, '09:30'),
       durationMin: clampNumber(session.durationMin, 5, 600, 75),
       plannedLoad: validLoad,
-      venue: clampString(session.venue, 1, 200, 'Main Pitch A'),
-      venueAddress: clampString(session.venueAddress || '', 0, 300, ''),
-      venuePlaceId: clampString(session.venuePlaceId || '', 0, 128, ''),
-      venueLat: clampNumber(session.venueLat ?? 19.076, -90, 90, 19.076),
-      venueLng: clampNumber(session.venueLng ?? 72.8777, -180, 180, 72.8777),
-      venueMapsUri: clampString(session.venueMapsUri || '', 0, 500, ''),
+      venue: clampString(session.pitchOrVenue, 1, 200, 'Main Pitch A'),
+      venueAddress: '',
+      venuePlaceId: '',
+      venueLat: 19.076,
+      venueLng: 72.8777,
+      venueMapsUri: '',
       sessionStatus: validStatus,
       coach: clampString(session.coach, 1, 120, 'Head Coach'),
       createdAt: existingCreatedAt,
@@ -309,11 +305,12 @@ export async function persistInjuryRecord(injury: Injury): Promise<void> {
   )
     ? injury.severity
     : 'Moderate';
-  const validStatus = ['Active', 'Rehab', 'RTP', 'Cleared', 'Closed'].includes(
-    injury.status
-  )
-    ? injury.status
-    : 'RTP';
+  const validStatus =
+    injury.stage === 'Return-to-Play'
+      ? 'RTP'
+      : injury.stage === 'In Rehabilitation' || injury.stage === 'Rehabilitation'
+      ? 'Rehab'
+      : 'Active';
 
   try {
     const existingSnap = await getDocs(
@@ -334,14 +331,14 @@ export async function persistInjuryRecord(injury: Injury): Promise<void> {
       athleteId: athleteDocId,
       athleteName: clampString(injury.athleteName, 1, 120, 'Athlete'),
       diagnosis: clampString(injury.diagnosis, 1, 200, 'Injury Assessment'),
-      bodyArea: clampString(injury.bodyArea, 1, 80, 'Hamstring'),
+      bodyArea: clampString(injury.bodyPart, 1, 80, 'Hamstring'),
       side: validSide,
       severity: validSeverity,
       injuryStatus: validStatus,
       rtpStage: clampNumber(injury.rtpStage, 1, 5, 1),
       painScore: clampNumber(injury.painScore ?? 2, 0, 10, 2),
       physiotherapist: clampString(
-        injury.physiotherapist,
+        injury.leadClinician,
         1,
         120,
         'Lead Physiotherapist'
@@ -356,7 +353,7 @@ export async function persistInjuryRecord(injury: Injury): Promise<void> {
 
 export async function persistAICopilotMessage(
   msg: AICopilotMessage,
-  sourceModality: 'text' | 'voice' | 'maps' = 'text'
+  sourceModality: 'text' | 'voice' = 'text'
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user || !user.emailVerified) return;
@@ -364,19 +361,25 @@ export async function persistAICopilotMessage(
   const docId = `${sanitizeShortId(user.uid.slice(0, 20))}_${sanitizeShortId(msg.id, 'msg-1')}`.slice(0, 64);
   const path = `ai_messages/${docId}`;
 
-  const validConfidence = ['High', 'Medium', 'Low'].includes(
-    msg.confidence || 'High'
-  )
-    ? (msg.confidence as string)
-    : 'High';
+  const validConfidence =
+    msg.confidence === 'Low'
+      ? 'Low'
+      : msg.confidence === 'Moderate'
+      ? 'Medium'
+      : 'High';
+
+  const textBody =
+    msg.sender === 'user'
+      ? msg.queryText || 'User query'
+      : msg.answerStatement || msg.recommendation || 'AI Copilot analysis';
 
   try {
     await setDoc(doc(db, 'ai_messages', docId), {
       ownerId: user.uid,
       messageId: docId,
-      role: msg.role === 'user' ? 'user' : 'assistant',
+      role: msg.sender === 'user' ? 'user' : 'assistant',
       timestamp: clampString(msg.timestamp, 1, 40, 'Just now'),
-      content: clampString(msg.content, 1, 8000, 'Copilot message'),
+      content: clampString(textBody, 1, 8000, 'Copilot message'),
       confidence: validConfidence,
       sourceModality,
       createdAt: serverTimestamp(),

@@ -16,14 +16,87 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
-import { NavItemId } from '../../types/usi';
+import { NavItemId, UserRole } from '../../types/usi';
 
 interface SidebarProps {
   activeNav: NavItemId;
   onSelectNav: (nav: NavItemId) => void;
   attentionCount: number;
   activeInjuryCount: number;
+  selectedRole?: UserRole;
 }
+
+const ROLE_ALLOWED_NAV_GROUPS: Record<UserRole, string[]> = {
+  'Performance Director': [
+    'command-center',
+    'athletes',
+    'training',
+    'medical',
+    'sports-science',
+    'nutrition',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+    'settings',
+  ],
+  Athlete: [
+    'command-center',
+    'training',
+    'medical',
+    'nutrition',
+    'assessments-tid',
+    'ai-copilot',
+  ],
+  Coach: [
+    'command-center',
+    'athletes',
+    'training',
+    'medical',
+    'sports-science',
+    'assessments-tid',
+    'ai-copilot',
+  ],
+  'Sports Scientist': [
+    'command-center',
+    'athletes',
+    'training',
+    'sports-science',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+  ],
+  Physiotherapist: [
+    'command-center',
+    'athletes',
+    'medical',
+    'sports-science',
+    'ai-copilot',
+  ],
+  Nutritionist: [
+    'command-center',
+    'athletes',
+    'nutrition',
+    'sports-science',
+    'ai-copilot',
+  ],
+  'Federation Admin': [
+    'command-center',
+    'athletes',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+    'settings',
+  ],
+  'Operations Team': [
+    'command-center',
+    'athletes',
+    'training',
+    'assessments-tid',
+    'analytics-bi',
+    'ai-copilot',
+    'settings',
+  ],
+};
 
 interface NavGroup {
   id: string;
@@ -44,6 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectNav,
   attentionCount,
   activeInjuryCount,
+  selectedRole = 'Performance Director',
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     athletes: false,
@@ -222,7 +296,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Scroll Area */}
       <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-1">
-        {navGroups.map((group) => {
+        {navGroups
+          .filter((group) =>
+            (
+              ROLE_ALLOWED_NAV_GROUPS[selectedRole] ||
+              ROLE_ALLOWED_NAV_GROUPS['Performance Director']
+            ).includes(group.id)
+          )
+          .map((group) => {
           const Icon = group.icon;
           const hasChildren = Boolean(group.children && group.children.length > 0);
           const isChildActive = group.children?.some((c) => c.id === activeNav);

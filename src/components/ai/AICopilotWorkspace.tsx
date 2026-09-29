@@ -48,6 +48,7 @@ import {
   AI_SLASH_COMMANDS,
 } from '../../data/aiCopilotMockData';
 import { AIRiskAndActionViews } from './AIRiskAndActionViews';
+import { LiveVoiceCopilotPanel } from './LiveVoiceCopilotPanel';
 
 export type AICopilotSubTab =
   | 'ai-copilot'
@@ -87,6 +88,7 @@ interface AICopilotWorkspaceProps {
   onNavigateModule: (nav: NavItemId) => void;
   onOpenAthlete360: (athleteId: string) => void;
   onShowToast: (msg: string) => void;
+  onVoiceTurnCompleted?: (userTranscript: string, aiTranscript: string) => void;
 }
 
 export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
@@ -116,6 +118,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
   onNavigateModule,
   onOpenAthlete360,
   onShowToast,
+  onVoiceTurnCompleted,
 }) => {
   const [queryInput, setQueryInput] = useState('');
   const [scopeMode, setScopeMode] = useState<
@@ -388,6 +391,13 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
           {/* Left 8 Columns: Multi-Turn Operational Conversation & Prompt Console */}
           <div className="xl:col-span-8 space-y-4">
+            {/* Real-Time Gemini 3.8 Live Voice Conversation Panel */}
+            <LiveVoiceCopilotPanel
+              role={selectedRole}
+              hierarchy={context}
+              onVoiceTurnCompleted={onVoiceTurnCompleted}
+            />
+
             {/* Prompt Input & Quick Slash Commands Card (Section 4) */}
             <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-4 space-y-3.5">
               <form onSubmit={handleFormSubmit} className="space-y-3">

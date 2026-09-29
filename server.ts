@@ -32,28 +32,6 @@ function getGenAIClient(): GoogleGenAI {
   });
 }
 
-function isVenueOrMapsQuery(query: string, explicitFlag?: boolean): boolean {
-  if (explicitFlag) return true;
-  const q = query.toLowerCase();
-  return (
-    q.includes('venue') ||
-    q.includes('stadium') ||
-    q.includes('arena') ||
-    q.includes('facility') ||
-    q.includes('facilities') ||
-    q.includes('pitch') ||
-    q.includes('ground') ||
-    q.includes('clinic') ||
-    q.includes('hospital') ||
-    q.includes('google maps') ||
-    q.includes('nearby') ||
-    q.includes('where is') ||
-    q.includes('find a ') ||
-    q.includes('location') ||
-    q.includes('address')
-  );
-}
-
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
@@ -61,15 +39,13 @@ async function startServer() {
   const httpServer = http.createServer(app);
 
   // ===========================================================================
-  // 1. POST /api/gemini/copilot — Gemini 3.8 Flash Chatbot + Maps Grounding
+  // 1. POST /api/gemini/copilot — Gemini 3.8 Flash Operational Intelligence
   // ===========================================================================
   app.post('/api/gemini/copilot', async (req, res) => {
     try {
       const {
         query,
         context,
-        useMapsGrounding,
-        latLng,
         history = [],
       } = req.body as {
         query: string;
@@ -87,8 +63,6 @@ async function startServer() {
           injuriesSummary?: string;
           sessionsSummary?: string;
         };
-        useMapsGrounding?: boolean;
-        latLng?: { lat: number; lng: number } | null;
         history?: Array<{ role: 'user' | 'assistant'; content: string }>;
       };
 
@@ -98,7 +72,6 @@ async function startServer() {
       }
 
       const ai = getGenAIClient();
-      const useMaps = isVenueOrMapsQuery(query, useMapsGrounding);
 
       const systemContextBlock = `You are USI Copilot, the enterprise AI decision-support engine inside the Unified Sports Interface (USI) Athlete Management System.
 Current Operational Context:
@@ -106,12 +79,12 @@ Current Operational Context:
 - Hierarchy: ${context?.hierarchy?.federation || 'National High Performance Program'} > ${context?.hierarchy?.sport || 'Football'} > ${context?.hierarchy?.program || "Senior Men's Program"} > ${context?.hierarchy?.squad || 'Senior Squad'}
 - Active Module: ${context?.activeModule || 'Command Center'}
 - Selected Athlete: ${context?.selectedAthleteName || 'Arjun Mehta'}
-- Squad Athletes Telemetry: ${context?.athletesSummary || 'Arjun Mehta (Readiness 62, ACWR 1.42, Restricted - Hamstring RTP Stage 3/5); Vikram Rathore (Readiness 64, ACWR 1.38); Rohan Deshmukh (Readiness 68, Fatigue High); Kabir Sharma (Readiness 88, Cleared); Devansh Nair (Readiness 84, Cleared).'}
-- Active Injuries & RTP: ${context?.injuriesSummary || 'Arjun Mehta: Left Biceps Femoris Grade 1 Strain (RTP Stage 3/5, Pain 2/10); Vikram Rathore: Right Adductor Tightness (Modified).'}
-- Upcoming Training Sessions: ${context?.sessionsSummary || 'High-Speed Conditioning & Transition Drills (09:30, Main Pitch A, High Load); Tactical Pressing & Set Pieces (16:00, Pitch B, Medium Load).'}
+- Squad Athletes Telemetry: ${context?.athletesSummary || 'Arjun Mehta (Readiness 62, ACWR 1.28, Restricted - Hamstring RTP Stage 3/5); Vikramaditya Nair (Readiness 59, ACWR 1.31); Kabir Rao (Readiness 71, Shoulder Stage 2/5); Rohan Deshmukh (Readiness 89, Cleared); Devansh Kulkarni (Readiness 66, Monitor).'}
+- Active Injuries & RTP: ${context?.injuriesSummary || 'Arjun Mehta: Left Biceps Femoris Grade 1 Strain (RTP Stage 3/5, Pain 3/10); Kabir Rao: Right Shoulder AC Joint Sprain (RTP Stage 2/5).'}
+- Upcoming Training Sessions: ${context?.sessionsSummary || 'High-Speed Conditioning & Transition Drills (09:30, Main Pitch A, High Load); Tactical Pressing & Set Pieces (16:00, Pitch B, Moderate Load).'}
 
 Governance Rules:
-- Provide concise, evidence-based, high-performance sports science, medical, training, and venue guidance tailored to the active role.
+- Provide concise, evidence-based, high-performance sports science, medical, training, and operational guidance tailored to the active role.
 - Never autonomously execute medical clearance; always frame medical/training changes as recommendations requiring human sign-off.`;
 
       const recentHistoryText =
@@ -122,87 +95,6 @@ Governance Rules:
               .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
               .join('\n')
           : '';
-
-      if (useMaps) {
-        // Maps Grounding mode: DO NOT set responseMimeType or responseSchema per @google/genai rules
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: `${systemContextBlock}${recentHistoryText}\n\nUser Request: ${query}\n\nProvide clear venue, facility, or location recommendations with practical sports operations details (surface/facility suitability, accessibility, recovery/medical proximity).`,
-          config: {
-            tools: [{ googleMaps: {} }],
-            ...(latLng &&
-            typeof latLng.lat === 'number' &&
-            typeof latLng.lng === 'number'
-              ? {
-                  toolConfig: {
-                    retrievalConfig: {
-                      latLng: {
-                        latitude: latLng.lat,
-                        longitude: latLng.lng,
-                      },
-                    },
-                  },
-                }
-              : {}),
-          },
-        });
-
-        const text =
-          response.text ||
-          'Found venue intelligence grounded via Google Maps.';
-        const rawChunks =
-          response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-
-        const mapsGroundingLinks: Array<{
-          title: string;
-          uri: string;
-          reviewSnippet?: string;
-        }> = [];
-
-        for (const chunk of rawChunks as any[]) {
-          if (chunk?.maps?.uri) {
-            const snippet =
-              chunk.maps?.placeAnswerSources?.reviewSnippets?.[0]?.snippet ||
-              chunk.maps?.placeAnswerSources?.reviewSnippets?.[0]?.text ||
-              undefined;
-            mapsGroundingLinks.push({
-              title: chunk.maps.title || 'View Venue on Google Maps',
-              uri: chunk.maps.uri,
-              reviewSnippet: snippet,
-            });
-          }
-        }
-
-        res.json({
-          mode: 'maps',
-          content: text,
-          confidence: 'High',
-          evidence: {
-            dataSources: [
-              'Google Maps Grounding Live Index',
-              'USI Training & Facility Operations',
-              `${context?.hierarchy?.squad || 'Senior Squad'} Logistics`,
-            ],
-            keySignals: [
-              mapsGroundingLinks.length > 0
-                ? `${mapsGroundingLinks.length} verified Google Maps venue(s) matched`
-                : 'Geographic venue intelligence retrieved',
-              `Query: "${query}"`,
-            ],
-            historicalContext:
-              'Cross-referenced with squad session logistics, travel time constraints, and pitch/facility requirements.',
-            confidenceRationale:
-              'High confidence — grounded directly against live Google Maps place metadata and URI citations.',
-          },
-          mapsGroundingLinks,
-          followUpSuggestions: [
-            'Open interactive Google Maps Venue Finder to assign this venue to a session',
-            'Which athletes require modified load at this venue tomorrow?',
-            'Find sports medicine & MRI clinics near this training facility',
-          ],
-        });
-        return;
-      }
 
       // Structured USI Copilot mode with Gemini 3.8 Flash
       const response = await ai.models.generateContent({
@@ -217,11 +109,11 @@ Governance Rules:
               content: {
                 type: Type.STRING,
                 description:
-                  'Detailed, structured markdown response addressing the user query with exact athlete names, metrics, and role-appropriate operational insights.',
+                  'Detailed, structured response addressing the user query with exact athlete names, metrics, and role-appropriate operational insights.',
               },
               confidence: {
                 type: Type.STRING,
-                description: 'Confidence level: High, Medium, or Low.',
+                description: 'Confidence level: High, Moderate, or Low.',
               },
               dataSources: {
                 type: Type.ARRAY,
@@ -243,7 +135,7 @@ Governance Rules:
               confidenceRationale: {
                 type: Type.STRING,
                 description:
-                  '1 sentence explaining why confidence is High, Medium, or Low.',
+                  '1 sentence explaining why confidence is High, Moderate, or Low.',
               },
               followUpSuggestions: {
                 type: Type.ARRAY,
@@ -268,7 +160,7 @@ Governance Rules:
       const parsed = JSON.parse(rawJson);
 
       const normalizedConfidence =
-        parsed.confidence === 'Low' || parsed.confidence === 'Medium'
+        parsed.confidence === 'Low' || parsed.confidence === 'Moderate'
           ? parsed.confidence
           : 'High';
 
@@ -292,13 +184,12 @@ Governance Rules:
             parsed.confidenceRationale ||
             'High sensor completeness across GPS, wellness, and medical logs.',
         },
-        mapsGroundingLinks: [],
         followUpSuggestions: Array.isArray(parsed.followUpSuggestions)
           ? parsed.followUpSuggestions.slice(0, 3)
           : [
               'Why is Arjun Mehta at elevated hamstring risk?',
               "Should we modify tomorrow's high-intensity session?",
-              'Search training venues near Mumbai on Google Maps',
+              'Summarize active rehabilitation cases across the squad.',
             ],
       });
     } catch (error: any) {
