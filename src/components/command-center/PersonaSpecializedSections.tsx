@@ -33,7 +33,6 @@ import {
   Users,
   Utensils,
   Wrench,
-  UserPlus,
   Radio,
   Zap,
   Gauge,
