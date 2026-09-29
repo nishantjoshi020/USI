@@ -1209,24 +1209,6 @@ export default function App() {
                     Good morning, Performance Team
                   </h1>
                 </div>
-
-                {/* Compact Date / Role Context Indicator */}
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0F1623] border border-slate-800">
-                    <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Role Lens:</span>
-                    <strong className="text-slate-200 font-semibold">
-                      {selectedRole}
-                    </strong>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0F1623] border border-slate-800 font-mono tabular-nums">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-slate-200">{context.date}</span>
-                    <span className="text-slate-600">·</span>
-                    <span className="text-slate-400">MD-3 Pre-Competition</span>
-                  </div>
-                </div>
               </div>
 
               {/* Dynamic 8-Persona Role Dashboard Banner */}
