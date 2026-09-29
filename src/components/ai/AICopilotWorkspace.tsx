@@ -131,28 +131,40 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
       squad: 'Senior Squad',
     };
 
-  const pendingActionsCount = (actionItems || []).filter(
+  const roleActionItems = useMemo(
+    () =>
+      (actionItems || []).filter(
+        (a) => !a.targetRoles || a.targetRoles.includes(selectedRole)
+      ),
+    [actionItems, selectedRole]
+  );
+
+  const roleRiskSignals = useMemo(
+    () =>
+      (riskSignals || []).filter(
+        (r) =>
+          r.feedbackStatus !== 'Dismissed' &&
+          (!r.targetRoles || r.targetRoles.includes(selectedRole))
+      ),
+    [riskSignals, selectedRole]
+  );
+
+  const pendingActionsCount = roleActionItems.filter(
     (a) => a.status === 'Pending Review'
   ).length;
-  const activeRiskCount = (riskSignals || []).filter(
-    (r) => r.feedbackStatus !== 'Dismissed'
-  ).length;
+  const activeRiskCount = roleRiskSignals.length;
   const activeRulesCount = (automationRules || []).filter(
     (r) => r.enabled
   ).length;
 
   const roleBehavior =
     AI_ROLE_BEHAVIOR_MATRIX[selectedRole] ||
-    AI_ROLE_BEHAVIOR_MATRIX['Athlete'] || {
-      focus:
-        'Personal readiness indicators, daily training schedule, recovery metrics, and subjective wellness logs.',
-      allowedApprovals: [
-        'Submit daily morning wellness survey & RPE scores',
-        'Log personal hydration & post-workout nutrition intake',
-      ],
-      restrictedScope:
-        'Restricted to personal biometric records and assigned training plans only.',
-    };
+    AI_ROLE_BEHAVIOR_MATRIX['Performance Director'];
+
+  const activePromptChips =
+    roleBehavior?.promptChips || AI_COPILOT_PROMPT_CHIPS;
+  const activeSlashCommands =
+    roleBehavior?.slashCommands || AI_SLASH_COMMANDS;
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,72 +223,51 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight text-slate-100">
-                  USI COPILOT
+                  USI COPILOT · {selectedRole.toUpperCase()}
                 </h1>
                 <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] font-semibold text-sky-300">
-                  AI-NATIVE OPERATIONS LAYER
+                  {roleBehavior.personaTitle.toUpperCase()}
                 </span>
                 <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 font-mono text-[10px] font-semibold text-amber-300">
                   HUMAN-IN-THE-LOOP GOVERNED
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Context-aware performance, medical, training and operational
-                intelligence. Principle: Ask → Understand Context → Analyse Data
-                → Explain → Recommend → Execute → Verify → Audit.
+              <p className="text-xs text-slate-300 mt-1 font-medium">
+                {roleBehavior.activeNeedSummary}
               </p>
             </div>
           </div>
 
-          {/* Right Quick Actions */}
+          {/* Right Quick Actions (Persona-Specific) */}
           <div className="flex flex-wrap items-center gap-2">
-            {selectedRole === 'Athlete' ? (
-              <>
-                <button
-                  onClick={() =>
-                    onSendQuery(
-                      'Explain my morning recovery telemetry and HRV baseline.'
-                    )
+            {(roleBehavior.headerQuickActions || []).map((qa, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (qa.openTrainingModModal) {
+                    onOpenTrainingModModal();
+                  } else if (qa.query) {
+                    onSendQuery(qa.query);
                   }
-                  className="px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Explain My Recovery Baseline</span>
-                </button>
-                <button
-                  onClick={() =>
-                    onSendQuery(
-                      'What are my hydration and fueling targets before today session?'
-                    )
-                  }
-                  className="px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <FileText className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Review Today Fueling</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={onOpenTrainingModModal}
-                  className="px-3.5 py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
-                >
+                }}
+                className={`px-3.5 py-2 rounded-md font-semibold text-xs inline-flex items-center gap-1.5 transition-colors ${
+                  qa.tone === 'amber'
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                    : qa.tone === 'primary'
+                      ? 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+                      : 'bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium'
+                }`}
+              >
+                {qa.openTrainingModModal ? (
                   <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>Review Training Modifications (2)</span>
-                </button>
-                <button
-                  onClick={() =>
-                    onSendQuery(
-                      'Generate weekly performance report for Senior Squad'
-                    )
-                  }
-                  className="px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
-                >
+                ) : qa.tone === 'primary' ? (
+                  <Sparkles className="w-3.5 h-3.5" />
+                ) : (
                   <FileText className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Generate Weekly Report</span>
-                </button>
-              </>
-            )}
+                )}
+                <span>{qa.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -451,13 +442,98 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
           {/* Left 8 Columns: Multi-Turn Operational Conversation & Prompt Console */}
           <div className="xl:col-span-8 space-y-4">
+            {/* Persona Needs & Proactive AI Recommendations Strip */}
+            <div className="bg-[#0F1623] border border-sky-500/30 rounded-lg p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-sky-400" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-100">
+                    PROACTIVE RECOMMENDATIONS FOR {selectedRole.toUpperCase()}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] text-sky-300">
+                  Tailored to {selectedRole} Needs
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(roleBehavior.proactiveRecommendations || []).map((rec) => {
+                  const badgeStyle =
+                    rec.impactTone === 'rose'
+                      ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                      : rec.impactTone === 'amber'
+                        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                        : rec.impactTone === 'emerald'
+                          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                          : 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+                  return (
+                    <div
+                      key={rec.id}
+                      className="p-3 rounded-md bg-[#090D16] border border-slate-800 flex flex-col justify-between space-y-2.5 text-xs"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span
+                            className={`px-1.5 py-0.5 rounded border font-mono text-[10px] font-bold ${badgeStyle}`}
+                          >
+                            {rec.metricBadge}
+                          </span>
+                          <span className="font-mono text-[9px] text-slate-500 uppercase">
+                            {rec.safetyClass}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-slate-100 leading-snug">
+                          {rec.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          {rec.rationale}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-800/80">
+                        <button
+                          type="button"
+                          onClick={() => onSendQuery(rec.queryPrompt)}
+                          className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-sky-300 transition-colors"
+                        >
+                          Ask Copilot
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onExecuteCopilotAction({
+                              id: rec.id,
+                              label: rec.actionLabel,
+                              safetyClass: rec.safetyClass,
+                              actionType: rec.actionType,
+                              targetAthleteId: rec.targetAthleteId,
+                            })
+                          }
+                          className={`px-2.5 py-1 rounded text-[10px] font-bold inline-flex items-center gap-1 transition-colors ${
+                            rec.safetyClass === 'CONSEQUENTIAL'
+                              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                              : 'bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300'
+                          }`}
+                        >
+                          <span>{rec.actionLabel}</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Prompt Input & Quick Slash Commands Card (Section 4) */}
             <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-4 space-y-3.5">
               <form onSubmit={handleFormSubmit} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-mono text-sky-400 uppercase font-semibold flex items-center gap-1.5">
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>OPERATIONAL INTELLIGENCE PROMPT</span>
+                    <span>
+                      {selectedRole.toUpperCase()} INTELLIGENCE CONSOLE
+                    </span>
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -477,7 +553,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                       onClick={onClearConversation}
                       className="text-[10px] font-mono text-slate-400 hover:text-slate-200"
                     >
-                      Reset Session Thread
+                      Reset {selectedRole} Thread
                     </button>
                   </div>
                 </div>
@@ -487,7 +563,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                     type="text"
                     value={queryInput}
                     onChange={(e) => setQueryInput(e.target.value)}
-                    placeholder="Ask USI anything about your athletes, squads or operations..."
+                    placeholder={`Ask USI Copilot as ${selectedRole} (e.g. "${activePromptChips[0]}")...`}
                     className="flex-1 px-3.5 py-2.5 rounded-md bg-[#090D16] border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
                   />
                   <button
@@ -499,12 +575,12 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                   </button>
                 </div>
 
-                {/* Quick Slash Commands */}
+                {/* Quick Slash Commands (Persona-Specific) */}
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                   <span className="text-[10px] font-mono text-slate-400 mr-1">
-                    Slash Commands:
+                    {selectedRole} Commands:
                   </span>
-                  {AI_SLASH_COMMANDS.map((sc) => (
+                  {activeSlashCommands.map((sc) => (
                     <button
                       key={sc.command}
                       type="button"
@@ -518,13 +594,13 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                 </div>
               </form>
 
-              {/* Prompt Suggestion Chips */}
+              {/* Prompt Suggestion Chips (Persona-Specific) */}
               <div className="pt-2.5 border-t border-slate-800/80">
                 <div className="text-[10px] font-mono text-slate-400 uppercase mb-2">
-                  CONTEXTUAL OPERATIONAL QUERIES (CLICK TO RUN)
+                  RECOMMENDED QUERIES FOR {selectedRole.toUpperCase()} (CLICK TO RUN)
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {AI_COPILOT_PROMPT_CHIPS.map((chip) => (
+                  {activePromptChips.map((chip) => (
                     <button
                       key={chip}
                       onClick={() => onSendQuery(chip)}
@@ -994,10 +1070,10 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
               <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                 <div>
                   <h3 className="font-bold text-slate-100 uppercase">
-                    PENDING HUMAN APPROVALS ({pendingActionsCount})
+                    {selectedRole.toUpperCase()} APPROVAL QUEUE ({pendingActionsCount})
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Consequential AI recommendations awaiting sign-off
+                    AI recommendations scoped to {selectedRole}
                   </p>
                 </div>
                 <button
@@ -1009,7 +1085,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
               </div>
 
               <div className="space-y-2.5">
-                {actionItems.slice(0, 3).map((item) => (
+                {roleActionItems.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
                     className="p-3 rounded bg-[#090D16] border border-slate-800 space-y-1.5"

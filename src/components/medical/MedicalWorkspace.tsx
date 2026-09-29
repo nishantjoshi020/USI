@@ -553,13 +553,15 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                   id: 'rehabilitation',
                   label: 'Rehabilitation',
                   route: '/medical/rehab',
-                  badge: 2,
+                  badge: rehabPlans.length,
                 },
                 {
                   id: 'return-to-play',
                   label: 'Return to Play',
                   route: '/medical/return-to-play',
-                  badge: 1,
+                  badge: injuries.filter(
+                    (i) => i.rtpStage >= 3 || i.stage === 'Recovery'
+                  ).length,
                 },
               ] as const
             ).map((tab) => {
@@ -596,50 +598,96 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
 
       {/* 2. TOP 6 CLICKABLE MEDICAL KPI CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
-        {[
-          {
-            id: 'active',
-            label: 'Active Injuries',
-            value: String(injuries.length),
-            sub: 'Hamstring (2), Ankle (1), Shoulder (1)',
-            accent: 'text-rose-400',
-          },
-          {
-            id: 'in-rehab',
-            label: 'In Rehabilitation',
-            value: '2',
-            sub: 'Arjun Mehta · Kabir Rao',
-            accent: 'text-amber-400',
-          },
-          {
-            id: 'rtp',
-            label: 'Return-to-Play',
-            value: '1',
-            sub: 'Arjun Mehta (Stage 3/5)',
-            accent: 'text-sky-400',
-          },
-          {
-            id: 'clearance-pending',
-            label: 'Medical Clearance Pending',
-            value: '2',
-            sub: 'Arjun Mehta · Rahul Singh',
-            accent: 'text-amber-300',
-          },
-          {
-            id: 'escalated',
-            label: 'Escalated Cases',
-            value: '1',
-            sub: 'Neeraj Patel (Severe)',
-            accent: 'text-rose-400',
-          },
-          {
-            id: 'avg-progress',
-            label: 'Average Rehab Progress',
-            value: '68%',
-            sub: '96% protocol compliance',
-            accent: 'text-emerald-400',
-          },
-        ].map((kpi) => {
+        {(() => {
+          const inRehabList = injuries.filter(
+            (i) =>
+              i.stage === 'Rehabilitation' ||
+              i.stage === 'In Rehabilitation' ||
+              rehabPlans.some((p) => p.injuryId === i.id)
+          );
+          const rtpList = injuries.filter(
+            (i) => i.rtpStage >= 3 || i.stage === 'Recovery'
+          );
+          const clearancePendingList = injuries.filter(
+            (i) => i.medicalStatus !== 'Cleared'
+          );
+          const escalatedList = injuries.filter(
+            (i) =>
+              i.severity === 'Severe' ||
+              i.severity === 'Critical' ||
+              i.stage === 'Escalated'
+          );
+          const avgProgress =
+            rehabPlans.length > 0
+              ? Math.round(
+                  rehabPlans.reduce((acc, p) => acc + p.progressPct, 0) /
+                    rehabPlans.length
+                )
+              : 68;
+          const bodyPartSummary = Array.from(
+            new Set(injuries.map((i) => i.bodyPart))
+          )
+            .map(
+              (bp) =>
+                `${bp} (${injuries.filter((i) => i.bodyPart === bp).length})`
+            )
+            .join(', ');
+
+          return [
+            {
+              id: 'active',
+              label: 'Active Injuries',
+              value: String(injuries.length),
+              sub: bodyPartSummary || 'No active injuries',
+              accent: 'text-rose-400',
+            },
+            {
+              id: 'in-rehab',
+              label: 'In Rehabilitation',
+              value: String(inRehabList.length),
+              sub:
+                inRehabList.map((i) => i.athleteName).join(' · ') ||
+                'None active',
+              accent: 'text-amber-400',
+            },
+            {
+              id: 'rtp',
+              label: 'Return-to-Play',
+              value: String(rtpList.length),
+              sub:
+                rtpList
+                  .map((i) => `${i.athleteName} (Stage ${i.rtpStage}/5)`)
+                  .join(' · ') || 'None in RTP',
+              accent: 'text-sky-400',
+            },
+            {
+              id: 'clearance-pending',
+              label: 'Medical Clearance Pending',
+              value: String(clearancePendingList.length),
+              sub:
+                clearancePendingList.map((i) => i.athleteName).join(' · ') ||
+                'All cleared',
+              accent: 'text-amber-300',
+            },
+            {
+              id: 'escalated',
+              label: 'Escalated Cases',
+              value: String(escalatedList.length),
+              sub:
+                escalatedList
+                  .map((i) => `${i.athleteName} (${i.severity})`)
+                  .join(' · ') || 'Zero escalated',
+              accent: 'text-rose-400',
+            },
+            {
+              id: 'avg-progress',
+              label: 'Average Rehab Progress',
+              value: `${avgProgress}%`,
+              sub: `${rehabPlans.length} active rehab plans`,
+              accent: 'text-emerald-400',
+            },
+          ];
+        })().map((kpi) => {
           const isSelected = activeKpiFilter === kpi.id;
           return (
             <button
@@ -776,46 +824,43 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                 <div className="text-xs font-bold text-slate-200 uppercase">
                   Injury Distribution (By Pathology)
                 </div>
-                {[
-                  {
-                    type: 'Hamstring',
-                    count: filteredInjuries.filter(
-                      (i) => i.bodyPart === 'Hamstring'
-                    ).length,
-                    pct: 50,
-                    color: 'bg-rose-500',
-                  },
-                  {
-                    type: 'Ankle',
-                    count: filteredInjuries.filter((i) => i.bodyPart === 'Ankle')
-                      .length,
-                    pct: 25,
-                    color: 'bg-sky-400',
-                  },
-                  {
-                    type: 'Shoulder',
-                    count: filteredInjuries.filter(
-                      (i) => i.bodyPart === 'Shoulder'
-                    ).length,
-                    pct: 25,
-                    color: 'bg-amber-400',
-                  },
-                ].map((item) => (
-                  <div key={item.type} className="space-y-1 text-xs">
-                    <div className="flex justify-between font-medium">
-                      <span className="text-slate-200">{item.type}</span>
-                      <span className="font-mono font-bold text-slate-100">
-                        {item.type} — {item.count}
-                      </span>
+                {Array.from(
+                  new Set([
+                    'Hamstring',
+                    'Ankle',
+                    'Shoulder',
+                    ...filteredInjuries.map((i) => i.bodyPart),
+                  ])
+                ).map((bodyPart, idx) => {
+                  const count = filteredInjuries.filter(
+                    (i) => i.bodyPart === bodyPart
+                  ).length;
+                  const total = Math.max(1, filteredInjuries.length);
+                  const pct = Math.round((count / total) * 100);
+                  const colors = [
+                    'bg-rose-500',
+                    'bg-sky-400',
+                    'bg-amber-400',
+                    'bg-emerald-400',
+                    'bg-indigo-400',
+                  ];
+                  return (
+                    <div key={bodyPart} className="space-y-1 text-xs">
+                      <div className="flex justify-between font-medium">
+                        <span className="text-slate-200">{bodyPart}</span>
+                        <span className="font-mono font-bold text-slate-100">
+                          {bodyPart} — {count} ({pct}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div
+                          className={`h-full ${colors[idx % colors.length]}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                      <div
-                        className={`h-full ${item.color}`}
-                        style={{ width: `${item.pct}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Severity Distribution */}
@@ -952,11 +997,16 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                       </option>
                     ))}
                   </select>
-                  {bodyMapAthleteId === 'ath-arjun-mehta' && (
-                    <span className="text-[11px] font-mono text-amber-300">
-                      Left Hamstring — Moderate — Stage 3/5 RTP · Right Ankle — Minor — Resolved
-                    </span>
-                  )}
+                  <span className="text-[11px] font-mono text-amber-300">
+                    {bodyMapInjuries.length > 0
+                      ? bodyMapInjuries
+                          .map(
+                            (inj) =>
+                              `${inj.bodyRegionDisplay} — ${inj.severity} — Stage ${inj.rtpStage}/5 RTP`
+                          )
+                          .join(' · ')
+                      : `${bodyMapAthlete.medicalStatus} — No active time-loss injuries`}
+                  </span>
                 </div>
               )}
             </div>

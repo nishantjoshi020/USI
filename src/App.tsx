@@ -148,6 +148,7 @@ import {
 import {
   ARJUN_EVIDENCE_BUNDLE,
   buildCopilotResponse,
+  getPersonaInitialMessages,
   INITIAL_AI_ACTION_CENTRE,
   INITIAL_AI_AUDIT_TRAIL,
   INITIAL_AI_RISK_SIGNALS,
@@ -582,6 +583,26 @@ export default function App() {
       },
       ...prev,
     ]);
+    setNotifications((prev) => [
+      {
+        id: `notif-inj-${Date.now()}`,
+        category: 'Medical',
+        title: `New Injury Reported · ${newInjury.athleteName}`,
+        description: `${newInjury.diagnosis} (${newInjury.bodyRegionDisplay}, ${newInjury.severity}). Restrictions: ${newInjury.restrictions}`,
+        timestamp: 'Just now',
+        read: false,
+        severity: 'high',
+        roles: [
+          'Physiotherapist',
+          'Performance Director',
+          'Coach',
+          'Sports Scientist',
+        ],
+        actionLabel: 'Open Clinical Injury Register',
+        linkedAthleteId: newInjury.athleteId,
+      },
+      ...prev,
+    ]);
     updateAthleteWithAudit(
       newInjury.athleteId,
       {
@@ -721,6 +742,27 @@ export default function App() {
       ? `RTP Gate Override Approved by ${overrideDetails.authorisedBy}: Advanced ${targetInj.athleteName} to Stage ${nextStage}/5 (${nextStageName}). Reason: "${overrideDetails.reason}"`
       : `Advanced ${targetInj.athleteName} to RTP Stage ${nextStage}/5 (${nextStageName})`;
 
+    setNotifications((prev) => [
+      {
+        id: `notif-rtp-${Date.now()}`,
+        category: 'Medical',
+        title: `RTP Stage Advanced · ${targetInj.athleteName} (Stage ${nextStage}/5)`,
+        description: `${targetInj.athleteName} progressed to ${nextStageName} (${nextPct}% rehab completion).`,
+        timestamp: 'Just now',
+        read: false,
+        severity: 'info',
+        roles: [
+          'Physiotherapist',
+          'Performance Director',
+          'Coach',
+          'Athlete',
+        ],
+        actionLabel: 'Inspect Return-to-Play Pipeline',
+        targetNav: 'return-to-play',
+      },
+      ...prev,
+    ]);
+
     updateAthleteWithAudit(
       targetInj.athleteId,
       {
@@ -777,7 +819,12 @@ export default function App() {
 
   const handleSelectRole = (role: UserRole) => {
     setSelectedRole(role);
-    triggerToast(`Switched operational view to ${role}`);
+    const personaInitial = getPersonaInitialMessages(role);
+    setAiMessages((prev) => {
+      const customTurns = prev.filter((m) => !m.id.startsWith('msg-welcome'));
+      return [...personaInitial, ...customTurns];
+    });
+    triggerToast(`Switched operational view & AI Copilot lens to ${role}`);
   };
 
   const handleSelectKpi = (kpi: KpiFilterKey) => {
@@ -1096,6 +1143,18 @@ export default function App() {
     } else if (action.actionType === 'open-analytics-module') {
       setActiveNav('analytics-federation');
       setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-nutrition-module') {
+      setActiveNav('nutrition');
+      setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-registry-module') {
+      setActiveNav('athlete-registry');
+      setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-readiness-module') {
+      setActiveNav('readiness');
+      setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-action-centre') {
+      setActiveNav('ai-action-centre');
+      setIsGlobalCopilotOpen(false);
     } else if (action.actionType === 'open-risk-centre') {
       setActiveNav('ai-risk-centre');
       setIsGlobalCopilotOpen(false);
@@ -1203,17 +1262,24 @@ export default function App() {
     setHydrationLogs(INITIAL_HYDRATION_LOGS);
     setSupplements(INITIAL_SUPPLEMENTS);
     setTestResults(INITIAL_TEST_RESULTS);
-    setAiMessages(INITIAL_COPILOT_MESSAGES);
+    setAiMessages(getPersonaInitialMessages(selectedRole));
     setAiActionItems(INITIAL_AI_ACTION_CENTRE);
     setAiRiskSignals(INITIAL_AI_RISK_SIGNALS);
     setAiAutomationRules(INITIAL_AUTOMATION_RULES);
     setAiAuditTrail(INITIAL_AI_AUDIT_TRAIL);
+    setNotifications(INITIAL_NOTIFICATIONS);
     setContext(INITIAL_CONTEXT);
     setSelectedRole('Performance Director');
     triggerToast('Reset all USI modules & telemetry to initial demo baseline ✓');
   };
 
-  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
+  const unreadNotificationsCount = notifications.filter(
+    (n) =>
+      !n.read &&
+      (!n.roles || n.roles.length === 0
+        ? selectedRole !== 'Athlete'
+        : n.roles.includes(selectedRole))
+  ).length;
   const pendingAIActionsCount = aiActionItems.filter(
     (a) => a.status === 'Pending Review'
   ).length;
@@ -1930,9 +1996,11 @@ export default function App() {
               messages={aiMessages}
               onSendQuery={handleSendAICopilotQuery}
               onClearConversation={() => {
-                setAiMessages(INITIAL_COPILOT_MESSAGES);
+                setAiMessages(getPersonaInitialMessages(selectedRole));
                 setSessionMemoryTopic(null);
-                triggerToast('Reset AI Copilot conversation session memory');
+                triggerToast(
+                  `Reset AI Copilot thread for ${selectedRole}`
+                );
               }}
               actionItems={aiActionItems}
               riskSignals={aiRiskSignals}
@@ -2309,6 +2377,27 @@ export default function App() {
             },
             ...prev,
           ]);
+          setNotifications((prev) => [
+            {
+              id: `notif-onb-${Date.now()}`,
+              category: 'Governance',
+              title: `New Athlete Enrolled · ${newAth.name} (${newAth.athleteId})`,
+              description: `${newAth.position} (${newAth.squad}) onboarded with baseline nutrition plan, body composition & field test records.`,
+              timestamp: 'Just now',
+              read: false,
+              severity: 'info',
+              roles: [
+                'Federation Admin',
+                'Performance Director',
+                'Coach',
+                'Nutritionist',
+                'Sports Scientist',
+              ],
+              actionLabel: `Open ${newAth.name} Profile`,
+              linkedAthleteId: newAth.id,
+            },
+            ...prev,
+          ]);
           triggerToast(
             `Athlete Profile Created: ${newAth.name} (${newAth.athleteId}) — Synced across all modules ✓`
           );
@@ -2390,15 +2479,29 @@ export default function App() {
       <NotificationPanel
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
+        selectedRole={selectedRole}
         notifications={notifications}
         onMarkRead={(id) =>
           setNotifications((prev) =>
             prev.map((n) => (n.id === id ? { ...n, read: true } : n))
           )
         }
-        onMarkAllRead={() => {
-          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-          triggerToast('All operational notifications marked as read');
+        onMarkAllRead={(role) => {
+          setNotifications((prev) =>
+            prev.map((n) => {
+              if (!role) return { ...n, read: true };
+              const matchesRole =
+                !n.roles || n.roles.length === 0
+                  ? role !== 'Athlete'
+                  : n.roles.includes(role);
+              return matchesRole ? { ...n, read: true } : n;
+            })
+          );
+          triggerToast(
+            role
+              ? `All ${role} notifications marked as read`
+              : 'All operational notifications marked as read'
+          );
         }}
         onSelectNotification={handleSelectNotification}
       />

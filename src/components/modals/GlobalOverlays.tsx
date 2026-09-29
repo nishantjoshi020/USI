@@ -20,6 +20,7 @@ import {
   Injury,
   NavItemId,
   TrainingSession,
+  UserRole,
 } from '../../types/usi';
 import { RiskBadge, StatusBadge } from '../ui/Badges';
 
@@ -301,23 +302,62 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 interface NotificationPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedRole: UserRole;
   notifications: AppNotification[];
   onMarkRead: (id: string) => void;
-  onMarkAllRead: () => void;
+  onMarkAllRead: (role?: UserRole) => void;
   onSelectNotification: (notif: AppNotification) => void;
 }
+
+const ROLE_NOTIFICATION_SUBTITLES: Record<UserRole, string> = {
+  'Performance Director':
+    'Executive AI risk alerts, RTP stage sign-offs & cross-program readiness briefs',
+  Coach:
+    'Tactical session rosters, modified load caps, attendance & matchday readiness',
+  'Sports Scientist':
+    'Force-plate asymmetry flags, Catapult GPS workload spikes & HRV telemetry',
+  Physiotherapist:
+    'Clinical escalations, rehabilitation progress & Return-to-Play gate checks',
+  Nutritionist:
+    'Hydration osmolality alerts, recovery supplementation & DEXA body composition',
+  'Federation Admin':
+    'Athlete eligibility verification, WADA whereabouts & governance audit logs',
+  Athlete:
+    'Personal pitch prescriptions, daily hydration targets & recovery schedule',
+  'Operations Team':
+    'Pitch calibration, hydrotherapy suite readiness & wearable pod logistics',
+};
 
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   isOpen,
   onClose,
+  selectedRole,
   notifications,
   onMarkRead,
   onMarkAllRead,
   onSelectNotification,
 }) => {
+  const [scopeMode, setScopeMode] = useState<'role' | 'all'>('role');
+
   if (!isOpen) return null;
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const isNotificationForRole = (notif: AppNotification, role: UserRole) => {
+    if (!notif.roles || notif.roles.length === 0) {
+      return role !== 'Athlete';
+    }
+    return notif.roles.includes(role);
+  };
+
+  const roleNotifications = notifications.filter((n) =>
+    isNotificationForRole(n, selectedRole)
+  );
+
+  const displayedNotifications =
+    selectedRole === 'Athlete' || scopeMode === 'role'
+      ? roleNotifications
+      : notifications;
+
+  const unreadCount = displayedNotifications.filter((n) => !n.read).length;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -327,37 +367,87 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       />
 
       <aside className="relative w-full max-w-md bg-[#0F1623] border-l border-slate-800 h-full flex flex-col justify-between z-10 shadow-2xl">
-        <div className="p-4 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-sky-400" />
-            <h2 className="text-sm font-bold text-slate-100">
-              OPERATIONAL NOTIFICATIONS
-            </h2>
-            <span className="font-mono text-xs text-slate-400">
-              ({unreadCount} unread)
-            </span>
+        <div className="p-4 border-b border-slate-800 bg-[#090D16] space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-sky-400" />
+              <h2 className="text-sm font-bold text-slate-100 uppercase">
+                {selectedRole === 'Athlete'
+                  ? 'MY PERSONAL NOTIFICATIONS'
+                  : `${selectedRole} NOTIFICATIONS`}
+              </h2>
+              <span className="font-mono text-xs text-sky-400">
+                ({unreadCount} unread)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={() =>
+                    onMarkAllRead(
+                      selectedRole === 'Athlete' || scopeMode === 'role'
+                        ? selectedRole
+                        : undefined
+                    )
+                  }
+                  className="text-xs text-sky-400 hover:text-sky-300 font-medium"
+                >
+                  Mark all read
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-1 rounded text-slate-400 hover:text-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {unreadCount > 0 && (
-              <button
-                onClick={onMarkAllRead}
-                className="text-xs text-sky-400 hover:text-sky-300 font-medium"
-              >
-                Mark all read
-              </button>
+          {/* Persona Context Subtitle & Scope Switcher */}
+          <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800/90 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-mono text-sky-400 font-semibold">
+                Active Persona: {selectedRole}
+              </span>
+              <span className="font-mono text-slate-400">
+                {roleNotifications.length} role-matched alerts
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-snug">
+              {ROLE_NOTIFICATION_SUBTITLES[selectedRole]}
+            </p>
+
+            {selectedRole !== 'Athlete' && (
+              <div className="flex items-center gap-1 pt-1">
+                <button
+                  onClick={() => setScopeMode('role')}
+                  className={`flex-1 py-1 px-2 rounded text-[11px] font-semibold transition-colors ${
+                    scopeMode === 'role'
+                      ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300'
+                      : 'bg-[#090D16] border border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {selectedRole} Feed ({roleNotifications.length})
+                </button>
+                <button
+                  onClick={() => setScopeMode('all')}
+                  className={`flex-1 py-1 px-2 rounded text-[11px] font-semibold transition-colors ${
+                    scopeMode === 'all'
+                      ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300'
+                      : 'bg-[#090D16] border border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  All Federation ({notifications.length})
+                </button>
+              </div>
             )}
-            <button
-              onClick={onClose}
-              className="p-1 rounded text-slate-400 hover:text-slate-200"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-          {notifications.map((notif) => (
+          {displayedNotifications.map((notif) => (
             <div
               key={notif.id}
               onClick={() => onSelectNotification(notif)}
@@ -367,23 +457,43 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   : 'bg-[#131C2E] border-sky-500/40 hover:bg-[#172238]'
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {!notif.read && (
-                    <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-                  )}
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
                   <span
-                    className={`text-xs font-bold ${
+                    className={
                       notif.severity === 'high'
-                        ? 'text-amber-300'
-                        : 'text-sky-300'
-                    }`}
+                        ? 'text-rose-400 font-semibold'
+                        : notif.severity === 'medium'
+                          ? 'text-amber-400 font-semibold'
+                          : 'text-sky-400 font-semibold'
+                    }
                   >
-                    {notif.title}
+                    {notif.category}
+                  </span>
+                  <span>·</span>
+                  <span>
+                    {notif.roles && notif.roles.length > 0
+                      ? notif.roles.join(', ')
+                      : selectedRole}
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className="text-[11px] font-mono text-slate-400 shrink-0">
                   {notif.timestamp}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!notif.read && (
+                  <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+                )}
+                <span
+                  className={`text-xs font-bold ${
+                    notif.severity === 'high'
+                      ? 'text-amber-300'
+                      : 'text-sky-300'
+                  }`}
+                >
+                  {notif.title}
                 </span>
               </div>
 
@@ -393,7 +503,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
               <div className="mt-2.5 flex items-center justify-between text-[11px]">
                 <span className="text-sky-400 font-medium">
-                  Click to open operational view →
+                  {notif.actionLabel || 'Click to open operational view'} →
                 </span>
                 {!notif.read && (
                   <button

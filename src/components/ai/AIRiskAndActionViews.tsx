@@ -91,6 +91,7 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
   const [actionStatusFilter, setActionStatusFilter] = useState<
     'All' | AIActionStatus
   >('All');
+  const [roleScopeFilter, setRoleScopeFilter] = useState<'role' | 'all'>('role');
 
   // Edit Automation Rule Modal State (Section 19)
   const [editingRule, setEditingRule] =
@@ -109,49 +110,81 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
    * VIEW 1: AI ACTION CENTRE (SECTION 18)
    * ========================================================= */
   if (mode === 'ai-action-centre') {
-    const filteredActions = actionItems.filter(
-      (item) =>
-        actionStatusFilter === 'All' || item.status === actionStatusFilter
-    );
+    const filteredActions = actionItems.filter((item) => {
+      const matchesStatus =
+        actionStatusFilter === 'All' || item.status === actionStatusFilter;
+      const matchesRole =
+        roleScopeFilter === 'all' ||
+        !item.targetRoles ||
+        item.targetRoles.includes(selectedRole);
+      return matchesStatus && matchesRole;
+    });
 
     return (
       <div className="space-y-5 text-xs">
         <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-5 flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="text-[11px] font-mono text-sky-400 uppercase">
-              HUMAN-IN-THE-LOOP GOVERNANCE QUEUE
+              HUMAN-IN-THE-LOOP GOVERNANCE QUEUE · {selectedRole.toUpperCase()}
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5">
-              AI ACTION CENTRE — PENDING & AUDITED RECOMMENDATIONS
+              AI ACTION CENTRE — {roleScopeFilter === 'role' ? `${selectedRole.toUpperCase()} RECOMMENDATIONS` : 'ALL FEDERATION RECOMMENDATIONS'}
             </h2>
             <p className="text-slate-400 mt-0.5">
-              Consequential and advisory AI recommendations requiring specialist review and approval.
+              Consequential and advisory AI recommendations requiring {selectedRole} review and approval.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(
-              [
-                'All',
-                'Pending Review',
-                'Approved',
-                'Applied',
-                'Rejected',
-                'Expired',
-              ] as const
-            ).map((st) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center rounded bg-[#090D16] border border-slate-800 p-0.5">
               <button
-                key={st}
-                onClick={() => setActionStatusFilter(st)}
-                className={`px-2.5 py-1.5 rounded border font-medium transition-colors ${
-                  actionStatusFilter === st
-                    ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
-                    : 'bg-[#0B101B] border-slate-800 text-slate-400 hover:text-slate-200'
+                type="button"
+                onClick={() => setRoleScopeFilter('role')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  roleScopeFilter === 'role'
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {st}
+                {selectedRole} Queue
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setRoleScopeFilter('all')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  roleScopeFilter === 'all'
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                All Roles ({actionItems.length})
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(
+                [
+                  'All',
+                  'Pending Review',
+                  'Approved',
+                  'Applied',
+                  'Rejected',
+                  'Expired',
+                ] as const
+              ).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setActionStatusFilter(st)}
+                  className={`px-2.5 py-1.5 rounded border font-medium transition-colors ${
+                    actionStatusFilter === st
+                      ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
+                      : 'bg-[#0B101B] border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -294,7 +327,10 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
     const visibleSignals = riskSignals.filter(
       (s) =>
         s.feedbackStatus !== 'Dismissed' &&
-        (selectedRiskCategory === 'All' || s.category === selectedRiskCategory)
+        (selectedRiskCategory === 'All' || s.category === selectedRiskCategory) &&
+        (roleScopeFilter === 'all' ||
+          !s.targetRoles ||
+          s.targetRoles.includes(selectedRole))
     );
 
     return (
@@ -302,30 +338,57 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
         <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-5 flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="text-[11px] font-mono text-amber-400 uppercase">
-              MULTI-DOMAIN EARLY WARNING SYSTEM
+              MULTI-DOMAIN EARLY WARNING SYSTEM · {selectedRole.toUpperCase()} LENS
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5">
-              AI RISK CENTRE — INJURY, WORKLOAD, RECOVERY & OPERATIONAL SIGNALS
+              AI RISK CENTRE — {roleScopeFilter === 'role' ? `${selectedRole.toUpperCase()} RISK SIGNALS` : 'ALL FEDERATION RISK SIGNALS'}
             </h2>
             <p className="text-slate-400 mt-0.5">
               Qualitative confidence scoring with human feedback signals (Helpful / Not Relevant / Dismiss with reason).
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            {riskCategories.map((cat) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center rounded bg-[#090D16] border border-slate-800 p-0.5">
               <button
-                key={cat}
-                onClick={() => setSelectedRiskCategory(cat)}
-                className={`px-2.5 py-1.5 rounded border font-medium transition-colors ${
-                  selectedRiskCategory === cat
-                    ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
-                    : 'bg-[#0B101B] border-slate-800 text-slate-400 hover:text-slate-200'
+                type="button"
+                onClick={() => setRoleScopeFilter('role')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  roleScopeFilter === 'role'
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {cat}
+                {selectedRole} Risks
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setRoleScopeFilter('all')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  roleScopeFilter === 'all'
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                All Federation
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {riskCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedRiskCategory(cat)}
+                  className={`px-2.5 py-1.5 rounded border font-medium transition-colors ${
+                    selectedRiskCategory === cat
+                      ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
+                      : 'bg-[#0B101B] border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
