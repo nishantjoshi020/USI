@@ -65,7 +65,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
   onOpenOnboarding,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<
-    'federation' | 'sport' | 'program' | 'squad' | 'date' | 'role' | 'athlete' | null
+    'federation' | 'sport' | 'program' | 'squad' | 'date' | 'role' | null
   >(null);
 
   const barRef = useRef<HTMLDivElement>(null);
@@ -260,72 +260,6 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
             </div>
           )}
         </div>
-        {/* Active Athlete Quick Focus / Switcher */}
-        {athletes && athletes.length > 0 && (
-          <div className="relative min-w-0">
-            <button
-              onClick={() => setOpenDropdown(openDropdown === 'athlete' ? null : 'athlete')}
-              title={`Focused Athlete: ${activeAthlete?.name || 'Select Athlete'}`}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-left transition-colors whitespace-nowrap ${
-                selectedRole === 'Athlete'
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200'
-                  : 'bg-[#0F1623] hover:bg-[#151E2E] border-slate-800 text-slate-200'
-              }`}
-            >
-              <User className={`w-3.5 h-3.5 shrink-0 ${selectedRole === 'Athlete' ? 'text-emerald-400' : 'text-sky-400'}`} />
-              <span className="text-[11px] font-semibold truncate max-w-[120px] xl:max-w-[160px]">
-                {activeAthlete?.name || 'Select Athlete'}
-              </span>
-              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
-            </button>
-
-            {openDropdown === 'athlete' && (
-              <div className="absolute left-0 mt-1.5 w-72 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50 max-h-80 overflow-y-auto">
-                <div className="px-3 py-1.5 border-b border-slate-800 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-300">Focus Active Athlete</span>
-                  {onOpenOnboarding && (
-                    <button
-                      onClick={() => {
-                        setOpenDropdown(null);
-                        onOpenOnboarding();
-                      }}
-                      className="text-[10px] text-sky-400 hover:text-sky-300 font-semibold"
-                    >
-                      + New Candidate
-                    </button>
-                  )}
-                </div>
-                {athletes.map((ath) => (
-                  <button
-                    key={ath.id}
-                    onClick={() => {
-                      onSelectActiveAthlete?.(ath.id);
-                      setOpenDropdown(null);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
-                      activeAthlete?.id === ath.id
-                        ? 'bg-sky-500/20 text-sky-300 font-semibold'
-                        : 'text-slate-300 hover:bg-slate-800/70'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-semibold text-slate-100">{ath.name}</div>
-                      <div className="text-[10px] text-slate-400">{ath.athleteId} · {ath.position} · {ath.squad}</div>
-                    </div>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
-                      ath.trainingStatus === 'INJURED' ? 'bg-rose-500/15 border-rose-500/30 text-rose-300' :
-                      ath.trainingStatus === 'PENDING' ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' :
-                      ath.trainingStatus === 'RESTRICTED' ? 'bg-orange-500/15 border-orange-500/30 text-orange-300' :
-                      'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                    }`}>
-                      {ath.trainingStatus}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Right Zone: AI Copilot Trigger, Notifications, Compact Role Selector */}
