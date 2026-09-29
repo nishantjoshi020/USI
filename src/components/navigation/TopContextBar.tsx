@@ -54,6 +54,10 @@ interface TopContextBarProps {
   onChangeViewportMode?: (mode: ViewportMode) => void;
   onToggleMobileSidebar?: () => void;
   isSidebarOpen?: boolean;
+  activeAthlete?: unknown;
+  athletes?: unknown[];
+  onSelectActiveAthlete?: (athId: string) => void;
+  onOpenOnboarding?: () => void;
 }
 
 const ROLES: UserRole[] = [
@@ -457,14 +461,14 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                 {renderFederationIcon(context.federation)}
                 {!isIconOnly && (
                   <span
-                    className={`text-[11px] font-semibold truncate ${
+                    className={`text-[11px] font-semibold ${
                       perm.canSwitchFederation
                         ? 'text-slate-100'
                         : 'text-slate-400'
                     } ${
                       isTablet
-                        ? 'max-w-[90px]'
-                        : 'max-w-[140px] xl:max-w-[205px]'
+                        ? 'truncate max-w-[90px]'
+                        : 'whitespace-nowrap'
                     }`}
                   >
                     {context.federation}
@@ -595,14 +599,14 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                 {renderProgramIcon(context.program)}
                 {!isIconOnly && (
                   <span
-                    className={`text-[11px] font-semibold truncate ${
+                    className={`text-[11px] font-semibold ${
                       perm.canSwitchProgram
                         ? 'text-slate-100'
                         : 'text-slate-400'
                     } ${
                       isTablet
-                        ? 'max-w-[80px]'
-                        : 'max-w-[115px] xl:max-w-[160px]'
+                        ? 'truncate max-w-[80px]'
+                        : 'whitespace-nowrap'
                     }`}
                   >
                     {context.program}
@@ -666,12 +670,12 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
                 {renderSquadIcon(context.squad)}
                 {!isIconOnly && (
                   <span
-                    className={`text-[11px] font-semibold truncate ${
+                    className={`text-[11px] font-semibold ${
                       perm.canSwitchSquad ? 'text-slate-100' : 'text-slate-400'
                     } ${
                       isTablet
-                        ? 'max-w-[85px]'
-                        : 'max-w-[120px] xl:max-w-[165px]'
+                        ? 'truncate max-w-[85px]'
+                        : 'whitespace-nowrap'
                     }`}
                   >
                     {context.squad}
@@ -765,8 +769,8 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
             </div>
             {!isIconOnly && (
               <span
-                className={`text-[11px] font-semibold text-slate-100 truncate ${
-                  isTablet ? 'max-w-[85px]' : 'max-w-[120px]'
+                className={`text-[11px] font-semibold text-slate-100 ${
+                  isTablet ? 'truncate max-w-[85px]' : 'whitespace-nowrap'
                 }`}
               >
                 {selectedRole}

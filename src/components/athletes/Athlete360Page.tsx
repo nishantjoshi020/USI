@@ -1261,7 +1261,8 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
         activeTab === 'Medical' ||
         activeTab === 'Sports Science' ||
         activeTab === 'Nutrition' ||
-        activeTab === 'Assessments') && (
+        activeTab === 'Assessments' ||
+        activeTab === 'Anti-Doping & Governance') && (
         <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
             <div>

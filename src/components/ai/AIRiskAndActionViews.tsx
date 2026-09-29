@@ -298,14 +298,16 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
                   {act.status === 'Pending Review' && (
                     <>
                       <button
+                        disabled={['Federation Admin', 'Athlete'].includes(selectedRole)}
                         onClick={() => onUpdateActionStatus(act.id, 'Approved')}
-                        className="px-3 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold"
+                        className="px-3 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold disabled:opacity-45 disabled:cursor-not-allowed"
                       >
                         Approve & Apply
                       </button>
                       <button
+                        disabled={['Federation Admin', 'Athlete'].includes(selectedRole)}
                         onClick={() => onUpdateActionStatus(act.id, 'Rejected')}
-                        className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                        className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-45 disabled:cursor-not-allowed"
                       >
                         Reject
                       </button>
@@ -671,14 +673,15 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
                   onClick={() => {
                     if (!rule.enabled) onToggleAutomationRule(rule.id);
                   }}
-                  disabled={rule.enabled}
-                  className="flex-1 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-40 border border-emerald-500/30 text-emerald-300 font-semibold"
+                  disabled={rule.enabled || !['Performance Director', 'Sports Scientist', 'Coach'].includes(selectedRole)}
+                  className="flex-1 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed border border-emerald-500/30 text-emerald-300 font-semibold"
                 >
                   Enable
                 </button>
                 <button
+                  disabled={!['Performance Director', 'Sports Scientist', 'Coach'].includes(selectedRole)}
                   onClick={() => setEditingRule(rule)}
-                  className="flex-1 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium"
+                  className="flex-1 py-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-700 text-slate-200 font-medium"
                 >
                   Edit
                 </button>
@@ -686,8 +689,8 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
                   onClick={() => {
                     if (rule.enabled) onToggleAutomationRule(rule.id);
                   }}
-                  disabled={!rule.enabled}
-                  className="flex-1 py-1.5 rounded bg-rose-500/20 hover:bg-rose-500/30 disabled:opacity-40 border border-rose-500/30 text-rose-300 font-semibold"
+                  disabled={!rule.enabled || !['Performance Director', 'Sports Scientist', 'Coach'].includes(selectedRole)}
+                  className="flex-1 py-1.5 rounded bg-rose-500/20 hover:bg-rose-500/30 disabled:opacity-40 disabled:cursor-not-allowed border border-rose-500/30 text-rose-300 font-semibold"
                 >
                   Disable
                 </button>

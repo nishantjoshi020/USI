@@ -317,11 +317,9 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
         {
           sessionId: `sess-init-${Date.now()}`,
           title: `${sport} ${squad} Onboarding Baseline Session`,
-          date: 'Today',
           rpe: 6,
           loadAu: 540,
           highSpeedMeters: 420,
-          compliance: 'Completed',
         },
       ],
       medicalNote: medicalNotes,

@@ -179,7 +179,12 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
         if (!match) return false;
       }
       if (sportFilter !== 'All' && inj.sport !== sportFilter) return false;
-      if (squadFilter !== 'All' && inj.squad !== squadFilter) return false;
+      if (
+        squadFilter !== 'All' &&
+        inj.squad !== squadFilter &&
+        !inj.squad.includes(squadFilter.replace(' Squad', ''))
+      )
+        return false;
       if (injuryTypeFilter !== 'All' && inj.bodyPart !== injuryTypeFilter)
         return false;
       if (bodyRegionFilter !== 'All' && inj.bodyRegion !== bodyRegionFilter)
@@ -187,6 +192,16 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
       if (severityFilter !== 'All' && inj.severity !== severityFilter)
         return false;
       if (statusFilter !== 'All' && inj.stage !== statusFilter) return false;
+      if (
+        dateRangeFilter === 'Last 30 Days' &&
+        (inj.onsetDate.includes('Aug') || inj.onsetDate.includes('Jul'))
+      )
+        return false;
+      if (
+        dateRangeFilter === 'Last 90 Days' &&
+        inj.onsetDate.includes('Jun')
+      )
+        return false;
 
       // Top KPI filter
       if (activeKpiFilter === 'in-rehab') {
@@ -214,6 +229,7 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
     bodyRegionFilter,
     severityFilter,
     statusFilter,
+    dateRangeFilter,
     activeKpiFilter,
   ]);
 
@@ -513,20 +529,13 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* 21. ROLE-BASED GOVERNANCE BADGE */}
-            <div
-              className={`px-3 py-1.5 rounded-md border text-xs flex items-center gap-2 ${roleGov.color}`}
-            >
-              <Lock className="w-3.5 h-3.5 shrink-0" />
-              <div>
-                <div className="font-bold leading-tight">{roleGov.badge}</div>
-                <div className="text-[10px] opacity-90">{roleGov.access}</div>
-              </div>
-            </div>
-
             <button
-              onClick={() => onOpenReportInjuryModal(selectedRegion)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-400 text-white font-semibold text-xs shadow-sm transition-colors"
+              disabled={!canEditMedical}
+              onClick={() => {
+                if (!canEditMedical) return;
+                onOpenReportInjuryModal(selectedRegion);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-rose-500 hover:bg-rose-400 text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
               <span>+ Report Injury</span>

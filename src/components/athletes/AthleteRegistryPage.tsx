@@ -127,7 +127,12 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
 
       if (sportFilter !== 'All' && a.sport !== sportFilter) return false;
       if (programFilter !== 'All' && a.program !== programFilter) return false;
-      if (squadFilter !== 'All' && a.squad !== squadFilter) return false;
+      if (
+        squadFilter !== 'All' &&
+        a.squad !== squadFilter &&
+        !a.squad.includes(squadFilter.replace(' Squad', ''))
+      )
+        return false;
       if (statusFilter !== 'All' && a.trainingStatus !== statusFilter)
         return false;
 
@@ -300,35 +305,35 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             {
               id: 'total',
               label: 'Total Athletes',
-              value: 184 + Math.max(0, athletes.length - 10),
-              sub: `${athletes.length} active cohort loaded`,
+              value: filteredAthletes.length,
+              sub: `Of ${athletes.length} cohort records in context`,
               tone: 'text-slate-100',
             },
             {
               id: 'active',
               label: 'Active',
-              value: 162 + athletes.filter((a) => a.trainingStatus === 'ACTIVE').length - 4,
+              value: filteredAthletes.filter((a) => a.trainingStatus === 'ACTIVE').length,
               sub: 'Cleared for squad operations',
               tone: 'text-emerald-400',
             },
             {
               id: 'pending-verification',
               label: 'Pending Verification',
-              value: pendingVerificationCount,
-              sub: `${athletes.filter((a) => a.verificationStatus === 'Pending').length} in current view`,
+              value: filteredAthletes.filter((a) => a.verificationStatus === 'Pending').length,
+              sub: 'Awaiting federation sign-off',
               tone: 'text-amber-400',
             },
             {
               id: 'incomplete',
               label: 'Incomplete Profiles',
-              value: incompleteProfilesCount,
+              value: filteredAthletes.filter((a) => a.profileCompletion < 95).length,
               sub: 'Missing doc or clearance',
               tone: 'text-amber-300',
             },
             {
               id: 'medical-pending',
               label: 'Medical Clearance Pending',
-              value: medicalPendingCount,
+              value: filteredAthletes.filter((a) => a.medicalStatus !== 'Cleared').length,
               sub: 'Requires clinician sign-off',
               tone: 'text-rose-400',
             },
@@ -794,17 +799,10 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
                           <button
                             onClick={() => onOpenQuickDrawer(athlete)}
                             title={selectedRole === 'Athlete' ? 'My Biometric Summary' : 'Quick Drawer Preview'}
-                            className="p-1.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium transition-colors"
                           >
-                            <PanelRightOpen className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => onOpenAthlete360(athlete)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-semibold transition-colors"
-                          >
-                            <span>{selectedRole === 'Athlete' ? 'View My Full 360' : 'Athlete 360'}</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <PanelRightOpen className="w-3.5 h-3.5 text-sky-400" />
+                            <span>Quick View</span>
                           </button>
                         </div>
                       </td>

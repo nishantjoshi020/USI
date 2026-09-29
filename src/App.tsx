@@ -186,6 +186,7 @@ export default function App() {
   const [activeNav, setActiveNav] = useState<NavItemId>('command-center');
   const [context, setContext] = useState<HierarchyContext>(INITIAL_CONTEXT);
   const [selectedRole, setSelectedRole] = useState<UserRole>('Performance Director');
+  const [isSidebarCompact, setIsSidebarCompact] = useState<boolean>(false);
 
   // Iteration 5: AI Copilot & AI-Native Operations Shared State
   const [aiMessages, setAiMessages] = useState<AICopilotMessage[]>(
@@ -1482,6 +1483,8 @@ export default function App() {
         attentionCount={18}
         activeInjuryCount={injuries.length}
         selectedRole={selectedRole}
+        isCompact={isSidebarCompact}
+        onToggleCompact={setIsSidebarCompact}
       />
 
       {/* Main Content Area */}
@@ -1501,6 +1504,7 @@ export default function App() {
           onOpenAICopilot={() => setIsGlobalCopilotOpen(true)}
           pendingAIActionsCount={pendingAIActionsCount}
           onResetDemoState={handleResetDemoState}
+          isSidebarOpen={!isSidebarCompact}
           activeAthlete={activeAthlete360}
           athletes={athletes}
           onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
@@ -1511,26 +1515,9 @@ export default function App() {
         <main className="flex-1 p-5 lg:p-6 max-w-[1600px] w-full mx-auto space-y-5">
           {activeNav === 'command-center' ? (
             <>
-              {/* 6. COMMAND CENTER HEADER */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-800/80">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-sky-400 font-medium">
-                    <span>{context.federation}</span>
-                    <span className="text-slate-600">·</span>
-                    <span className="text-slate-200">
-                      {context.sport} · Senior Men's Squad
-                    </span>
-                  </div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 mt-1">
-                    Good morning, Performance Team
-                  </h1>
-                </div>
-              </div>
-
               {/* Dynamic 8-Persona Role Dashboard Banner */}
               <RoleDashboardBanner
                 selectedRole={selectedRole}
-                onSelectRole={handleSelectRole}
                 onTriggerQuickAction={(id, label) =>
                   triggerToast(`[${selectedRole}] Quick action triggered: ${label}`)
                 }

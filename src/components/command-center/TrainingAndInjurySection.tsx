@@ -11,27 +11,54 @@ import { Injury, TrainingSession } from '../../types/usi';
 import { LoadBadge, StatusBadge } from '../ui/Badges';
 
 interface TrainingAndInjurySectionProps {
+  sessions?: TrainingSession[];
+  injuries?: Injury[];
   onSelectSession: (session: TrainingSession) => void;
   onSelectInjuryAthlete: (athleteId: string) => void;
   onViewInjuryIntelligence: () => void;
 }
 
 export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> = ({
+  sessions = TRAINING_SESSIONS,
+  injuries = ACTIVE_INJURIES,
   onSelectSession,
   onSelectInjuryAthlete,
   onViewInjuryIntelligence,
 }) => {
   const [sessionFilter, setSessionFilter] = useState<'All' | 'Completed' | 'Upcoming'>('All');
 
-  const filteredSessions = TRAINING_SESSIONS.filter((s) =>
+  const filteredSessions = sessions.filter((s) =>
     sessionFilter === 'All' ? true : s.status === sessionFilter
   );
 
-  const injuryDistribution = [
-    { part: 'Hamstring', count: 2, pct: 50, color: 'bg-rose-500' },
-    { part: 'Ankle', count: 1, pct: 25, color: 'bg-amber-500' },
-    { part: 'Shoulder', count: 1, pct: 25, color: 'bg-sky-500' },
-  ];
+  const completedCount = sessions.filter((s) => s.status === 'Completed').length;
+  const upcomingCount = sessions.filter((s) => s.status === 'Upcoming').length;
+  const avgAttendance = sessions.length
+    ? Math.round(sessions.reduce((acc, s) => acc + s.attendance, 0) / sessions.length)
+    : 94;
+
+  const totalInj = injuries.length || 1;
+  const partCounts: Record<string, number> = {};
+  injuries.forEach((inj) => {
+    const part = inj.bodyPart.split(' ')[0] || inj.bodyPart;
+    partCounts[part] = (partCounts[part] || 0) + 1;
+  });
+
+  const injuryDistribution =
+    Object.keys(partCounts).length > 0
+      ? Object.entries(partCounts).map(([part, count], idx) => ({
+          part,
+          count,
+          pct: Math.round((count / totalInj) * 100),
+          color: idx === 0 ? 'bg-rose-500' : idx === 1 ? 'bg-amber-500' : 'bg-sky-500',
+        }))
+      : [
+          { part: 'Hamstring', count: 0, pct: 0, color: 'bg-rose-500' },
+        ];
+
+  const rehabCount = injuries.filter((i) => i.status === 'In Rehab').length;
+  const rtpCount = injuries.filter((i) => i.status === 'Return-to-Play').length;
+  const escalatedCount = injuries.filter((i) => i.status === 'Escalated').length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -48,13 +75,13 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
                 </h2>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-1 font-mono tabular-nums">
-                <span className="text-slate-200 font-semibold">8 Sessions Scheduled</span>
+                <span className="text-slate-200 font-semibold">{sessions.length} Sessions Scheduled</span>
                 <span>·</span>
-                <span className="text-emerald-400">6 Completed</span>
+                <span className="text-emerald-400">{completedCount} Completed</span>
                 <span>·</span>
-                <span className="text-sky-400">2 Upcoming</span>
+                <span className="text-sky-400">{upcomingCount} Upcoming</span>
                 <span>·</span>
-                <span>Attendance: <strong className="text-slate-200">94%</strong></span>
+                <span>Attendance: <strong className="text-slate-200">{avgAttendance}%</strong></span>
                 <span>·</span>
                 <span>Training Load: <strong className="text-emerald-400">Normal</strong></span>
               </div>
@@ -179,25 +206,25 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
             <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800/80">
               <div className="text-[11px] text-slate-400">Active Injuries</div>
               <div className="text-xl font-mono font-bold text-slate-100 mt-0.5 tabular-nums">
-                4
+                {injuries.length}
               </div>
             </div>
             <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800/80">
               <div className="text-[11px] text-slate-400">In Rehab</div>
               <div className="text-xl font-mono font-bold text-amber-400 mt-0.5 tabular-nums">
-                2
+                {rehabCount}
               </div>
             </div>
             <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800/80">
               <div className="text-[11px] text-slate-400">Return-to-Play</div>
               <div className="text-xl font-mono font-bold text-emerald-400 mt-0.5 tabular-nums">
-                1
+                {rtpCount}
               </div>
             </div>
             <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800/80">
               <div className="text-[11px] text-slate-400">Escalated</div>
               <div className="text-xl font-mono font-bold text-rose-400 mt-0.5 tabular-nums">
-                1
+                {escalatedCount}
               </div>
             </div>
           </div>
@@ -209,7 +236,7 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
                 Anatomical Site Distribution
               </span>
               <span className="font-mono text-[11px] text-slate-400 tabular-nums">
-                4 Active Cases
+                {injuries.length} Active Cases
               </span>
             </div>
 
@@ -237,7 +264,7 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
 
           {/* Active Injury Cases List */}
           <div className="mt-3.5 space-y-1.5">
-            {ACTIVE_INJURIES.map((inj: Injury) => (
+            {injuries.map((inj: Injury) => (
               <button
                 key={inj.id}
                 onClick={() => onSelectInjuryAthlete(inj.athleteId)}

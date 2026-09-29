@@ -406,16 +406,6 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
               Multi-cycle periodisation planning, dynamic session builder, live coach attendance & sRPE collection, and ACWR load modeling.
             </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onSelectSubTab('builder')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Session Builder</span>
-            </button>
-          </div>
         </div>
 
         {/* Subtabs Bar */}
@@ -592,13 +582,6 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
                   <span>Assign Athletes</span>
                 </button>
               )}
-              <button
-                onClick={() => onSelectSubTab('builder')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create New Session</span>
-              </button>
             </div>
           </div>
 
@@ -842,6 +825,31 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
               </select>
             </div>
           </div>
+
+          {activeSession && (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 p-3 rounded-lg bg-[#0B101B] border border-slate-800 text-xs">
+              <div>
+                <span className="text-slate-500 block text-[10px]">VENUE</span>
+                <strong className="text-slate-200">{activeSession.pitchOrVenue}</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">LEAD COACH</span>
+                <strong className="text-slate-200">{activeSession.coach}</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">DURATION</span>
+                <strong className="font-mono text-sky-400">{activeSession.durationMin} min</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">PLANNED LOAD</span>
+                <strong className="font-mono text-emerald-400">{activeSession.plannedLoadAu} AU</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">INTENSITY TIER</span>
+                <strong className="font-mono text-amber-300">{activeSession.intensity}</strong>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">

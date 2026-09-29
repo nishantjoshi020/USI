@@ -244,55 +244,6 @@ export const RoleScopedDashboard: React.FC<RoleScopedDashboardProps> = ({
             </button>
           </div>
         </div>
-
-        {/* 8-Persona Active Role View Selector Strip */}
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-300 font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-              <span>Active Role View (8 User Personas)</span>
-              <span className="text-slate-500 font-normal">
-                — Dashboard dynamically filters to information strictly relevant to the selected persona
-              </span>
-            </div>
-            <span className="font-mono text-[11px] text-sky-400">
-              {roleMeta.clearance}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
-            {ALL_USER_PERSONAS.map((persona) => {
-              const isActive = selectedRole === persona.role;
-              return (
-                <button
-                  key={persona.role}
-                  onClick={() => onSelectRole(persona.role)}
-                  className={`p-2.5 rounded-md border text-left transition-all ${
-                    isActive
-                      ? 'bg-sky-500/15 border-sky-500 text-slate-100 ring-1 ring-sky-500/30'
-                      : 'bg-[#090D16] hover:bg-[#141D2E] border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <span
-                      className={`text-xs font-bold truncate ${
-                        isActive ? 'text-sky-300' : 'text-slate-200'
-                      }`}
-                    >
-                      {persona.pluralLabel}
-                    </span>
-                    {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
-                    )}
-                  </div>
-                  <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
-                    {persona.shortTag}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* =====================================================================

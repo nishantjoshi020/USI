@@ -3408,26 +3408,6 @@ export const AI_ROLE_BEHAVIOR_MATRIX: Record<UserRole, PersonaCopilotConfig> = {
       },
     ],
   },
-  Athlete: {
-    focus:
-      'Personal readiness indicators, daily training schedule, recovery metrics, and subjective wellness logs.',
-    allowedApprovals: [
-      'Submit daily morning wellness survey & RPE scores',
-      'Log personal hydration & post-workout nutrition intake',
-    ],
-    restrictedScope:
-      'Restricted to personal biometric records and assigned training plans only.',
-  },
-  'Operations Team': {
-    focus:
-      'Facility capacity, pitch surface condition, sports technology calibration, and logistics travel manifests.',
-    allowedApprovals: [
-      'Confirm pitch & gym maintenance schedules',
-      'Sign off on travel manifest & equipment logistics orders',
-    ],
-    restrictedScope:
-      'Medical diagnostics and tactical coach notes restricted to high performance staff.',
-  },
 };
 
 

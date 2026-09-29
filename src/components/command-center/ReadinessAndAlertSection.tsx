@@ -7,8 +7,10 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { AI_OPERATIONAL_ALERT, READINESS_DISTRIBUTION } from '../../data/mockData';
+import { Athlete } from '../../types/usi';
 
 interface ReadinessAndAlertSectionProps {
+  athletes?: Athlete[];
   selectedReadinessTier: string | null;
   onSelectReadinessTier: (tier: string | null) => void;
   onViewAthletesRegistry: () => void;
@@ -17,12 +19,48 @@ interface ReadinessAndAlertSectionProps {
 }
 
 export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> = ({
+  athletes,
   selectedReadinessTier,
   onSelectReadinessTier,
   onViewAthletesRegistry,
   onReviewRiskAthletes,
   onOpenRiskFactorsModal,
 }) => {
+  const dynamicDistribution = React.useMemo(() => {
+    if (!athletes || athletes.length === 0) return READINESS_DISTRIBUTION;
+    const total = athletes.length;
+    const readyCount = athletes.filter((a) => a.readiness >= 80).length;
+    const monitorCount = athletes.filter((a) => a.readiness >= 65 && a.readiness < 80).length;
+    const restrictedCount = athletes.filter((a) => a.readiness >= 50 && a.readiness < 65).length;
+    const unavailCount = Math.max(0, total - readyCount - monitorCount - restrictedCount);
+    return [
+      {
+        tier: 'Ready' as const,
+        percentage: Math.round((readyCount / total) * 100),
+        athleteCount: readyCount,
+        rangeLabel: '80–100%',
+      },
+      {
+        tier: 'Monitor' as const,
+        percentage: Math.round((monitorCount / total) * 100),
+        athleteCount: monitorCount,
+        rangeLabel: '65–79%',
+      },
+      {
+        tier: 'Restricted' as const,
+        percentage: Math.round((restrictedCount / total) * 100),
+        athleteCount: restrictedCount,
+        rangeLabel: '50–64%',
+      },
+      {
+        tier: 'Unavailable' as const,
+        percentage: Math.max(0, 100 - Math.round((readyCount / total) * 100) - Math.round((monitorCount / total) * 100) - Math.round((restrictedCount / total) * 100)),
+        athleteCount: unavailCount,
+        rangeLabel: '<50%',
+      },
+    ];
+  }, [athletes]);
+
   const tierColors: Record<
     string,
     { bar: string; text: string; dot: string; border: string }
@@ -74,7 +112,7 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
                 </h2>
                 <span className="text-xs text-slate-500">·</span>
                 <span className="text-xs font-mono text-slate-400 tabular-nums">
-                  n = 184 Athletes
+                  n = {athletes ? athletes.length : 184} Athletes
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -83,13 +121,6 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={onReviewRiskAthletes}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-semibold text-amber-300 transition-colors whitespace-nowrap"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                <span>Morning Triage Console</span>
-              </button>
               <button
                 onClick={onViewAthletesRegistry}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-medium text-sky-300 hover:text-sky-200 transition-colors whitespace-nowrap"
@@ -119,7 +150,7 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
             </div>
 
             <div className="h-3.5 w-full rounded-md bg-slate-900 overflow-hidden flex gap-0.5 p-0.5 border border-slate-800">
-              {READINESS_DISTRIBUTION.map((item) => {
+              {dynamicDistribution.map((item) => {
                 const style = tierColors[item.tier];
                 const isSelected = selectedReadinessTier === item.tier;
                 return (
@@ -143,7 +174,7 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
 
           {/* 4 Readiness Tiers Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
-            {READINESS_DISTRIBUTION.map((item) => {
+            {dynamicDistribution.map((item) => {
               const style = tierColors[item.tier];
               const isSelected = selectedReadinessTier === item.tier;
               return (

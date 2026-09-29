@@ -132,17 +132,19 @@ export interface RehabStageDetail {
 
 export interface RehabSessionRecord {
   id: string;
-  injuryId: string;
+  injuryId?: string;
   athleteId: string;
+  athleteName?: string;
   date: string;
-  professional: string;
+  professional?: string;
   focus: string;
   exercises: string[];
-  targetLoad: string;
+  targetLoad?: string;
   painBefore: number;
   painAfter: number;
+  rpe?: number;
   notes: string;
-  status: 'Completed' | 'Scheduled';
+  status?: 'Completed' | 'Scheduled';
 }
 
 export interface RehabPlanRecord {
@@ -256,6 +258,7 @@ export type NavItemId =
   | 'sessions'
   | 'exercises'
   | 'workload'
+  | 'attendance-rpe'
   | 'injury-intelligence'
   | 'injury-register'
   | 'rehabilitation'
@@ -264,6 +267,7 @@ export type NavItemId =
   | 'fatigue'
   | 'gps-wearables'
   | 'recovery'
+  | 'anomaly-matrix'
   | 'nutrition'
   | 'nutrition-plans'
   | 'nutrition-hydration'
@@ -484,6 +488,7 @@ export interface TrainingSession {
   title: string;
   category: 'Conditioning' | 'Strength' | 'Tactical' | 'Recovery' | 'Speed' | 'Technical';
   time: string;
+  day?: string;
   durationMin: number;
   coach: string;
   coachRole: string;
@@ -492,6 +497,7 @@ export interface TrainingSession {
   attendance: number;
   attendedCount: number;
   scheduledCount: number;
+  attendedAthletes?: string[];
   intensity: SessionIntensity;
   status: SessionStatus;
   plannedLoadAu: number;
@@ -597,12 +603,13 @@ export interface AppNotification {
     | 'Nutrition'
     | 'Governance'
     | 'Operations'
-    | 'Science';
+    | 'Science'
+    | 'Administrative';
   title: string;
   description: string;
   timestamp: string;
   read: boolean;
-  severity: 'high' | 'medium' | 'info';
+  severity: 'high' | 'medium' | 'info' | 'low' | 'Low' | 'High';
   roles?: UserRole[];
   actionLabel?: string;
   linkedAthleteId?: string;
@@ -831,7 +838,7 @@ export interface TalentProfile {
   basePerformanceIndex: number;
   benchmarkAlignment: 'High' | 'Moderate' | 'Developing';
   developmentPriority: 'Acceleration & RSA Focus' | 'Strength & Power Progression' | 'Tactical Transition';
-  status: 'Active Candidate' | 'Under Review' | 'Academy Pathway';
+  status: 'Active Candidate' | 'Under Review' | 'Academy Pathway' | 'Promoted to Senior Squad';
   developmentAreas: string[];
   strengths: string[];
   suggestedDevelopmentFocus: string;

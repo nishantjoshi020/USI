@@ -826,7 +826,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                                     : `${activeAthlete.medicalStatus} (No restriction)`,
                                 recovery: `Readiness ${activeAthlete.readiness}% · HRV ${activeAthlete.hrvMs}ms · Sleep ${activeAthlete.sleepFormatted}`,
                                 assessment: `30m: ${activeAthlete.performanceMetrics.sprint30m.current} · CMJ: ${activeAthlete.performanceMetrics.cmj.current}`,
-                                nutrition: `Compliance ${activeAthletePlan?.compliancePct ?? activeAthlete.nutritionCompliancePct}% · Hydration ${activeAthletePlan?.hydrationIntakeL ?? activeAthlete.hydrationLiters}L`,
+                                nutrition: `Compliance ${activeAthletePlan?.compliancePct ?? activeAthlete.nutritionCompliancePct}% · Hydration ${activeAthletePlan?.currentHydrationL ?? 2.8}L`,
                               },
                               {
                                 date: '3 Days Ago',
@@ -836,15 +836,15 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                                     ? `Rehab compliance ${activeAthleteInjuries[0].rehabCompliancePct}%`
                                     : 'Routine physio screening passed',
                                 recovery: `Readiness ${Math.min(99, activeAthlete.readiness + 3)}% · HRV ${activeAthlete.hrvMs + 2}ms`,
-                                assessment: `Yo-Yo IR2: ${activeAthlete.performanceMetrics.yoYoIr2.current}`,
-                                nutrition: `Macro Target ${activeAthletePlan?.caloriesTarget ?? activeAthlete.dailyCalorieTargetKcal} kcal met`,
+                                assessment: `Yo-Yo IR2: ${activeAthlete.performanceMetrics.yoYo.current}`,
+                                nutrition: `Macro Target ${activeAthletePlan?.targetCalories ?? 3200} kcal met`,
                               },
                               {
                                 date: '7 Days Ago',
                                 training: `Microcycle Baseline Load (${activeAthlete.chronicLoadAu} AU)`,
                                 medical: 'Baseline musculoskeletal check verified',
                                 recovery: `Readiness ${Math.max(55, activeAthlete.readiness - activeAthlete.readinessDelta)}% · Baseline HRV ${activeAthlete.hrvBaselineMs}ms`,
-                                assessment: `Baseline 30m: ${activeAthlete.performanceMetrics.sprint30m.previous}`,
+                                assessment: `Baseline 30m: ${activeAthlete.performanceMetrics.sprint30m.points[0]?.value ?? activeAthlete.performanceMetrics.sprint30m.current}`,
                                 nutrition: `Hydration Status: ${activeAthlete.hydrationStatus}`,
                               },
                             ]

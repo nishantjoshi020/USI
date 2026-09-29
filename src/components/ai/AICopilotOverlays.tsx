@@ -423,8 +423,11 @@ export const ProposedTrainingModificationsModal: React.FC<
                 </button>
                 <button
                   onClick={() => setConfirmingApproval(true)}
-                  disabled={selectedItems.length === 0}
-                  className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-semibold text-xs"
+                  disabled={
+                    selectedItems.length === 0 ||
+                    ['Federation Admin', 'Nutritionist', 'Athlete'].includes(selectedRole)
+                  }
+                  className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 disabled:opacity-45 disabled:cursor-not-allowed text-slate-950 font-semibold text-xs"
                 >
                   {reviewIndividually
                     ? `Approve Selected (${selectedItems.length})`

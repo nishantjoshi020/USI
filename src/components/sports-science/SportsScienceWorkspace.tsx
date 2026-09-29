@@ -373,23 +373,41 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div className="p-4 rounded-lg bg-[#0F1623] border border-slate-800">
               <span className="text-slate-400 block text-xs">Squad Mean Readiness</span>
-              <strong className="text-2xl font-bold text-emerald-400 font-mono mt-1 block">81.4 / 100</strong>
-              <div className="text-[11px] text-slate-400 mt-1">+1.8 vs 7-day rolling baseline</div>
+              <strong className="text-2xl font-bold text-emerald-400 font-mono mt-1 block">
+                {athletes.length
+                  ? (athletes.reduce((acc, a) => acc + a.readiness, 0) / athletes.length).toFixed(1)
+                  : '81.4'}{' '}
+                / 100
+              </strong>
+              <div className="text-[11px] text-slate-400 mt-1">
+                Across {athletes.length} monitored athletes in selected context
+              </div>
             </div>
             <div className="p-4 rounded-lg bg-[#0F1623] border border-slate-800">
-              <span className="text-slate-400 block text-xs">Autonomic HRV rMSSD Median</span>
-              <strong className="text-2xl font-bold text-cyan-400 font-mono mt-1 block">72.8 ms</strong>
+              <span className="text-slate-400 block text-xs">Autonomic HRV rMSSD Mean</span>
+              <strong className="text-2xl font-bold text-cyan-400 font-mono mt-1 block">
+                {athletes.length
+                  ? (athletes.reduce((acc, a) => acc + a.hrvMs, 0) / athletes.length).toFixed(1)
+                  : '72.8'}{' '}
+                ms
+              </strong>
               <div className="text-[11px] text-slate-400 mt-1">Normal Parasympathetic Balance</div>
             </div>
             <div className="p-4 rounded-lg bg-[#0F1623] border border-slate-800">
               <span className="text-slate-400 block text-xs">Mean Sleep Duration</span>
-              <strong className="text-2xl font-bold text-slate-100 font-mono mt-1 block">7h 52m</strong>
+              <strong className="text-2xl font-bold text-slate-100 font-mono mt-1 block">
+                {athletes.length
+                  ? `${(athletes.reduce((acc, a) => acc + a.sleepHours, 0) / athletes.length).toFixed(1)}h`
+                  : '7h 52m'}
+              </strong>
               <div className="text-[11px] text-emerald-400 mt-1">21.5% Deep Non-REM Stage</div>
             </div>
             <div className="p-4 rounded-lg bg-[#0F1623] border border-slate-800">
               <span className="text-slate-400 block text-xs">Autonomic Suppression Flags</span>
-              <strong className="text-2xl font-bold text-amber-400 font-mono mt-1 block">2 Athletes</strong>
-              <div className="text-[11px] text-amber-400 mt-1">HRV CV &gt; 1.5 SD below norm</div>
+              <strong className="text-2xl font-bold text-amber-400 font-mono mt-1 block">
+                {athletes.filter((a) => a.hrvMs < a.hrvBaselineMs).length} Athletes
+              </strong>
+              <div className="text-[11px] text-amber-400 mt-1">HRV below individual rolling norm</div>
             </div>
           </div>
 

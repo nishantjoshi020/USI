@@ -257,15 +257,17 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
 
   const handleCreateCamp = (e: React.FormEvent) => {
     e.preventDefault();
-    const newCampItem = {
+    const newCampItem: CampRecord = {
       id: `camp-${Date.now()}`,
       name: campName,
+      squad: 'Senior Squad',
       location: campLocation,
       venue: campVenue,
       dates: campDates,
       status: 'Upcoming' as const,
       headcount: campHeadcount,
       budgetAllocated: campBudget,
+      budgetSpent: '₹0 L',
       budgetVariance: '₹0 (On Track)',
       travelCoordinator: campCoordinator,
     };
