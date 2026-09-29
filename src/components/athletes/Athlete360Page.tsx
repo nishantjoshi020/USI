@@ -15,7 +15,10 @@ import {
   FileText,
   HeartPulse,
   RefreshCw,
+  Shield,
   ShieldAlert,
+  ShieldCheck,
+  MapPin,
   Sparkles,
   Upload,
   UserCheck,
@@ -57,6 +60,7 @@ export type Athlete360TabId =
   | 'Sports Science'
   | 'Nutrition'
   | 'Assessments'
+  | 'Anti-Doping & Governance'
   | 'Documents';
 
 export type AiAssistanceMode =
@@ -139,17 +143,84 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
     useState<AthleteDocument | null>(null);
   const [showAssessmentDetailModal, setShowAssessmentDetailModal] =
     useState(false);
+  const [isWhereaboutsModalOpen, setIsWhereaboutsModalOpen] = useState(false);
+  const [isTueApplicationModalOpen, setIsTueApplicationModalOpen] = useState(false);
+  const [whereaboutsWindow, setWhereaboutsWindow] = useState(
+    athlete.wadaWhereabouts?.dailyWindowTime || '06:00 - 07:00 AM'
+  );
+  const [whereaboutsLocation, setWhereaboutsLocation] = useState(
+    athlete.wadaWhereabouts?.dailyLocation || 'National High Performance Centre, Hostel Wing B, Room 302'
+  );
+  const [loggedMeals, setLoggedMeals] = useState<Record<string, boolean>>({
+    'meal-1': true,
+    'meal-2': true,
+    'meal-3': false,
+    'meal-4': false,
+    'meal-5': false,
+  });
+  const [loggedHydrationMl, setLoggedHydrationMl] = useState(2600);
 
-  const tabs: Athlete360TabId[] = [
-    'Overview',
-    'Performance',
-    'Training',
-    'Medical',
-    'Sports Science',
-    'Nutrition',
-    'Assessments',
-    'Documents',
-  ];
+  const getTabsForRole = (role: UserRole): Athlete360TabId[] => {
+    switch (role) {
+      case 'Athlete':
+        return [
+          'Overview',
+          'Performance',
+          'Training',
+          'Sports Science',
+          'Nutrition',
+          'Anti-Doping & Governance',
+          'Documents',
+        ];
+      case 'Coach':
+        return [
+          'Overview',
+          'Performance',
+          'Training',
+          'Sports Science',
+          'Assessments',
+          'Anti-Doping & Governance',
+          'Documents',
+        ];
+      case 'Physiotherapist':
+        return ['Overview', 'Medical', 'Training', 'Sports Science', 'Assessments', 'Documents'];
+      case 'Nutritionist':
+        return ['Overview', 'Nutrition', 'Performance', 'Sports Science', 'Documents'];
+      case 'Operations Team':
+        return ['Overview', 'Training', 'Documents'];
+      case 'Federation Admin':
+        return [
+          'Overview',
+          'Anti-Doping & Governance',
+          'Documents',
+          'Assessments',
+          'Performance',
+        ];
+      case 'Sports Scientist':
+        return ['Overview', 'Sports Science', 'Performance', 'Training', 'Nutrition', 'Assessments'];
+      case 'Performance Director':
+      default:
+        return [
+          'Overview',
+          'Performance',
+          'Training',
+          'Medical',
+          'Sports Science',
+          'Nutrition',
+          'Assessments',
+          'Anti-Doping & Governance',
+          'Documents',
+        ];
+    }
+  };
+
+  const tabs: Athlete360TabId[] = getTabsForRole(selectedRole);
+
+  React.useEffect(() => {
+    if (!tabs.includes(activeTab)) {
+      setActiveTab(tabs[0] || 'Overview');
+    }
+  }, [selectedRole, tabs, activeTab]);
 
   const handleGenerateUpdatedAiSummary = () => {
     const updatedText = `${athlete.name}'s composite readiness is ${athlete.readiness}/100 (updated 28 Sep 2026). Acute workload (${athlete.acuteLoadAu} AU, ACWR ${athlete.acwr.toFixed(2)}), morning HRV (${athlete.hrvMs} ms), and sleep consistency (${athlete.sleepFormatted}) have been cross-checked against ${athlete.medicalStatus.toLowerCase()} medical status. Review high-speed running exposure prior to next pitch block.`;
@@ -234,31 +305,33 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
             className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white font-medium transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
-            <span>Athlete Registry</span>
+            <span>{selectedRole === 'Athlete' ? 'Personal Portal' : 'Athlete Registry'}</span>
           </button>
           <span className="text-slate-600">/</span>
           <span className="font-mono text-sky-400">
-            /athletes/{athlete.athleteId}
+            {selectedRole === 'Athlete' ? '/my-profile' : `/athletes/${athlete.athleteId}`}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-400">Switch Athlete:</span>
-          <select
-            value={athlete.id}
-            onChange={(e) => {
-              const target = allAthletes.find((a) => a.id === e.target.value);
-              if (target) onSwitchAthlete(target);
-            }}
-            className="px-2.5 py-1 bg-[#0F1623] border border-slate-800 rounded text-xs text-slate-100 focus:outline-none focus:border-sky-500"
-          >
-            {allAthletes.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name} ({a.athleteId} · {a.position})
-              </option>
-            ))}
-          </select>
-        </div>
+        {selectedRole !== 'Athlete' && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-400">Switch Athlete:</span>
+            <select
+              value={athlete.id}
+              onChange={(e) => {
+                const target = allAthletes.find((a) => a.id === e.target.value);
+                if (target) onSwitchAthlete(target);
+              }}
+              className="px-2.5 py-1 bg-[#0F1623] border border-slate-800 rounded text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+            >
+              {allAthletes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.athleteId} · {a.position})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* 4. ATHLETE 360 HEADER */}
@@ -301,10 +374,11 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
             </div>
           </div>
 
-          {/* Header Actions: [Edit Profile] [Assign Coach] [Medical] [Training] [Generate AI Summary] */}
+          {/* Header Actions: Role-scoped actions */}
           <div className="flex flex-wrap items-center gap-2">
             {(athlete.verificationStatus === 'Pending' ||
-              athlete.verificationStatus === 'Changes Requested') && (
+              athlete.verificationStatus === 'Changes Requested') &&
+              ['Federation Admin', 'Performance Director'].includes(selectedRole) && (
               <button
                 onClick={() => onOpenReviewApplication(athlete)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-colors whitespace-nowrap"
@@ -319,32 +393,38 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
             >
               <Edit3 className="w-3.5 h-3.5 text-slate-400" />
-              <span>Edit Profile</span>
+              <span>{selectedRole === 'Athlete' ? 'Edit My Details' : 'Edit Profile'}</span>
             </button>
 
-            <button
-              onClick={() => onOpenAssignCoach(athlete)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-sky-400" />
-              <span>Assign Coach</span>
-            </button>
+            {['Coach', 'Federation Admin', 'Performance Director'].includes(selectedRole) && (
+              <button
+                onClick={() => onOpenAssignCoach(athlete)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-sky-400" />
+                <span>Assign Coach</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setActiveTab('Medical')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-            >
-              <HeartPulse className="w-3.5 h-3.5 text-rose-400" />
-              <span>Medical</span>
-            </button>
+            {tabs.includes('Medical') && (
+              <button
+                onClick={() => setActiveTab('Medical')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              >
+                <HeartPulse className="w-3.5 h-3.5 text-rose-400" />
+                <span>Medical</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setActiveTab('Training')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
-            >
-              <Dumbbell className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Training</span>
-            </button>
+            {tabs.includes('Training') && (
+              <button
+                onClick={() => setActiveTab('Training')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              >
+                <Dumbbell className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Training</span>
+              </button>
+            )}
 
             <button
               onClick={() => onOpenAiAssistance('summary')}
@@ -770,6 +850,65 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Section: WADA ANTI-DOPING & WHEREABOUTS CARD */}
+            <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <h2 className="text-xs font-bold tracking-wider text-slate-200 uppercase">
+                    WADA ANTI-DOPING & WHEREABOUTS
+                  </h2>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  {athlete.wadaWhereabouts?.filingStatus || 'Compliant ✓'}
+                </span>
+              </div>
+
+              <div className="p-3 rounded bg-[#0B101B] border border-slate-800/80 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Testing Pool:</span>
+                  <span className="font-mono font-bold text-sky-400">
+                    {athlete.wadaWhereabouts?.poolTier || 'National RTP'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">60-Min Daily Window:</span>
+                  <span className="font-mono font-bold text-slate-200">
+                    {whereaboutsWindow}
+                  </span>
+                </div>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-slate-400 shrink-0">Location:</span>
+                  <span className="text-right text-[11px] text-slate-300 line-clamp-1">
+                    {whereaboutsLocation}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                  <span className="text-slate-400">Active TUE:</span>
+                  <span className="font-mono font-semibold text-emerald-400">
+                    {athlete.wadaWhereabouts?.tueActive
+                      ? 'Approved (Formoterol)'
+                      : 'None Required'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 text-xs">
+                <button
+                  onClick={() => setIsWhereaboutsModalOpen(true)}
+                  className="text-sky-400 hover:text-sky-300 font-semibold"
+                >
+                  Edit 60-min Window ✎
+                </button>
+                <button
+                  onClick={() => setActiveTab('Anti-Doping & Governance')}
+                  className="text-slate-400 hover:text-white"
+                >
+                  Full Anti-Doping Dossier →
+                </button>
               </div>
             </div>
 
@@ -1475,11 +1614,174 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                       {onNavigateModule && (
                         <button
                           onClick={() => onNavigateModule('nutrition')}
-                          className="px-3.5 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+                          className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors"
                         >
                           Open Full Nutrition Workspace →
                         </button>
                       )}
+                    </div>
+
+                    {/* Interactive Daily Intake & Hydration Protocol */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* Left 8 Cols: Prescribed Fueling Protocol */}
+                      <div className="lg:col-span-8 p-4 rounded-lg bg-[#0F1623] border border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <Utensils className="w-4 h-4 text-emerald-400" />
+                            <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                              Today's Prescribed Fueling & Recovery Protocol
+                            </h4>
+                          </div>
+                          <span className="font-mono text-[11px] text-emerald-400">
+                            {Object.values(loggedMeals).filter(Boolean).length}/5 Completed (
+                            {Math.round((Object.values(loggedMeals).filter(Boolean).length / 5) * 100)}%)
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {[
+                            {
+                              id: 'meal-1',
+                              time: '07:30 IST',
+                              label: 'Pre-Training Carbohydrate Fueling',
+                              menu: 'Rolled Oats (80g) + 35g Whey Isolate + Banana + Tart Cherry (75g CHO, 35g PRO)',
+                            },
+                            {
+                              id: 'meal-2',
+                              time: '10:00 IST',
+                              label: 'Hydration Bolus & Electrolyte Priming',
+                              menu: '500ml Hypotonic Drink + 450mg Sodium + 200mg Potassium',
+                            },
+                            {
+                              id: 'meal-3',
+                              time: '11:45 IST',
+                              label: 'Intra-Session High-Intensity Fuel',
+                              menu: 'Dual-Source Maltodextrin:Fructose Hydrogel (60g CHO/hr)',
+                            },
+                            {
+                              id: 'meal-4',
+                              time: '13:15 IST',
+                              label: 'Post-Session Anabolic Window Shake',
+                              menu: '4:1 CHO:PRO Recovery Bolus + 5g Informed-Sport Creapure® Creatine',
+                            },
+                            {
+                              id: 'meal-5',
+                              time: '20:30 IST',
+                              label: 'Dinner & Slow-Digesting Night Protein',
+                              menu: 'Grilled Salmon + Quinoa + Steamed Asparagus + 30g Micellar Casein',
+                            },
+                          ].map((item) => {
+                            const isDone = Boolean(loggedMeals[item.id]);
+                            return (
+                              <div
+                                key={item.id}
+                                className={`p-2.5 rounded border transition-colors flex items-center justify-between gap-3 ${
+                                  isDone
+                                    ? 'bg-[#091515] border-emerald-500/30'
+                                    : 'bg-[#0B101B] border-slate-800'
+                                }`}
+                              >
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-[10px] text-slate-400 font-semibold">{item.time}</span>
+                                    <span className="text-slate-600">·</span>
+                                    <span className={`text-xs font-semibold ${isDone ? 'text-emerald-300' : 'text-slate-200'}`}>
+                                      {item.label}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-400">{item.menu}</p>
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    setLoggedMeals((prev) => ({ ...prev, [item.id]: !isDone }));
+                                    onUpdateAthlete(
+                                      athlete.id,
+                                      {
+                                        nutritionCompliancePct: Math.min(
+                                          100,
+                                          Math.round(((Object.values(loggedMeals).filter(Boolean).length + (isDone ? -1 : 1)) / 5) * 100)
+                                        ),
+                                      },
+                                      `${isDone ? 'Unchecked' : 'Logged'} fueling meal: ${item.label}`,
+                                      `${isDone ? 'Unchecked' : 'Logged'} ${item.label} ✓ Updated daily compliance`
+                                    );
+                                  }}
+                                  className={`px-3 py-1.5 rounded text-xs font-semibold shrink-0 transition-colors ${
+                                    isDone
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                      : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'
+                                  }`}
+                                >
+                                  {isDone ? '✓ Consumed' : 'Mark Consumed'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Right 4 Cols: Rapid Hydration Bolus Logger */}
+                      <div className="lg:col-span-4 p-4 rounded-lg bg-[#0F1623] border border-slate-800 space-y-3 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                              Live Fluid Intake
+                            </span>
+                            <span className="font-mono text-xs font-bold text-amber-400">
+                              {(loggedHydrationMl / 1000).toFixed(1)}L / 3.5L
+                            </span>
+                          </div>
+
+                          <div className="mt-3 space-y-2">
+                            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-amber-400 h-full rounded-full transition-all"
+                                style={{ width: `${Math.min(100, Math.round((loggedHydrationMl / 3500) * 100))}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                              <span>Current: {loggedHydrationMl}ml</span>
+                              <span>Target: 3,500ml</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-2">
+                            <span className="text-[11px] text-slate-400 font-medium block">
+                              Log Hydration Bolus:
+                            </span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { label: '+250ml Water', amount: 250 },
+                                { label: '+500ml Water', amount: 500 },
+                                { label: '+500ml Hypotonic', amount: 500 },
+                                { label: '+750ml Bottle', amount: 750 },
+                              ].map((btn) => (
+                                <button
+                                  key={btn.label}
+                                  onClick={() => {
+                                    const next = Math.min(5000, loggedHydrationMl + btn.amount);
+                                    setLoggedHydrationMl(next);
+                                    onUpdateAthlete(
+                                      athlete.id,
+                                      {},
+                                      `Logged ${btn.amount}ml fluid intake (Total: ${(next / 1000).toFixed(1)}L)`,
+                                      `Added ${btn.amount}ml to daily fluid total (${(next / 1000).toFixed(1)}L logged) ✓`
+                                    );
+                                  }}
+                                  className="p-2 rounded bg-[#090D16] hover:bg-[#131B2A] border border-slate-800 text-[11px] font-mono text-amber-300 font-semibold transition-colors"
+                                >
+                                  {btn.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-2.5 rounded bg-emerald-950/30 border border-emerald-500/30 text-[11px] text-emerald-300">
+                          Pre-session USG: <strong>1.018 (Nominal)</strong> · Sweat rate modeled at <strong>1.2 L/hr</strong>
+                        </div>
+                      </div>
                     </div>
                   </>
                 );
@@ -1528,6 +1830,240 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                     Open Assessments & TID Module →
                   </button>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Anti-Doping & Governance' && (
+            <div className="space-y-5 text-xs">
+              {/* Header Overview Card */}
+              <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                      <h2 className="text-base font-bold text-slate-100 tracking-tight uppercase">
+                        WADA & NADA ANTI-DOPING COMPLIANCE DOSSIER
+                      </h2>
+                    </div>
+                    <p className="text-slate-400 text-xs mt-1">
+                      World Anti-Doping Code (ADAMS) Testing Pool, 60-Minute Whereabouts Window & TUE Governance
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold">
+                      ADAMS STATUS: {athlete.wadaWhereabouts?.filingStatus || 'COMPLIANT ✓'}
+                    </span>
+                    <button
+                      onClick={() => setIsWhereaboutsModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors"
+                    >
+                      Update 60-min Window
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
+                  <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Testing Pool Tier</span>
+                    <strong className="text-sky-300 font-bold mt-1 block">
+                      {athlete.wadaWhereabouts?.poolTier || 'International RTP'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Quarterly Filing</span>
+                    <strong className="text-slate-100 font-mono mt-1 block">
+                      {athlete.wadaWhereabouts?.filingQuarter || 'Q4 2026'} Filed ✓
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Missed Tests (12m)</span>
+                    <strong className="text-emerald-400 font-mono font-bold mt-1 block">
+                      0 / 3 (Clean Record)
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded bg-[#0B101B] border border-slate-800">
+                    <span className="text-slate-400 block text-[11px]">Next Filing Deadline</span>
+                    <strong className="text-amber-300 font-mono mt-1 block">
+                      {athlete.wadaWhereabouts?.nextDeadline || '15 Dec 2026'}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Detail Cards: Whereabouts Window | Active TUE | Anti-Doping Education */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Daily 60-Min Testing Window */}
+                <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-100 uppercase">
+                        60-Minute Daily Window
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-400">
+                        Active Today
+                      </span>
+                    </div>
+                    <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-1.5">
+                      <div className="text-xs text-slate-400">Designated Hour:</div>
+                      <div className="text-lg font-mono font-bold text-sky-400">
+                        {whereaboutsWindow}
+                      </div>
+                      <div className="text-xs text-slate-400 pt-1 border-t border-slate-800/70">
+                        Designated Location:
+                      </div>
+                      <div className="text-xs text-slate-200 font-medium">
+                        {whereaboutsLocation}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsWhereaboutsModalOpen(true)}
+                    className="w-full py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-center transition-colors"
+                  >
+                    Modify Schedule / Travel Location →
+                  </button>
+                </div>
+
+                {/* 2. Therapeutic Use Exemption (TUE) Portal */}
+                <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-100 uppercase">
+                        Active TUE Certificates
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                        WADA Validated
+                      </span>
+                    </div>
+                    {athlete.wadaWhereabouts?.tueCertificate ? (
+                      <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-1.5">
+                        <div className="flex justify-between font-mono text-[11px] text-sky-400">
+                          <span>{athlete.wadaWhereabouts.tueCertificate.certificateNumber}</span>
+                          <span>Exp: {athlete.wadaWhereabouts.tueCertificate.approvedUntil}</span>
+                        </div>
+                        <div className="font-semibold text-slate-100 text-xs">
+                          {athlete.wadaWhereabouts.tueCertificate.substance}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Granting Authority: {athlete.wadaWhereabouts.tueCertificate.grantingBody}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800 text-slate-400">
+                        No active Therapeutic Use Exemptions on record. All prescribed therapies comply with standard limits.
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setIsTueApplicationModalOpen(true)}
+                    className="w-full py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-center transition-colors"
+                  >
+                    Submit New TUE Medical Dossier →
+                  </button>
+                </div>
+
+                {/* 3. WADA ADEL Anti-Doping Passport */}
+                <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-100 uppercase">
+                        Clean Sport Education
+                      </span>
+                      <span className="text-[10px] font-mono text-sky-400">
+                        ADEL Verified
+                      </span>
+                    </div>
+                    <div className="p-3.5 rounded bg-[#0B101B] border border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-300 font-medium">International Athlete Module</span>
+                        <span className="font-mono text-emerald-400 font-bold">100% Passed</span>
+                      </div>
+                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div className="bg-emerald-500 h-full w-full" />
+                      </div>
+                      <div className="text-[11px] text-slate-400 pt-1">
+                        Certificate ID: <span className="font-mono text-slate-300">ADEL-2026-90412</span> · Valid through Nov 2027
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-medium">
+                    ✓ Clean Sport Athlete Charter signed on file.
+                  </div>
+                </div>
+              </div>
+
+              {/* Doping Control History & Chain-of-Custody Log */}
+              <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100 uppercase">
+                      DOPING CONTROL SAMPLES & CHAIN OF CUSTODY (12-MONTH LOG)
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Verified laboratory results from WADA-accredited analytical laboratories
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono text-slate-400">
+                    3 Controls Registered
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#0B101B] border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase">
+                        <th className="py-2.5 px-3">Date</th>
+                        <th className="py-2.5 px-3">Sample Code</th>
+                        <th className="py-2.5 px-3">Testing Type</th>
+                        <th className="py-2.5 px-3">Testing Authority</th>
+                        <th className="py-2.5 px-3">Laboratory</th>
+                        <th className="py-2.5 px-3">Analytical Result</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/70">
+                      {[
+                        {
+                          date: '14 Aug 2026',
+                          code: 'WADA-SAMP-91048',
+                          type: 'Out-of-Competition (Urine + Blood ABP)',
+                          authority: 'National Anti-Doping Agency (NADA)',
+                          lab: 'NDTL New Delhi (WADA-Accredited)',
+                          result: 'Negative / Normal (Cleared)',
+                        },
+                        {
+                          date: '28 Jun 2026',
+                          code: 'WADA-SAMP-84912',
+                          type: 'In-Competition (Post-Final Urine)',
+                          authority: 'International Testing Agency (ITA)',
+                          lab: 'Lausanne Laboratory for Analysis',
+                          result: 'Negative / Normal (Cleared)',
+                        },
+                        {
+                          date: '12 Mar 2026',
+                          code: 'WADA-SAMP-77319',
+                          type: 'Out-of-Competition (Blood ABP)',
+                          authority: 'WADA Independent Testing',
+                          lab: 'Cologne Analytical Center',
+                          result: 'Negative / Normal (Cleared)',
+                        },
+                      ].map((test) => (
+                        <tr key={test.code} className="hover:bg-[#141D2E]">
+                          <td className="py-3 px-3 font-mono text-slate-300">{test.date}</td>
+                          <td className="py-3 px-3 font-mono font-bold text-sky-400">{test.code}</td>
+                          <td className="py-3 px-3 text-slate-200">{test.type}</td>
+                          <td className="py-3 px-3 text-slate-300">{test.authority}</td>
+                          <td className="py-3 px-3 text-slate-400 font-mono text-[11px]">{test.lab}</td>
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono text-[11px] font-bold">
+                              {test.result}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1724,6 +2260,170 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
               )}
             </div>
           </aside>
+        </div>
+      )}
+
+      {/* WADA Whereabouts 60-Minute Window Update Modal */}
+      {isWhereaboutsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsWhereaboutsModalOpen(false)}
+            className="fixed inset-0 bg-black/75 backdrop-blur-[1px]"
+          />
+          <div className="relative w-full max-w-lg bg-[#0F1623] border border-slate-800 rounded-xl p-6 z-10 shadow-2xl space-y-5 text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm font-bold text-slate-100 uppercase">
+                  UPDATE WADA 60-MINUTE WHEREABOUTS WINDOW
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsWhereaboutsModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-relaxed">
+                <strong>Mandatory Anti-Doping Regulation:</strong> Registered Testing Pool (RTP) athletes must specify a 60-minute daily time window between 05:00 and 23:00 during which they are available and accessible for testing at a specified location. Failure to be available may result in a Filing Failure / Missed Test strike.
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-slate-300 font-semibold block">
+                  60-Minute Daily Availability Window
+                </label>
+                <select
+                  value={whereaboutsWindow}
+                  onChange={(e) => setWhereaboutsWindow(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#090D16] border border-slate-800 rounded text-slate-100 font-mono text-xs focus:outline-none focus:border-sky-500"
+                >
+                  <option value="05:00 - 06:00 AM">05:00 - 06:00 AM</option>
+                  <option value="06:00 - 07:00 AM">06:00 - 07:00 AM (Default Training Camp)</option>
+                  <option value="07:00 - 08:00 AM">07:00 - 08:00 AM</option>
+                  <option value="12:00 - 01:00 PM">12:00 - 01:00 PM (Midday Rest)</option>
+                  <option value="20:00 - 21:00 PM">20:00 - 21:00 PM (Evening Village)</option>
+                  <option value="21:00 - 22:00 PM">21:00 - 22:00 PM</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-slate-300 font-semibold block">
+                  Overnight / Specific Location Address
+                </label>
+                <input
+                  type="text"
+                  value={whereaboutsLocation}
+                  onChange={(e) => setWhereaboutsLocation(e.target.value)}
+                  placeholder="Street, Building, Room / Hotel number, City"
+                  className="w-full px-3 py-2 bg-[#090D16] border border-slate-800 rounded text-slate-100 text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="p-3 rounded bg-[#0B101B] border border-slate-800 space-y-1 text-[11px] font-mono text-slate-400">
+                <div>Athlete: {athlete.name} ({athlete.athleteId})</div>
+                <div>Filing Quarter: Q4 2026 · Anti-Doping Authority: WADA / NADA ADAMS</div>
+                <div className="text-emerald-400">Submission will automatically sync to WADA ADAMS 4.0 API</div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsWhereaboutsModalOpen(false)}
+                className="px-3.5 py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onUpdateAthlete(
+                    athlete.id,
+                    {
+                      wadaWhereabouts: {
+                        poolTier: athlete.wadaWhereabouts?.poolTier || 'International RTP',
+                        filingQuarter: athlete.wadaWhereabouts?.filingQuarter || 'Q4 2026',
+                        filingStatus: 'Compliant',
+                        dailyWindowTime: whereaboutsWindow,
+                        dailyLocation: whereaboutsLocation,
+                        nextDeadline: '15 Dec 2026',
+                        missedTestsCount12m: athlete.wadaWhereabouts?.missedTestsCount12m || 0,
+                        tueActive: athlete.wadaWhereabouts?.tueActive ?? true,
+                        tueCertificate: athlete.wadaWhereabouts?.tueCertificate,
+                      },
+                    },
+                    `Updated WADA Whereabouts 60-min window to ${whereaboutsWindow} at ${whereaboutsLocation}`,
+                    `WADA ADAMS Whereabouts updated successfully ✓`
+                  );
+                  setIsWhereaboutsModalOpen(false);
+                }}
+                className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold"
+              >
+                Save & Transmit to WADA ADAMS ✓
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit TUE Medical Dossier Modal */}
+      {isTueApplicationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setIsTueApplicationModalOpen(false)}
+            className="fixed inset-0 bg-black/75 backdrop-blur-[1px]"
+          />
+          <div className="relative w-full max-w-lg bg-[#0F1623] border border-slate-800 rounded-xl p-6 z-10 shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-sky-400" />
+                <h3 className="text-sm font-bold text-slate-100 uppercase">
+                  THERAPEUTIC USE EXEMPTION (TUE) APPLICATION
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsTueApplicationModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-slate-300 leading-relaxed">
+              Submit a formal clinical application to the National Anti-Doping Agency (NADA) TUE Committee in accordance with Article 4.4 of the World Anti-Doping Code.
+            </p>
+
+            <div className="space-y-3">
+              <div className="p-3 rounded bg-[#0B101B] border border-slate-800 space-y-1">
+                <span className="text-slate-400 block text-[11px]">Prohibited Substance Requested:</span>
+                <strong className="text-slate-100 font-mono">Formoterol Fumarate (Inhaled)</strong>
+                <span className="text-slate-400 block text-[11px] pt-1">Medical Diagnosis: Exercise-Induced Asthma / Bronchospasm (FEV1 drop &gt; 10%)</span>
+              </div>
+              <div className="p-3 rounded bg-[#0B101B] border border-slate-800 space-y-1">
+                <span className="text-slate-400 block text-[11px]">Certifying Physician:</span>
+                <span className="text-slate-200">Dr. K. Nair, MD (Chief Medical Officer · Team Physician)</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setIsTueApplicationModalOpen(false)}
+                className="px-3.5 py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onTriggerToast('TUE Medical Dossier Transmitted to NADA TUE Committee ✓');
+                  setIsTueApplicationModalOpen(false);
+                }}
+                className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold"
+              >
+                Submit TUE Dossier to NADA
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

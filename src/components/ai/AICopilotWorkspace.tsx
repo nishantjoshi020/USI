@@ -143,29 +143,43 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
     setQueryInput('');
   };
 
-  const subTabs: {
-    id: AICopilotSubTab;
-    label: string;
-    badge?: number | string;
-  }[] = [
-    { id: 'ai-copilot', label: 'USI Copilot Workspace', badge: 'Live' },
-    {
-      id: 'ai-action-centre',
-      label: 'AI Action Centre',
-      badge: pendingActionsCount,
-    },
-    { id: 'ai-risk-centre', label: 'AI Risk Centre', badge: activeRiskCount },
-    {
-      id: 'ai-automation',
-      label: 'Workflow Automation',
-      badge: `${activeRulesCount} Active`,
-    },
-    {
-      id: 'ai-audit',
-      label: 'AI Audit & Governance',
-      badge: aiAuditTrail.length,
-    },
-  ];
+  const subTabs = useMemo(() => {
+    if (selectedRole === 'Athlete') {
+      return [
+        { id: 'ai-copilot' as const, label: 'My Athlete AI Assistant', badge: 'Active' },
+        {
+          id: 'ai-action-centre' as const,
+          label: 'My Action Items',
+          badge: pendingActionsCount,
+        },
+      ];
+    }
+    return [
+      { id: 'ai-copilot' as const, label: 'USI Copilot Workspace', badge: 'Live' },
+      {
+        id: 'ai-action-centre' as const,
+        label: 'AI Action Centre',
+        badge: pendingActionsCount,
+      },
+      { id: 'ai-risk-centre' as const, label: 'AI Risk Centre', badge: activeRiskCount },
+      {
+        id: 'ai-automation' as const,
+        label: 'Workflow Automation',
+        badge: `${activeRulesCount} Active`,
+      },
+      {
+        id: 'ai-audit' as const,
+        label: 'AI Audit & Governance',
+        badge: aiAuditTrail.length,
+      },
+    ];
+  }, [
+    selectedRole,
+    pendingActionsCount,
+    activeRiskCount,
+    activeRulesCount,
+    aiAuditTrail.length,
+  ]);
 
   return (
     <div className="space-y-5">
@@ -198,24 +212,53 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
 
           {/* Right Quick Actions */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={onOpenTrainingModModal}
-              className="px-3.5 py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Review Training Modifications (2)</span>
-            </button>
-            <button
-              onClick={() =>
-                onSendQuery(
-                  'Generate weekly performance report for Senior Squad'
-                )
-              }
-              className="px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
-            >
-              <FileText className="w-3.5 h-3.5 text-sky-400" />
-              <span>Generate Weekly Report</span>
-            </button>
+            {selectedRole === 'Athlete' ? (
+              <>
+                <button
+                  onClick={() =>
+                    onSendQuery(
+                      'Explain my morning recovery telemetry and HRV baseline.'
+                    )
+                  }
+                  className="px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Explain My Recovery Baseline</span>
+                </button>
+                <button
+                  onClick={() =>
+                    onSendQuery(
+                      'What are my hydration and fueling targets before today session?'
+                    )
+                  }
+                  className="px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Review Today Fueling</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={onOpenTrainingModModal}
+                  className="px-3.5 py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Review Training Modifications (2)</span>
+                </button>
+                <button
+                  onClick={() =>
+                    onSendQuery(
+                      'Generate weekly performance report for Senior Squad'
+                    )
+                  }
+                  className="px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Generate Weekly Report</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -247,50 +290,52 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
             </div>
           </div>
 
-          {/* Context Switchers */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-[#0F1623] border border-slate-800 rounded px-2.5 py-1">
-              <span className="text-[10px] font-mono text-slate-400">
-                Athlete:
-              </span>
-              <select
-                value={activeAthlete.id}
-                onChange={(e) => onSelectContextAthlete(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-slate-100 focus:outline-none"
-              >
-                {athletes.slice(0, 12).map((ath) => (
-                  <option
-                    key={ath.id}
-                    value={ath.id}
-                    className="bg-[#0F1623] text-slate-100"
-                  >
-                    {ath.name} ({ath.squad})
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Context Switchers (Hidden for Athlete) */}
+          {selectedRole !== 'Athlete' && (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-[#0F1623] border border-slate-800 rounded px-2.5 py-1">
+                <span className="text-[10px] font-mono text-slate-400">
+                  Athlete:
+                </span>
+                <select
+                  value={activeAthlete.id}
+                  onChange={(e) => onSelectContextAthlete(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-100 focus:outline-none"
+                >
+                  {athletes.slice(0, 12).map((ath) => (
+                    <option
+                      key={ath.id}
+                      value={ath.id}
+                      className="bg-[#0F1623] text-slate-100"
+                    >
+                      {ath.name} ({ath.squad})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="flex items-center gap-1.5 bg-[#0F1623] border border-slate-800 rounded px-2.5 py-1">
-              <span className="text-[10px] font-mono text-slate-400">
-                Scope:
-              </span>
-              <select
-                value={scopeMode}
-                onChange={(e) => setScopeMode(e.target.value as any)}
-                className="bg-transparent text-xs font-semibold text-slate-100 focus:outline-none"
-              >
-                <option value="Athlete Focus" className="bg-[#0F1623]">
-                  Athlete Focus ({activeAthlete.name})
-                </option>
-                <option value="Squad Operations" className="bg-[#0F1623]">
-                  Squad Operations ({context.squad})
-                </option>
-                <option value="Federation Oversight" className="bg-[#0F1623]">
-                  Federation Oversight ({context.federation})
-                </option>
-              </select>
+              <div className="flex items-center gap-1.5 bg-[#0F1623] border border-slate-800 rounded px-2.5 py-1">
+                <span className="text-[10px] font-mono text-slate-400">
+                  Scope:
+                </span>
+                <select
+                  value={scopeMode}
+                  onChange={(e) => setScopeMode(e.target.value as any)}
+                  className="bg-transparent text-xs font-semibold text-slate-100 focus:outline-none"
+                >
+                  <option value="Athlete Focus" className="bg-[#0F1623]">
+                    Athlete Focus ({activeAthlete.name})
+                  </option>
+                  <option value="Squad Operations" className="bg-[#0F1623]">
+                    Squad Operations ({context.squad})
+                  </option>
+                  <option value="Federation Oversight" className="bg-[#0F1623]">
+                    Federation Oversight ({context.federation})
+                  </option>
+                </select>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Data Freshness Telemetry Bar (Section 23) */}

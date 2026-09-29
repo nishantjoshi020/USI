@@ -81,6 +81,7 @@ import { AthleteAttentionTable } from './components/command-center/AthleteAttent
 import { AiRecommendationsAndAnalytics } from './components/command-center/AiRecommendationsAndAnalytics';
 import { AthleteDetailDrawer } from './components/drawers/AthleteDetailDrawer';
 import { SessionDetailDrawer } from './components/drawers/SessionDetailDrawer';
+import { MorningSquadTriageDrawer } from './components/drawers/MorningSquadTriageDrawer';
 import {
   GlobalSearchModal,
   NotificationPanel,
@@ -94,6 +95,8 @@ import {
   Athlete360Page,
 } from './components/athletes/Athlete360Page';
 import { AthleteOnboardingModal } from './components/athletes/AthleteOnboardingModal';
+import { AthleteLifecycleHub } from './components/athletes/AthleteLifecycleHub';
+import { SessionAssignmentModal, CoachWorkflowPanel } from './components/training/CoachWorkflowComponents';
 import {
   AiAthleteAssistanceDrawer,
   AthleteApprovalModal,
@@ -136,6 +139,18 @@ import {
   AnalyticsSubTab,
   AnalyticsWorkspace,
 } from './components/analytics/AnalyticsWorkspace';
+import {
+  TrainingSubTab,
+  TrainingWorkspace,
+} from './components/training/TrainingWorkspace';
+import {
+  SportsScienceSubTab,
+  SportsScienceWorkspace,
+} from './components/sports-science/SportsScienceWorkspace';
+import {
+  OperationsSubTab,
+  OperationsWorkspace,
+} from './components/operations/OperationsWorkspace';
 import {
   ARJUN_EVIDENCE_BUNDLE,
   buildCopilotResponse,
@@ -295,12 +310,16 @@ export default function App() {
   const [isReportInjuryOpen, setIsReportInjuryOpen] = useState(false);
   const [reportInjuryInitialRegion, setReportInjuryInitialRegion] =
     useState<BodyRegionId>('Hamstring — Left');
+  const [reportInjuryInitialAthleteId, setReportInjuryInitialAthleteId] =
+    useState<string | null>(null);
   const [rehabSessionModalInjuryId, setRehabSessionModalInjuryId] = useState<
     string | null
   >(null);
   const [rtpGateModalInjuryId, setRtpGateModalInjuryId] = useState<
     string | null
   >(null);
+  const [isMorningTriageOpen, setIsMorningTriageOpen] = useState(false);
+  const [isSessionAssignmentOpen, setIsSessionAssignmentOpen] = useState(false);
 
   // Toast Feedback State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -473,6 +492,93 @@ export default function App() {
 
   const handleSubmitNewInjury = (newInjury: Injury) => {
     setInjuries((prev) => [newInjury, ...prev]);
+
+    // Auto-create clinical 5-stage rehabilitation plan for this injury
+    const newRehabPlan: RehabPlanRecord = {
+      id: `rehab-${newInjury.id}`,
+      injuryId: newInjury.id,
+      athleteId: newInjury.athleteId,
+      athleteName: newInjury.athleteName,
+      title: `${newInjury.injuryTitle} Clinical Rehabilitation Protocol`,
+      currentStage: 1,
+      totalStages: 5,
+      progressPct: 15,
+      trackStatus: 'On Track',
+      currentFocus: 'Pain reduction & acute tissue off-loading',
+      nextMilestone: 'Clinical re-assessment & isometric force tolerance',
+      targetDate: '14 Oct 2026',
+      stages: [
+        {
+          stageNumber: 1,
+          title: 'Pain Reduction',
+          status: 'Current',
+          objectives: [
+            `Resolve acute symptoms and resting discomfort in ${newInjury.bodyRegionDisplay}`,
+            'Establish pain-free active range of motion',
+          ],
+          exercises: ['Isometric Holds (sub-maximal)', 'Cryotherapy & Compression', 'Gentle Mobility'],
+          tests: ['Zero resting pain', 'Pain ≤ 2/10 during light isometric activation'],
+          completionCriteria: ['Pain score ≤ 2/10', 'Resting swelling resolved'],
+          assignedProfessional: 'Dr. S. Patel (Physiotherapist)',
+        },
+        {
+          stageNumber: 2,
+          title: 'Strength Restoration',
+          status: 'Pending',
+          objectives: ['Restore bilateral force symmetry > 85%', 'Neuromuscular activation'],
+          exercises: ['Targeted Resistance Protocol', 'Eccentric Control Drills'],
+          tests: ['Force plate / dynamometer symmetry > 85%'],
+          completionCriteria: ['Limb symmetry index ≥ 85%'],
+          assignedProfessional: 'Dr. S. Patel (Physiotherapist)',
+        },
+        {
+          stageNumber: 3,
+          title: 'Sport-Specific Training',
+          status: 'Pending',
+          objectives: ['Progressive running & tactical drill re-introduction', 'Deceleration mechanics'],
+          exercises: ['Linear Acceleration Drills', 'Change of Direction Mechanics'],
+          tests: ['GPS sprint tolerance up to 85% Vmax'],
+          completionCriteria: ['Running tolerance verified via GPS'],
+          assignedProfessional: 'Dr. S. Patel & Coach',
+        },
+        {
+          stageNumber: 4,
+          title: 'Full Training',
+          status: 'Pending',
+          objectives: ['Unrestricted team tactical drill participation'],
+          exercises: ['Full Squad Tactical Grids', 'Match-speed Sprints'],
+          tests: ['Full training exposure with zero flare-up'],
+          completionCriteria: ['Team training clearance signed'],
+          assignedProfessional: 'Dr. S. Patel & Coach',
+        },
+        {
+          stageNumber: 5,
+          title: 'Return to Competition',
+          status: 'Pending',
+          objectives: ['Full competitive match availability'],
+          exercises: ['Match Play Conditioning', 'Championship Drills'],
+          tests: ['Chief Medical Officer sign-off'],
+          completionCriteria: ['Clinical clearance verified'],
+          assignedProfessional: 'Chief Medical Officer',
+        },
+      ],
+      sessions: [
+        {
+          id: `rs-init-${Date.now()}`,
+          date: '28 Sep',
+          focus: 'Acute assessment & baseline protection',
+          painBefore: newInjury.painScore,
+          painAfter: Math.max(1, newInjury.painScore - 1),
+          exercises: ['Isometric Holds', 'Cryotherapy', 'Lymphatic Compression'],
+          rpe: 3,
+          notes: `Initial clinical assessment logged. Restricted: ${newInjury.restrictions}`,
+          athleteId: newInjury.athleteId,
+          athleteName: newInjury.athleteName,
+        },
+      ],
+    };
+    setRehabPlans((prev) => [newRehabPlan, ...prev]);
+
     setMedicalAlerts((prev) => [
       {
         id: `ma-${Date.now()}`,
@@ -487,6 +593,23 @@ export default function App() {
       },
       ...prev,
     ]);
+
+    setNotifications((prev) => [
+      {
+        id: `notif-inj-${Date.now()}`,
+        timestamp: 'Just now',
+        read: false,
+        category: 'Medical',
+        title: `Injury Alert: ${newInjury.athleteName}`,
+        description: `Diagnosed with ${newInjury.diagnosis} (${newInjury.bodyRegionDisplay}). Status: Restricted. Pain: ${newInjury.painScore}/10.`,
+        severity: 'High',
+        linkedAthleteId: newInjury.athleteId,
+        targetNav: 'injury-intelligence',
+      },
+      ...prev,
+    ]);
+
+    const targetAth = athletes.find((a) => a.id === newInjury.athleteId);
     updateAthleteWithAudit(
       newInjury.athleteId,
       {
@@ -494,6 +617,8 @@ export default function App() {
         medicalStatus: 'Restricted',
         status: 'Attention',
         injuryRisk: 'High',
+        readiness: Math.max(48, (targetAth?.readiness || 80) - 26),
+        sorenessScore: newInjury.painScore,
       },
       `Reported new injury: ${newInjury.diagnosis} (${newInjury.bodyRegionDisplay})`,
       `New Injury Reported: ${newInjury.athleteName} — ${newInjury.bodyRegionDisplay}`,
@@ -622,6 +747,23 @@ export default function App() {
       })
     );
 
+    if (nextStage === 5) {
+      setNotifications((prev) => [
+        {
+          id: `notif-rtp-cleared-${Date.now()}`,
+          timestamp: 'Just now',
+          read: false,
+          category: 'Medical',
+          title: `Full Match Clearance: ${targetInj.athleteName}`,
+          description: `Stage 5/5 Return-to-Competition approved by ${selectedRole}. Athlete is now FULLY AVAILABLE for senior selection.`,
+          severity: 'Low',
+          linkedAthleteId: targetInj.athleteId,
+          targetNav: 'injury-intelligence',
+        },
+        ...prev,
+      ]);
+    }
+
     const auditMsg = overrideDetails
       ? `RTP Gate Override Approved by ${overrideDetails.authorisedBy}: Advanced ${targetInj.athleteName} to Stage ${nextStage}/5 (${nextStageName}). Reason: "${overrideDetails.reason}"`
       : `Advanced ${targetInj.athleteName} to RTP Stage ${nextStage}/5 (${nextStageName})`;
@@ -629,7 +771,7 @@ export default function App() {
     updateAthleteWithAudit(
       targetInj.athleteId,
       {
-        trainingStatus: nextStage >= 4 ? 'RETURN TO PLAY' : 'IN REHAB',
+        trainingStatus: nextStage >= 5 ? 'ACTIVE' : nextStage >= 4 ? 'RETURN TO PLAY' : 'IN REHAB',
         medicalStatus: nextStage === 5 ? 'Cleared' : targetInj.medicalStatus,
       },
       auditMsg,
@@ -729,12 +871,78 @@ export default function App() {
   };
 
   const handleReviewRiskAthletes = () => {
+    setIsMorningTriageOpen(true);
     setTableStatusFilter('Attention');
     document
       .getElementById('athlete-attention-section')
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     triggerToast(
-      'AI Operational Alert: Filtered table to 3 athletes with elevated injury-risk patterns'
+      'Morning Squad Triage Console opened for elevated injury-risk cohort'
+    );
+  };
+
+  const handleApplyMorningTriageModification = (
+    athleteId: string,
+    modification: string,
+    trainingStatus: Athlete['trainingStatus'],
+    notes: string
+  ) => {
+    const target = athletes.find((a) => a.id === athleteId);
+    updateAthleteWithAudit(
+      athleteId,
+      { trainingStatus },
+      `Morning Triage: ${modification} (${trainingStatus})`,
+      `Applied morning modification to ${target?.name || 'athlete'}: ${modification}`,
+      {
+        title: `Morning Squad Triage: ${modification}`,
+        description: notes,
+        category: 'Training',
+        detailNotes: `Prescribed by ${selectedRole}: ${modification}. Training status set to ${trainingStatus}.`,
+      }
+    );
+
+    // Update today's primary session notes & load
+    setSessions((prev) =>
+      prev.map((s, idx) =>
+        idx === 0
+          ? {
+              ...s,
+              notes: `${s.notes || ''} · [Triage: ${target?.name || 'Athlete'} → ${modification}]`,
+            }
+          : s
+      )
+    );
+  };
+
+  const handleAthleteWellnessSurveySubmit = (scores: {
+    sleep: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    readiness: number;
+  }) => {
+    const targetAthId = 'ath-01'; // Default active athlete Ananya Sen
+    const target = athletes.find((a) => a.id === targetAthId) || athletes[0];
+    if (!target) return;
+
+    updateAthleteWithAudit(
+      target.id,
+      {
+        readiness: scores.readiness,
+        sorenessScore: scores.soreness,
+        wellnessScore: Math.round(
+          (scores.sleep + (10 - scores.fatigue) * 10 + (10 - scores.stress) * 10) / 3
+        ),
+        sleepHours: Number((scores.sleep / 10).toFixed(1)),
+      },
+      `Logged morning wellness check-in: Readiness ${scores.readiness}%, Soreness ${scores.soreness}/10`,
+      `Morning wellness check-in submitted ✓ Readiness computed at ${scores.readiness}%`,
+      {
+        title: 'Daily Hooper-Mackinnon Wellness Logged',
+        description: `Sleep: ${scores.sleep}/100 · Soreness: ${scores.soreness}/10 · Fatigue: ${scores.fatigue}/10 · Stress: ${scores.stress}/10`,
+        category: 'Training',
+        detailNotes: `Calculated readiness score ${scores.readiness}%. Synced with coaching staff & sports science triage.`,
+      }
     );
   };
 
@@ -767,6 +975,70 @@ export default function App() {
       }
     }
     setIsRiskModalOpen(true);
+  };
+
+  // Session Assignment Handler
+  const handleAssignAthleteToSession = (sessionId: string, athleteId: string, athleteName: string) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    const sessionTitle = session?.title || sessionId;
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              attendedAthletes: s.attendedAthletes?.includes(athleteId)
+                ? s.attendedAthletes
+                : [...(s.attendedAthletes || []), athleteId],
+            }
+          : s
+      )
+    );
+
+    const target = athletes.find((a) => a.id === athleteId);
+    if (target) {
+      const updatedBreakdown = {
+        ...target.profileCompletionBreakdown,
+        trainingPlan: true,
+      };
+      const completedCount =
+        Object.values(updatedBreakdown).filter(Boolean).length;
+      const newPct = Math.min(100, Math.round((completedCount / 6) * 100));
+
+      updateAthleteWithAudit(
+        athleteId,
+        {
+          trainingStatus:
+            target.trainingStatus === 'PENDING' ? 'ACTIVE' : target.trainingStatus,
+          profileCompletionBreakdown: updatedBreakdown,
+          profileCompletion: Math.max(target.profileCompletion, newPct),
+        },
+        `Assigned to training session: ${sessionTitle}`,
+        `Assigned ${athleteName || target.name} to ${sessionTitle} ✓`,
+        {
+          title: 'Assigned to training session',
+          description: sessionTitle,
+          category: 'Training',
+          detailNotes: `Scheduled session assigned by ${selectedRole} (${session?.day || 'Today'} · ${session?.time || '08:00 AM'}).`,
+        }
+      );
+
+      // Create high-visibility coaching notification
+      setNotifications((prev) => [
+        {
+          id: `notif-sess-assign-${Date.now()}`,
+          timestamp: 'Just now',
+          read: false,
+          category: 'Training',
+          title: `Training Scheduled: ${athleteName || target.name}`,
+          description: `Assigned to session "${sessionTitle}" (${session?.intensity || 'High'} intensity, ${session?.plannedLoadAu || 450} AU).`,
+          severity: 'Low',
+          linkedAthleteId: athleteId,
+          targetNav: 'sessions',
+        },
+        ...prev,
+      ]);
+    }
   };
 
   const handleCompleteSessionAction = (sessionId: string, msg: string) => {
@@ -827,6 +1099,10 @@ export default function App() {
         coachRole: roleLabel,
         profileCompletionBreakdown: updatedBreakdown,
         profileCompletion: newPct,
+        trainingStatus:
+          target.verificationStatus === 'Verified' && target.trainingStatus === 'PENDING'
+            ? 'ACTIVE'
+            : target.trainingStatus,
       },
       `Assigned ${coach.name} as ${roleLabel} (Start: ${startDate})`,
       `Coach Assigned ✓ — ${coach.name} assigned to ${target.name}`,
@@ -837,6 +1113,22 @@ export default function App() {
         detailNotes: `${coach.name} (${coach.role}, ${coach.squad}) assigned as ${roleLabel}.`,
       }
     );
+
+    // Create staff notification
+    setNotifications((prev) => [
+      {
+        id: `notif-coach-assign-${Date.now()}`,
+        timestamp: 'Just now',
+        read: false,
+        category: 'Administrative',
+        title: `Coach Assigned: ${target.name}`,
+        description: `${coach.name} has been assigned as ${roleLabel} for ${target.name}.`,
+        severity: 'Low',
+        linkedAthleteId: athleteId,
+        targetNav: 'athlete-registry',
+      },
+      ...prev,
+    ]);
   };
 
   // Approval Workflow Handlers
@@ -1159,6 +1451,27 @@ export default function App() {
     activeNav === 'analytics-athlete' ||
     activeNav === 'analytics-reports';
 
+  const isTrainingRoute =
+    activeNav === 'periodisation' ||
+    activeNav === 'sessions' ||
+    activeNav === 'exercises' ||
+    activeNav === 'workload';
+
+  const isLifecycleHubRoute = activeNav === 'athlete-lifecycle';
+
+  const isSportsScienceRoute =
+    activeNav === 'readiness' ||
+    activeNav === 'fatigue' ||
+    activeNav === 'gps-wearables' ||
+    activeNav === 'recovery';
+
+  const isOperationsRoute =
+    activeNav === 'operations' ||
+    activeNav === 'camps' ||
+    activeNav === 'manifests' ||
+    activeNav === 'cargo' ||
+    activeNav === 'facilities';
+
   return (
     <div className="min-h-screen bg-[#090D16] text-[#F8FAFC] flex">
       {/* Persistent Left Sidebar */}
@@ -1189,6 +1502,10 @@ export default function App() {
           onOpenAICopilot={() => setIsGlobalCopilotOpen(true)}
           pendingAIActionsCount={pendingAIActionsCount}
           onResetDemoState={handleResetDemoState}
+          activeAthlete={activeAthlete360}
+          athletes={athletes}
+          onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
         />
 
         {/* Workspace Viewport */}
@@ -1208,24 +1525,6 @@ export default function App() {
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 mt-1">
                     Good morning, Performance Team
                   </h1>
-                </div>
-
-                {/* Compact Date / Role Context Indicator */}
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0F1623] border border-slate-800">
-                    <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Role Lens:</span>
-                    <strong className="text-slate-200 font-semibold">
-                      {selectedRole}
-                    </strong>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0F1623] border border-slate-800 font-mono tabular-nums">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-slate-200">{context.date}</span>
-                    <span className="text-slate-600">·</span>
-                    <span className="text-slate-400">MD-3 Pre-Competition</span>
-                  </div>
                 </div>
               </div>
 
@@ -1257,8 +1556,22 @@ export default function App() {
               {/* Specialized Persona Hubs for Athlete, Nutritionist, Operations, Federation Admin */}
               <PersonaSpecializedSections
                 selectedRole={selectedRole}
+                activeAthlete={activeAthlete360}
+                allAthletes={athletes}
+                sessions={sessions}
+                injuries={injuries}
+                onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
+                onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                onOpenApproval={(ath) => setApprovalModalAthleteId(ath.id)}
+                onOpenCoachAssignment={(ath) => setCoachModalAthleteId(ath.id)}
+                onOpenSessionAssignment={() => setIsSessionAssignmentOpen(true)}
+                onOpenReportInjury={(athId) => {
+                  if (athId) setReportInjuryInitialAthleteId(athId);
+                  setIsReportInjuryOpen(true);
+                }}
                 onTriggerToast={triggerToast}
                 onNavigateSection={(sec) => setActiveNav(sec as any)}
+                onUpdateAthleteWellness={handleAthleteWellnessSurveySubmit}
               />
 
               {/* Standard Tactical & Clinical Squad Sections (Hidden for Athlete, Nutritionist, Operations, Federation Admin) */}
@@ -1311,9 +1624,33 @@ export default function App() {
                 </>
               )}
             </>
+          ) : isLifecycleHubRoute ? (
+            <AthleteLifecycleHub
+              athletes={athletes}
+              injuries={injuries}
+              sessions={sessions}
+              selectedRole={selectedRole}
+              onOpenOnboarding={() => setIsOnboardingOpen(true)}
+              onOpenApproval={(ath) => setApprovalModalAthleteId(ath.id)}
+              onOpenCoachAssignment={(ath) => setCoachModalAthleteId(ath.id)}
+              onOpenAthlete360={handleOpenFullAthlete360}
+              onOpenReportInjury={(reg, athId) => {
+                if (reg) setReportInjuryInitialRegion(reg);
+                if (athId) setReportInjuryInitialAthleteId(athId);
+                setIsReportInjuryOpen(true);
+              }}
+              onOpenSessionAssignment={(athId) => {
+                setIsSessionAssignmentOpen(true);
+              }}
+              onOpenCreateRehab={(inj) => setRehabSessionModalInjuryId(inj.id)}
+              onOpenAdvanceRtp={(inj) => setRtpGateModalInjuryId(inj.id)}
+              onNavigate={(nav) => setActiveNav(nav as any)}
+              onTriggerToast={triggerToast}
+            />
           ) : activeNav === 'athlete-registry' ? (
             <AthleteRegistryPage
               athletes={athletes}
+              selectedRole={selectedRole}
               onOpenAthlete360={handleOpenFullAthlete360}
               onOpenQuickDrawer={(ath) => setDrawerAthleteId(ath.id)}
               onOpenAddAthleteModal={() => setIsOnboardingOpen(true)}
@@ -1522,6 +1859,39 @@ export default function App() {
                 setActiveNav('athlete-360');
               }}
               onTriggerToast={triggerToast}
+              onPromoteTalentAthlete={(profileId, athleteId) => {
+                setTalentProfiles((prev) =>
+                  prev.map((tp) =>
+                    tp.id === profileId
+                      ? {
+                          ...tp,
+                          squad: 'Senior Squad',
+                          status: 'Promoted to Senior Squad',
+                          pathwayStage: 'Tier 1 — Senior National',
+                        }
+                      : tp
+                  )
+                );
+                const ath = athletes.find((a) => a.id === athleteId);
+                if (ath) {
+                  updateAthleteWithAudit(
+                    ath.id,
+                    {
+                      squad: 'Senior Squad',
+                      coach: 'Vikram Sharma',
+                      coachRole: 'Head Coach',
+                    },
+                    'Promoted from TID Academy to Senior Squad (TID Pathway)',
+                    `Promoted ${ath.name} to Senior Squad ✓ Assigned to Coach Vikram Sharma`,
+                    {
+                      title: 'Promoted to Senior National Squad',
+                      description: 'Talent identification benchmark alignment >= 90%',
+                      category: 'Administrative',
+                      detailNotes: `Promoted from Development Squad by ${selectedRole}. Reassigned to Vikram Sharma.`,
+                    }
+                  );
+                }
+              }}
             />
           ) : isAnalyticsRoute ? (
             <AnalyticsWorkspace
@@ -1555,6 +1925,7 @@ export default function App() {
               riskAlerts={medicalRiskAlerts}
               medicalAlerts={medicalAlerts}
               wellnessProfile={wellnessProfile}
+              activeAthleteId={drawerAthleteId || activeAthlete360Id || athletes[0]?.id}
               onSelectInjuryDrawer={(inj) => setSelectedInjuryDrawerId(inj.id)}
               onOpenReportInjuryModal={(reg) => {
                 if (reg) setReportInjuryInitialRegion(reg);
@@ -1682,9 +2053,79 @@ export default function App() {
               }}
               onShowToast={triggerToast}
             />
+          ) : isTrainingRoute ? (
+            <TrainingWorkspace
+              activeSubTab={activeNav as TrainingSubTab}
+              onSelectSubTab={(tab) => setActiveNav(tab)}
+              selectedRole={selectedRole}
+              sessions={sessions}
+              athletes={athletes}
+              onOpenSessionAssignment={() => setIsSessionAssignmentOpen(true)}
+              onSelectSession={(sess) => setSelectedSession(sess)}
+              onCreateSession={(newSess) => {
+                setSessions((prev) => [newSess, ...prev]);
+              }}
+              onRecordAttendanceAndRpe={(sessionId, records) => {
+                setSessions((prev) =>
+                  prev.map((s) =>
+                    s.id === sessionId
+                      ? {
+                          ...s,
+                          status: 'Completed',
+                          attendedCount: records.filter(
+                            (r) =>
+                              r.attendance === 'Present' ||
+                              r.attendance === 'Late'
+                          ).length,
+                        }
+                      : s
+                  )
+                );
+                records.forEach((rec) => {
+                  if (rec.attendance === 'Present' || rec.attendance === 'Late') {
+                    const addedLoad = rec.rpe * 75;
+                    updateAthleteWithAudit(
+                      rec.athleteId,
+                      {
+                        acuteLoadAu: Math.round(
+                          addedLoad * 0.2 +
+                            (athletes.find((a) => a.id === rec.athleteId)
+                              ?.acuteLoadAu || 500) *
+                              0.8
+                        ),
+                      },
+                      `Recorded training attendance (${rec.attendance}) & sRPE ${rec.rpe}/10 (+${addedLoad} AU)`
+                    );
+                  }
+                });
+              }}
+              onOpenAthlete360={(ath) => handleOpenFullAthlete360(ath)}
+              onTriggerToast={triggerToast}
+            />
+          ) : isSportsScienceRoute ? (
+            <SportsScienceWorkspace
+              activeSubTab={activeNav as SportsScienceSubTab}
+              onSelectSubTab={(tab) => setActiveNav(tab)}
+              selectedRole={selectedRole}
+              athletes={athletes}
+              onOpenAthlete360={(ath) => handleOpenFullAthlete360(ath)}
+              onTriggerToast={triggerToast}
+            />
+          ) : isOperationsRoute ? (
+            <OperationsWorkspace
+              activeSubTab={
+                (['camps', 'manifests', 'cargo', 'facilities'].includes(activeNav)
+                  ? activeNav
+                  : 'camps') as OperationsSubTab
+              }
+              onSelectSubTab={(tab) => setActiveNav(tab)}
+              selectedRole={selectedRole}
+              onTriggerToast={triggerToast}
+            />
           ) : (
             <ConnectedModuleView
               activeNav={activeNav}
+              selectedRole={selectedRole}
               onReturnToCommandCenter={() => setActiveNav('command-center')}
               athletes={athletes}
               sessions={sessions}
@@ -1735,6 +2176,17 @@ export default function App() {
         onCompleteSessionAction={handleCompleteSessionAction}
       />
 
+      {/* Morning Squad Triage Drawer */}
+      <MorningSquadTriageDrawer
+        isOpen={isMorningTriageOpen}
+        onClose={() => setIsMorningTriageOpen(false)}
+        athletes={athletes}
+        selectedRole={selectedRole}
+        onApplyModification={handleApplyMorningTriageModification}
+        onOpenAthlete360={handleOpenFullAthlete360}
+        onTriggerToast={triggerToast}
+      />
+
       {/* Iteration 3: Clinical Injury Detail Drawer */}
       <InjuryDetailDrawer
         injury={selectedInjuryDrawer}
@@ -1760,9 +2212,13 @@ export default function App() {
       <ReportInjuryModal
         isOpen={isReportInjuryOpen}
         initialRegion={reportInjuryInitialRegion}
+        initialAthleteId={reportInjuryInitialAthleteId || undefined}
         athletes={athletes}
         existingInjuries={injuries}
-        onClose={() => setIsReportInjuryOpen(false)}
+        onClose={() => {
+          setIsReportInjuryOpen(false);
+          setReportInjuryInitialAthleteId(null);
+        }}
         onSubmitNewInjury={handleSubmitNewInjury}
       />
 
@@ -1794,6 +2250,7 @@ export default function App() {
         onClose={() => setIsOnboardingOpen(false)}
         onCreateAthlete={(newAth) => {
           setAthletes((prev) => [newAth, ...prev]);
+          setActiveAthlete360Id(newAth.id);
           triggerToast(
             `Athlete Profile Created: ${newAth.name} (${newAth.athleteId})`
           );
@@ -1804,6 +2261,22 @@ export default function App() {
           setActiveNav('athlete-360');
           setCoachModalAthleteId(ath.id);
         }}
+        onOpenSessionAssignmentForCreated={(ath) => {
+          setActiveAthlete360Id(ath.id);
+          setIsSessionAssignmentOpen(true);
+        }}
+        onNavigateLifecycle={() => setActiveNav('athlete-lifecycle')}
+      />
+
+      {/* Session Assignment Modal — Coach/Director assigns athletes to training sessions */}
+      <SessionAssignmentModal
+        isOpen={isSessionAssignmentOpen}
+        onClose={() => setIsSessionAssignmentOpen(false)}
+        sessions={sessions}
+        athletes={athletes}
+        selectedRole={selectedRole}
+        onAssignAthlete={handleAssignAthleteToSession}
+        onTriggerToast={triggerToast}
       />
 
       {/* 13. Coach Assignment Workflow Modal */}

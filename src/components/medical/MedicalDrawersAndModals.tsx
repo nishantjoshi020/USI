@@ -514,6 +514,7 @@ export const InjuryDetailDrawer: React.FC<InjuryDetailDrawerProps> = ({
 interface ReportInjuryModalProps {
   isOpen: boolean;
   initialRegion?: BodyRegionId;
+  initialAthleteId?: string;
   athletes: Athlete[];
   existingInjuries: Injury[];
   onClose: () => void;
@@ -523,6 +524,7 @@ interface ReportInjuryModalProps {
 export const ReportInjuryModal: React.FC<ReportInjuryModalProps> = ({
   isOpen,
   initialRegion = 'Hamstring — Left',
+  initialAthleteId,
   athletes,
   existingInjuries,
   onClose,
@@ -530,8 +532,21 @@ export const ReportInjuryModal: React.FC<ReportInjuryModalProps> = ({
 }) => {
   const [step, setStep] = useState(1);
   const [selectedAthleteId, setSelectedAthleteId] = useState(
-    athletes[0]?.id || 'ath-arjun-mehta'
+    initialAthleteId || athletes[0]?.id || 'ath-arjun-mehta'
   );
+
+  React.useEffect(() => {
+    if (initialAthleteId) {
+      setSelectedAthleteId(initialAthleteId);
+    }
+  }, [initialAthleteId, isOpen]);
+
+  React.useEffect(() => {
+    if (initialRegion) {
+      setSelectedRegion(initialRegion);
+    }
+  }, [initialRegion, isOpen]);
+
   const [selectedRegion, setSelectedRegion] =
     useState<BodyRegionId>(initialRegion);
   const [injuryTitle, setInjuryTitle] = useState('Hamstring Strain');
@@ -1171,6 +1186,9 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
     g.functionalTestMet &&
     g.medicalClearanceMet;
 
+  const isMedicalAuthorized =
+    selectedRole === 'Physiotherapist' || selectedRole === 'Performance Director';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -1358,53 +1376,77 @@ export const RTPGateModal: React.FC<RTPGateModalProps> = ({
           </button>
 
           <div className="flex flex-wrap items-center gap-2">
-            {!allMet && !showOverrideForm && (
-              <>
+            {nextStage >= 4 && !isMedicalAuthorized ? (
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-mono text-[11px]">
+                  🔒 Stage {nextStage}/5 Requires Medical Officer Clearance
+                </span>
                 <button
-                  onClick={() => setShowOverrideForm(true)}
-                  className="px-3 py-2 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-semibold text-xs"
-                >
-                  Override Requirement
-                </button>
-                <button
+                  type="button"
                   onClick={() => {
                     onRequestMedicalReview(injury.id);
                     onClose();
                   }}
-                  className="px-3.5 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+                  className="px-3.5 py-2 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
                 >
-                  Request Medical Review
+                  Request Chief Medical Officer Review
                 </button>
+              </div>
+            ) : (
+              <>
+                {!allMet && !showOverrideForm && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowOverrideForm(true)}
+                      className="px-3 py-2 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-semibold text-xs"
+                    >
+                      Override Requirement
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onRequestMedicalReview(injury.id);
+                        onClose();
+                      }}
+                      className="px-3.5 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+                    >
+                      Request Medical Review
+                    </button>
+                  </>
+                )}
+
+                {showOverrideForm && !allMet && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!overrideReason.trim() || !authorisedBy.trim()) return;
+                      onAdvanceStage(injury.id, {
+                        reason: overrideReason.trim(),
+                        authorisedBy: authorisedBy.trim(),
+                        timestamp,
+                      });
+                      onClose();
+                    }}
+                    className="px-4 py-2 rounded bg-rose-500 hover:bg-rose-400 text-white font-semibold text-xs"
+                  >
+                    Confirm Override & Advance to Stage {nextStage}/5
+                  </button>
+                )}
+
+                {allMet && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAdvanceStage(injury.id);
+                      onClose();
+                    }}
+                    className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs"
+                  >
+                    Advance Stage (to Stage {nextStage}/5)
+                  </button>
+                )}
               </>
-            )}
-
-            {showOverrideForm && !allMet && (
-              <button
-                onClick={() => {
-                  if (!overrideReason.trim() || !authorisedBy.trim()) return;
-                  onAdvanceStage(injury.id, {
-                    reason: overrideReason.trim(),
-                    authorisedBy: authorisedBy.trim(),
-                    timestamp,
-                  });
-                  onClose();
-                }}
-                className="px-4 py-2 rounded bg-rose-500 hover:bg-rose-400 text-white font-semibold text-xs"
-              >
-                Confirm Override & Advance to Stage {nextStage}/5
-              </button>
-            )}
-
-            {allMet && (
-              <button
-                onClick={() => {
-                  onAdvanceStage(injury.id);
-                  onClose();
-                }}
-                className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs"
-              >
-                Advance Stage (to Stage {nextStage}/5)
-              </button>
             )}
           </div>
         </div>

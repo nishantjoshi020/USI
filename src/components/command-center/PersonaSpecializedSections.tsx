@@ -34,22 +34,52 @@ import {
   Utensils,
   Wrench,
 } from 'lucide-react';
-import { UserRole } from '../../types/usi';
+import { Athlete, Injury, TrainingSession, UserRole } from '../../types/usi';
 
 interface PersonaSpecializedSectionsProps {
   selectedRole: UserRole;
+  activeAthlete?: Athlete;
+  allAthletes?: Athlete[];
+  sessions?: TrainingSession[];
+  injuries?: Injury[];
+  onSelectActiveAthlete?: (athleteId: string) => void;
+  onOpenOnboarding?: () => void;
+  onOpenApproval?: (athlete: Athlete) => void;
+  onOpenCoachAssignment?: (athlete: Athlete) => void;
+  onOpenSessionAssignment?: () => void;
+  onOpenReportInjury?: (athleteId?: string) => void;
   onTriggerToast: (message: string) => void;
   onNavigateSection?: (navId: string) => void;
+  onUpdateAthleteWellness?: (scores: {
+    sleep: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    readiness: number;
+  }) => void;
 }
 
 export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProps> = ({
   selectedRole,
+  activeAthlete,
+  allAthletes = [],
+  sessions = [],
+  injuries = [],
+  onSelectActiveAthlete,
+  onOpenOnboarding,
+  onOpenApproval,
+  onOpenCoachAssignment,
+  onOpenSessionAssignment,
+  onOpenReportInjury,
   onTriggerToast,
   onNavigateSection,
+  onUpdateAthleteWellness,
 }) => {
   // Athlete Wellness State
   const [wellnessLogged, setWellnessLogged] = useState(false);
-  const [sorenessLevel, setSorenessLevel] = useState(2);
+  const [sorenessLevel, setSorenessLevel] = useState(activeAthlete?.sorenessScore || 2);
+  const [fatigueLevel, setFatigueLevel] = useState(3);
+  const [stressLevel, setStressLevel] = useState(2);
   const [sleepScore, setSleepScore] = useState(88);
 
   // Operations Work Orders State
@@ -78,8 +108,89 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
      1. ATHLETE PORTAL SPECIALIZED HUB
      ========================================================================= */
   if (selectedRole === 'Athlete') {
+    const currentAth = activeAthlete || allAthletes[0];
+    const athSessions = sessions.filter(
+      (s) => (currentAth && s.attendedAthletes?.includes(currentAth.id)) || s.squad === currentAth?.squad
+    ).slice(0, 4);
+    const athInjuries = injuries.filter((i) => i.athleteId === currentAth?.id);
+
     return (
       <div className="space-y-4">
+        {/* Active Athlete Banner & Selector */}
+        {currentAth && (
+          <div className="bg-[#0b111e]/90 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300 font-mono text-sm">
+                {currentAth.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white">{currentAth.name}</h3>
+                  <span className="font-mono text-xs text-sky-400">({currentAth.athleteId})</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                    currentAth.trainingStatus === 'INJURED' ? 'bg-rose-500/15 border-rose-500/30 text-rose-300' :
+                    currentAth.trainingStatus === 'RESTRICTED' ? 'bg-orange-500/15 border-orange-500/30 text-orange-300' :
+                    currentAth.trainingStatus === 'PENDING' ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' :
+                    'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                  }`}>
+                    {currentAth.trainingStatus}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                  <span>{currentAth.sport} · {currentAth.position}</span>
+                  <span className="text-slate-600">·</span>
+                  <span>Squad: <strong className="text-slate-300">{currentAth.squad}</strong></span>
+                  <span className="text-slate-600">·</span>
+                  <span>Coach: <strong className="text-slate-300">{currentAth.coach || 'Unassigned'}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {allAthletes.length > 1 && onSelectActiveAthlete && (
+                <select
+                  value={currentAth.id}
+                  onChange={(e) => onSelectActiveAthlete(e.target.value)}
+                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs text-slate-200"
+                >
+                  {allAthletes.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.athleteId}) — {a.trainingStatus}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {onOpenOnboarding && (
+                <button
+                  onClick={onOpenOnboarding}
+                  className="px-3 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Register New Candidate</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Active Medical Alert Notice if Injured */}
+        {currentAth && athInjuries.length > 0 && (
+          <div className="p-3.5 rounded-lg bg-rose-500/15 border border-rose-500/40 text-xs text-rose-200 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>
+                <strong>Clinical Restriction:</strong> Active injury recorded: {athInjuries[0].diagnosis} ({athInjuries[0].bodyRegionDisplay}) · RTP Stage {athInjuries[0].rtpStage}/5 ({athInjuries[0].rtpStageName}).
+              </span>
+            </div>
+            <button
+              onClick={() => onNavigateSection?.('injury-intelligence')}
+              className="px-2.5 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-100 font-semibold shrink-0"
+            >
+              View Body Map & RTP →
+            </button>
+          </div>
+        )}
+
         {/* Personal Schedule & Wellness Logging Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Today's Personal Schedule (7 Cols) */}
@@ -92,43 +203,45 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                 </h3>
               </div>
               <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-300">
-                MD-3 High-Speed Microcycle
+                {currentAth?.squad || 'National Squad'}
               </span>
             </div>
 
             <div className="space-y-3">
-              {[
-                { time: '08:30 IST', title: 'Morning Biometrics & Hydration Testing', venue: 'Science Lab', badge: 'Completed', tone: 'emerald', detail: 'USG: 1.014 (Optimal) · Salivary Cortisol Baseline Normal' },
-                { time: '10:00 IST', title: 'Strength & Power Gym Block', venue: 'High Performance Gym', badge: 'Completed', tone: 'emerald', detail: 'Target: 85% 1RM Trap Bar Deadlift + CMJ Potentiation' },
-                { time: '12:30 IST', title: 'Nutritionist Consultation & Fueling Protocol', venue: 'Fueling Bar', badge: 'Completed', tone: 'emerald', detail: 'Consuming Smoothie #B-12 (40g Whey + 60g Cluster Dextrin)' },
-                { time: '15:30 IST', title: 'High-Intensity Tactical Pitch Drill', venue: 'Stadium Pitch 2', badge: 'Upcoming', tone: 'sky', detail: 'Bring GPS Pod #14. Target RPE: 7/10 · High-Speed Running <400m' },
-                { time: '18:00 IST', title: 'Contrast Hydrotherapy & Recovery Flush', venue: 'Hydro Recovery Zone', badge: 'Scheduled', tone: 'slate', detail: '10 mins cold immersion (10°C) + 3 mins sauna' },
-              ].map((sess, idx) => (
-                <div key={idx} className="p-3 rounded-lg bg-[#101827] border border-slate-800/80 flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono font-bold text-slate-300 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        {sess.time}
-                      </span>
-                      <span className="text-slate-600">·</span>
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        {sess.venue}
-                      </span>
+              {athSessions.length > 0 ? (
+                athSessions.map((sess) => (
+                  <div key={sess.id} className="p-3 rounded-lg bg-[#101827] border border-slate-800/80 flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono font-bold text-slate-300 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          {sess.time}
+                        </span>
+                        <span className="text-slate-600">·</span>
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          {sess.pitchOrVenue}
+                        </span>
+                        <span className="text-slate-600">·</span>
+                        <span className="text-[11px] text-slate-400">Coach: {sess.coach}</span>
+                      </div>
+                      <h4 className="text-xs font-semibold text-white">{sess.title}</h4>
+                      <p className="text-[11px] text-slate-400">Category: {sess.category} · Planned Load: {sess.plannedLoadAu} AU</p>
                     </div>
-                    <h4 className="text-xs font-semibold text-white">{sess.title}</h4>
-                    <p className="text-[11px] text-slate-400">{sess.detail}</p>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 ${
+                      sess.status === 'Completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
+                      sess.status === 'In Progress' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' :
+                      'bg-slate-800 text-slate-400'
+                    }`}>
+                      {sess.status}
+                    </span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 ${
-                    sess.tone === 'emerald' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
-                    sess.tone === 'sky' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' :
-                    'bg-slate-800 text-slate-400'
-                  }`}>
-                    {sess.badge}
-                  </span>
+                ))
+              ) : (
+                <div className="p-6 text-center text-slate-500 text-xs">
+                  No sessions assigned for today yet. Use Coach workflow or Session Assignment to assign training blocks.
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -189,6 +302,45 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-slate-300">Perceived Fatigue</span>
+                      <span className="font-mono font-bold text-amber-400">{fatigueLevel}/10</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={fatigueLevel}
+                      onChange={(e) => setFatigueLevel(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-slate-300">Mental Stress</span>
+                      <span className="font-mono font-bold text-indigo-400">{stressLevel}/10</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={stressLevel}
+                      onChange={(e) => setStressLevel(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Computed Hooper-Mackinnon Readiness Preview */}
+                <div className="p-2.5 rounded bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between">
+                  <span className="text-[11px] text-emerald-300 font-medium">Computed Readiness Index</span>
+                  <span className="font-mono font-bold text-xs text-emerald-400">
+                    {Math.min(100, Math.max(35, Math.round((sleepScore * 0.4) + ((10 - sorenessLevel) * 3) + ((10 - fatigueLevel) * 2) + 10)))}%
+                  </span>
+                </div>
+
                 {/* Subjective Status Feedback */}
                 <div className="p-3 rounded-lg bg-[#101827] border border-slate-800/80 space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
@@ -205,7 +357,15 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
             <button
               onClick={() => {
                 setWellnessLogged(true);
-                onTriggerToast('Morning wellness survey logged successfully. Synced with coaching staff.');
+                const computedReadiness = Math.min(100, Math.max(35, Math.round((sleepScore * 0.4) + ((10 - sorenessLevel) * 3) + ((10 - fatigueLevel) * 2) + 10)));
+                onUpdateAthleteWellness?.({
+                  sleep: sleepScore,
+                  soreness: sorenessLevel,
+                  fatigue: fatigueLevel,
+                  stress: stressLevel,
+                  readiness: computedReadiness,
+                });
+                onTriggerToast(`Morning wellness check-in logged ✓ Synced to Coach & Sport Science console (Readiness: ${computedReadiness}%)`);
               }}
               className="w-full py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold text-emerald-200 transition-all flex items-center justify-center gap-2"
             >
@@ -453,17 +613,78 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Athlete Licensing & Eligibility Audit (7 Cols) */}
           <div className="lg:col-span-7 bg-[#0b111e]/90 border border-slate-800 rounded-xl p-5 backdrop-blur-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 gap-2">
               <div className="flex items-center gap-2">
                 <FileCheck className="w-4 h-4 text-cyan-400" />
                 <h3 className="text-sm font-bold text-white tracking-wide">
                   National Athlete Licensing & Eligibility Verification
                 </h3>
               </div>
-              <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-mono text-cyan-300">
-                184 National Registrations
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-mono text-cyan-300">
+                  {allAthletes.length} National Athletes
+                </span>
+                {onOpenOnboarding && (
+                  <button
+                    onClick={onOpenOnboarding}
+                    className="px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <UserPlus className="w-3 h-3" />
+                    <span>Enroll Candidate</span>
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Pending Applicants Alert & Review Queue */}
+            {allAthletes.filter((a) => a.verificationStatus === 'Pending').length > 0 && (
+              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                    <ShieldAlert className="w-4 h-4 text-amber-400" />
+                    <span>
+                      {allAthletes.filter((a) => a.verificationStatus === 'Pending').length} Candidate(s) Awaiting Federation Verification
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-amber-400">Action Required</span>
+                </div>
+                <div className="space-y-2">
+                  {allAthletes
+                    .filter((a) => a.verificationStatus === 'Pending')
+                    .map((ath) => (
+                      <div
+                        key={ath.id}
+                        className="p-2.5 rounded bg-[#090D16] border border-amber-500/20 flex flex-wrap items-center justify-between gap-2 text-xs"
+                      >
+                        <div>
+                          <div className="font-bold text-slate-100">{ath.name} ({ath.athleteId})</div>
+                          <div className="text-[11px] text-slate-400">
+                            {ath.sport} · {ath.position} · {ath.squad} · Coach: {ath.coach || 'Unassigned'}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {onOpenApproval && (
+                            <button
+                              onClick={() => onOpenApproval(ath)}
+                              className="px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors"
+                            >
+                              Review Application
+                            </button>
+                          )}
+                          {onOpenCoachAssignment && !ath.coach && (
+                            <button
+                              onClick={() => onOpenCoachAssignment(ath)}
+                              className="px-2 py-1 rounded bg-violet-500/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold"
+                            >
+                              Assign Coach
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">

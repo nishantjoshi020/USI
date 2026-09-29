@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -63,6 +63,7 @@ interface MedicalWorkspaceProps {
   riskAlerts: MedicalRiskAlertItem[];
   medicalAlerts: MedicalOperationalAlert[];
   wellnessProfile: WellnessProfile;
+  activeAthleteId?: string;
   onSelectInjuryDrawer: (injury: Injury) => void;
   onOpenReportInjuryModal: (initialRegion?: BodyRegionId) => void;
   onOpenCreateRehabSession: (injury: Injury) => void;
@@ -99,6 +100,7 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
   riskAlerts,
   medicalAlerts,
   wellnessProfile,
+  activeAthleteId,
   onSelectInjuryDrawer,
   onOpenReportInjuryModal,
   onOpenCreateRehabSession,
@@ -116,7 +118,13 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
     useState<BodyRegionId>('Hamstring — Left');
   const [bodyMapScope, setBodyMapScope] = useState<'squad' | 'athlete'>('squad');
   const [bodyMapAthleteId, setBodyMapAthleteId] =
-    useState<string>('ath-arjun-mehta');
+    useState<string>(activeAthleteId || athletes[0]?.id || 'ath-arjun-mehta');
+
+  useEffect(() => {
+    if (activeAthleteId) {
+      setBodyMapAthleteId(activeAthleteId);
+    }
+  }, [activeAthleteId]);
 
   // Top KPI Filter State (Clicking a KPI filters the Injury Register)
   const [activeKpiFilter, setActiveKpiFilter] = useState<string | null>(null);
@@ -150,7 +158,17 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
 
   // Filtered Injuries for Landscape & Register
   const filteredInjuries = useMemo(() => {
-    return injuries.filter((inj) => {
+    let sourceInjuries = injuries;
+    if (selectedRole === 'Athlete') {
+      sourceInjuries = injuries.filter(
+        (inj) =>
+          inj.athleteId === 'ath-1042' ||
+          inj.athleteName.toLowerCase().includes('arjun') ||
+          inj.athleteId === athletes[0]?.id
+      );
+    }
+
+    return sourceInjuries.filter((inj) => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const match =
@@ -942,9 +960,18 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                       </option>
                     ))}
                   </select>
-                  {bodyMapAthleteId === 'ath-arjun-mehta' && (
+                  {bodyMapInjuries.length > 0 ? (
                     <span className="text-[11px] font-mono text-amber-300">
-                      Left Hamstring — Moderate — Stage 3/5 RTP · Right Ankle — Minor — Resolved
+                      {bodyMapInjuries
+                        .map(
+                          (i) =>
+                            `${i.bodyRegion} (${i.severity}) — Stage ${i.rtpStage}/5 RTP [${i.stage}]`
+                        )
+                        .join(' · ')}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-mono text-emerald-400">
+                      No active injuries · Full training clearance
                     </span>
                   )}
                 </div>

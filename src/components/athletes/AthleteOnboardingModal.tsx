@@ -9,6 +9,9 @@ import {
   Upload,
   UserPlus,
   X,
+  Sparkles,
+  Calendar,
+  Users,
 } from 'lucide-react';
 import { Athlete, MedicalClearanceStatus } from '../../types/usi';
 import {
@@ -26,6 +29,8 @@ interface AthleteOnboardingModalProps {
   onCreateAthlete: (newAthlete: Athlete) => void;
   onViewCreatedAthlete: (athlete: Athlete) => void;
   onOpenAssignCoachForCreated: (athlete: Athlete) => void;
+  onOpenSessionAssignmentForCreated?: (athlete: Athlete) => void;
+  onNavigateLifecycle?: () => void;
 }
 
 const STEPS = [
@@ -43,6 +48,8 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
   onCreateAthlete,
   onViewCreatedAthlete,
   onOpenAssignCoachForCreated,
+  onOpenSessionAssignmentForCreated,
+  onNavigateLifecycle,
 }) => {
   const [step, setStep] = useState<number>(1);
 
@@ -267,6 +274,47 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
           {/* STEP 1: BASIC INFORMATION */}
           {step === 1 && (
             <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg bg-sky-500/10 border border-sky-500/30">
+                <div className="flex items-center gap-2 text-sky-300">
+                  <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
+                  <span className="font-semibold text-xs">Testing candidate workflow? Pre-populate a fresh candidate:</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const num = Math.floor(1200 + Math.random() * 800);
+                      setFullName('Karanveer Deshmukh');
+                      setAthleteId(`ATH-${num}`);
+                      setPosition('Midfielder');
+                      setDob('2003-04-18');
+                      setContactEmail(`karanveer.${num}@nhpp-sports.org`);
+                      setContactPhone('+91 98204 55190');
+                      setCoach('Vikram Sharma');
+                    }}
+                    className="px-2.5 py-1 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] transition-colors"
+                  >
+                    ⚡ Footballer (Karanveer)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const num = Math.floor(1200 + Math.random() * 800);
+                      setFullName('Siddharth Malhotra');
+                      setAthleteId(`ATH-${num}`);
+                      setPosition('Center Back');
+                      setDob('2004-08-22');
+                      setContactEmail(`siddharth.${num}@nhpp-sports.org`);
+                      setContactPhone('+91 98111 23456');
+                      setCoach('Rahul Roy');
+                    }}
+                    className="px-2.5 py-1 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-[11px] transition-colors"
+                  >
+                    ⚡ Defender (Siddharth)
+                  </button>
+                </div>
+              </div>
+
               <div className="text-sm font-bold text-slate-100">
                 1. Basic Information
               </div>
@@ -591,30 +639,54 @@ export const AthleteOnboardingModal: React.FC<AthleteOnboardingModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-4">
                 <button
                   onClick={() => {
                     onViewCreatedAthlete(createdAthlete);
                     onClose();
                   }}
-                  className="px-4 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+                  className="px-4 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs"
                 >
-                  View Athlete
+                  View Athlete 360 →
                 </button>
                 <button
                   onClick={() => {
                     onClose();
                     onOpenAssignCoachForCreated(createdAthlete);
                   }}
-                  className="px-4 py-2 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs"
+                  className="px-3.5 py-2 rounded-md bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs flex items-center gap-1.5"
                 >
+                  <Users className="w-3.5 h-3.5" />
                   Assign Coach
                 </button>
+                {onOpenSessionAssignmentForCreated && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenSessionAssignmentForCreated(createdAthlete);
+                    }}
+                    className="px-3.5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    Assign to Training Session
+                  </button>
+                )}
+                {onNavigateLifecycle && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onNavigateLifecycle();
+                    }}
+                    className="px-3.5 py-2 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs"
+                  >
+                    Go to Lifecycle Hub
+                  </button>
+                )}
                 <button
                   onClick={resetFormForAnother}
-                  className="px-4 py-2 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs"
+                  className="px-3 py-2 rounded-md bg-transparent hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs"
                 >
-                  Add Another Athlete
+                  + Add Another
                 </button>
               </div>
             </div>

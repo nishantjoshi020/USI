@@ -78,15 +78,17 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
 }) => {
   // Determine active hierarchy level from subTab (Sections 21 & 23)
   const currentLevel: AnalyticsHierarchyLevel =
-    activeSubTab === 'analytics-sport'
-      ? 'Sport'
-      : activeSubTab === 'analytics-program'
-        ? 'Program'
-        : activeSubTab === 'analytics-squad'
-          ? 'Squad'
-          : activeSubTab === 'analytics-athlete'
-            ? 'Athlete'
-            : 'Federation';
+    selectedRole === 'Athlete'
+      ? 'Athlete'
+      : activeSubTab === 'analytics-sport'
+        ? 'Sport'
+        : activeSubTab === 'analytics-program'
+          ? 'Program'
+          : activeSubTab === 'analytics-squad'
+            ? 'Squad'
+            : activeSubTab === 'analytics-athlete'
+              ? 'Athlete'
+              : 'Federation';
 
   const isReportsView = activeSubTab === 'analytics-reports';
 
@@ -345,25 +347,43 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
               Hierarchy Drill-Down:
             </span>
             {(
-              [
-                {
-                  level: 'Federation' as AnalyticsHierarchyLevel,
-                  label: 'Federation (National HP Program)',
-                },
-                { level: 'Sport' as AnalyticsHierarchyLevel, label: 'Football' },
-                {
-                  level: 'Program' as AnalyticsHierarchyLevel,
-                  label: "Senior Men's Program",
-                },
-                {
-                  level: 'Squad' as AnalyticsHierarchyLevel,
-                  label: 'Senior Squad',
-                },
-                {
-                  level: 'Athlete' as AnalyticsHierarchyLevel,
-                  label: 'Arjun Mehta',
-                },
-              ] as const
+              selectedRole === 'Athlete'
+                ? [
+                    {
+                      level: 'Athlete' as AnalyticsHierarchyLevel,
+                      label: 'My Longitudinal Analytics (Arjun Mehta)',
+                    },
+                  ]
+                : selectedRole === 'Coach'
+                ? [
+                    {
+                      level: 'Squad' as AnalyticsHierarchyLevel,
+                      label: 'Senior Squad',
+                    },
+                    {
+                      level: 'Athlete' as AnalyticsHierarchyLevel,
+                      label: 'Arjun Mehta',
+                    },
+                  ]
+                : [
+                    {
+                      level: 'Federation' as AnalyticsHierarchyLevel,
+                      label: 'Federation (National HP Program)',
+                    },
+                    { level: 'Sport' as AnalyticsHierarchyLevel, label: 'Football' },
+                    {
+                      level: 'Program' as AnalyticsHierarchyLevel,
+                      label: "Senior Men's Program",
+                    },
+                    {
+                      level: 'Squad' as AnalyticsHierarchyLevel,
+                      label: 'Senior Squad',
+                    },
+                    {
+                      level: 'Athlete' as AnalyticsHierarchyLevel,
+                      label: 'Arjun Mehta',
+                    },
+                  ]
             ).map((crumb, idx) => {
               const active = !isReportsView && currentLevel === crumb.level;
               return (

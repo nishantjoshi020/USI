@@ -13,8 +13,9 @@ import {
   Trophy,
   Layers,
   Users,
+  User,
 } from 'lucide-react';
-import { HierarchyContext, UserRole } from '../../types/usi';
+import { Athlete, HierarchyContext, UserRole } from '../../types/usi';
 import { CONTEXT_OPTIONS, ROLE_DESCRIPTIONS } from '../../data/mockData';
 
 interface TopContextBarProps {
@@ -29,6 +30,10 @@ interface TopContextBarProps {
   onOpenAICopilot?: () => void;
   pendingAIActionsCount?: number;
   onResetDemoState?: () => void;
+  activeAthlete?: Athlete;
+  athletes?: Athlete[];
+  onSelectActiveAthlete?: (athleteId: string) => void;
+  onOpenOnboarding?: () => void;
 }
 
 const ROLES: UserRole[] = [
@@ -54,9 +59,13 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
   onOpenAICopilot,
   pendingAIActionsCount = 0,
   onResetDemoState,
+  activeAthlete,
+  athletes,
+  onSelectActiveAthlete,
+  onOpenOnboarding,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<
-    'federation' | 'sport' | 'program' | 'squad' | 'date' | 'role' | null
+    'federation' | 'sport' | 'program' | 'squad' | 'date' | 'role' | 'athlete' | null
   >(null);
 
   const barRef = useRef<HTMLDivElement>(null);
@@ -74,28 +83,23 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
   return (
     <header
       ref={barRef}
-      className="h-16 bg-[#090D16]/95 backdrop-blur-sm border-b border-slate-800/90 px-5 flex items-center justify-between gap-4 sticky top-0 z-20"
+      className="h-14 bg-[#090D16]/95 backdrop-blur-sm border-b border-slate-800/90 px-4 flex items-center justify-between gap-2 sticky top-0 z-20"
     >
-      {/* Left: Global Hierarchy Context Filters (Federation -> Sport -> Program -> Squad -> Date) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
+      {/* Left: Global Hierarchy Context Filters (Federation -> Sport -> Program -> Squad) */}
+      <div className="flex items-center gap-1 min-w-0 flex-1">
         {/* Federation */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             onClick={() =>
               setOpenDropdown(openDropdown === 'federation' ? null : 'federation')
             }
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
           >
             <Building2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <div>
-              <span className="block text-[10px] text-slate-400 leading-none">
-                Federation
-              </span>
-              <span className="text-xs font-semibold text-slate-100 flex items-center gap-1 mt-0.5">
-                {context.federation}
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </span>
-            </div>
+            <span className="text-[11px] font-semibold text-slate-100 truncate max-w-[170px] xl:max-w-[230px]">
+              {context.federation}
+            </span>
+            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
           </button>
 
           {openDropdown === 'federation' && (
@@ -129,21 +133,16 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
         <span className="text-slate-600 text-xs select-none">/</span>
 
         {/* Sport */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setOpenDropdown(openDropdown === 'sport' ? null : 'sport')}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
           >
             <Trophy className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <div>
-              <span className="block text-[10px] text-slate-400 leading-none">
-                Sport
-              </span>
-              <span className="text-xs font-semibold text-slate-100 flex items-center gap-1 mt-0.5">
-                {context.sport}
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </span>
-            </div>
+            <span className="text-[11px] font-semibold text-slate-100">
+              {context.sport}
+            </span>
+            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
           </button>
 
           {openDropdown === 'sport' && (
@@ -177,23 +176,18 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
         <span className="text-slate-600 text-xs select-none">/</span>
 
         {/* Program */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             onClick={() =>
               setOpenDropdown(openDropdown === 'program' ? null : 'program')
             }
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
           >
             <Layers className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <div>
-              <span className="block text-[10px] text-slate-400 leading-none">
-                Program
-              </span>
-              <span className="text-xs font-semibold text-slate-100 flex items-center gap-1 mt-0.5">
-                {context.program}
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </span>
-            </div>
+            <span className="text-[11px] font-semibold text-slate-100 truncate max-w-[130px] xl:max-w-[170px]">
+              {context.program}
+            </span>
+            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
           </button>
 
           {openDropdown === 'program' && (
@@ -227,21 +221,16 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
         <span className="text-slate-600 text-xs select-none">/</span>
 
         {/* Squad */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             onClick={() => setOpenDropdown(openDropdown === 'squad' ? null : 'squad')}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
           >
             <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <div>
-              <span className="block text-[10px] text-slate-400 leading-none">
-                Squad
-              </span>
-              <span className="text-xs font-semibold text-slate-100 flex items-center gap-1 mt-0.5">
-                {context.squad}
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </span>
-            </div>
+            <span className="text-[11px] font-semibold text-slate-100 truncate max-w-[125px] xl:max-w-[160px]">
+              {context.squad}
+            </span>
+            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
           </button>
 
           {openDropdown === 'squad' && (
@@ -272,61 +261,82 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
           )}
         </div>
 
-        {/* Date Context */}
-        <div className="relative ml-1">
-          <button
-            onClick={() => setOpenDropdown(openDropdown === 'date' ? null : 'date')}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors whitespace-nowrap"
-          >
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <div>
-              <span className="block text-[10px] text-slate-400 leading-none">
-                Date
+        {/* Active Athlete Quick Focus / Switcher */}
+        {athletes && athletes.length > 0 && (
+          <div className="relative min-w-0">
+            <button
+              onClick={() => setOpenDropdown(openDropdown === 'athlete' ? null : 'athlete')}
+              title={`Focused Athlete: ${activeAthlete?.name || 'Select Athlete'}`}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-left transition-colors whitespace-nowrap ${
+                selectedRole === 'Athlete'
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200'
+                  : 'bg-[#0F1623] hover:bg-[#151E2E] border-slate-800 text-slate-200'
+              }`}
+            >
+              <User className={`w-3.5 h-3.5 shrink-0 ${selectedRole === 'Athlete' ? 'text-emerald-400' : 'text-sky-400'}`} />
+              <span className="text-[11px] font-semibold truncate max-w-[120px] xl:max-w-[160px]">
+                {activeAthlete?.name || 'Select Athlete'}
               </span>
-              <span className="text-xs font-mono font-semibold text-slate-100 flex items-center gap-1 mt-0.5 tabular-nums">
-                {context.date}
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </span>
-            </div>
-          </button>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+            </button>
 
-          {openDropdown === 'date' && (
-            <div className="absolute right-0 mt-1.5 w-52 bg-[#0F1623] border border-slate-700 rounded-md shadow-xl py-1 z-50">
-              <div className="px-3 py-1.5 text-[11px] font-medium text-slate-400 border-b border-slate-800">
-                Operational Date
-              </div>
-              {CONTEXT_OPTIONS.dates.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => {
-                    onUpdateContext({ date: d });
-                    setOpenDropdown(null);
-                  }}
-                  className={`w-full text-left px-3 py-2 text-xs font-mono flex items-center justify-between ${
-                    context.date === d
-                      ? 'bg-sky-500/15 text-sky-300 font-semibold'
-                      : 'text-slate-300 hover:bg-slate-800/70'
-                  }`}
-                >
-                  <span>{d}</span>
-                  {context.date === d && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+            {openDropdown === 'athlete' && (
+              <div className="absolute left-0 mt-1.5 w-72 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50 max-h-80 overflow-y-auto">
+                <div className="px-3 py-1.5 border-b border-slate-800 flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-300">Focus Active Athlete</span>
+                  {onOpenOnboarding && (
+                    <button
+                      onClick={() => {
+                        setOpenDropdown(null);
+                        onOpenOnboarding();
+                      }}
+                      className="text-[10px] text-sky-400 hover:text-sky-300 font-semibold"
+                    >
+                      + New Candidate
+                    </button>
                   )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                </div>
+                {athletes.map((ath) => (
+                  <button
+                    key={ath.id}
+                    onClick={() => {
+                      onSelectActiveAthlete?.(ath.id);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
+                      activeAthlete?.id === ath.id
+                        ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                        : 'text-slate-300 hover:bg-slate-800/70'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold text-slate-100">{ath.name}</div>
+                      <div className="text-[10px] text-slate-400">{ath.athleteId} · {ath.position} · {ath.squad}</div>
+                    </div>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                      ath.trainingStatus === 'INJURED' ? 'bg-rose-500/15 border-rose-500/30 text-rose-300' :
+                      ath.trainingStatus === 'PENDING' ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' :
+                      ath.trainingStatus === 'RESTRICTED' ? 'bg-orange-500/15 border-orange-500/30 text-orange-300' :
+                      'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                    }`}>
+                      {ath.trainingStatus}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Right Zone: AI Copilot Trigger, Search, Notifications, Help, Role/User Profile */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Right Zone: AI Copilot Trigger, Notifications, Compact Role Selector */}
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* Persistent AI Copilot Trigger (Section 1) */}
         {onOpenAICopilot && (
           <button
             onClick={onOpenAICopilot}
             title="Open Context-Aware USI AI Copilot"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-xs font-semibold text-sky-300 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-[11px] font-semibold text-sky-300 transition-colors whitespace-nowrap"
           >
             <Bot className="w-3.5 h-3.5 text-sky-400" />
             <span>AI Copilot</span>
@@ -338,75 +348,37 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
           </button>
         )}
 
-        {/* Global Search Trigger */}
-        <button
-          onClick={onOpenSearch}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-xs text-slate-400 hover:text-slate-200 transition-colors whitespace-nowrap"
-        >
-          <Search className="w-3.5 h-3.5 text-slate-400" />
-          <span className="hidden 2xl:inline">Search athletes, squads, sessions...</span>
-          <span className="2xl:hidden">Search</span>
-          <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-800/90 text-slate-300 rounded border border-slate-700">
-            ⌘K
-          </kbd>
-        </button>
-
-        {/* Demo Reset Trigger for Assessment Readiness */}
-        {onResetDemoState && (
-          <button
-            onClick={onResetDemoState}
-            title="Reset Demo State to Initial Baseline"
-            className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-[11px] font-mono text-slate-300 hover:text-white transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-            <span>Reset Demo</span>
-          </button>
-        )}
-
         {/* Notifications */}
         <button
           onClick={onToggleNotifications}
           title="Operational Notifications"
-          className="relative p-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-slate-300 hover:text-white transition-colors"
+          className="relative p-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-slate-300 hover:text-white transition-colors"
         >
-          <Bell className="w-4 h-4" />
+          <Bell className="w-3.5 h-3.5" />
           {unreadNotificationsCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-mono text-[10px] font-bold flex items-center justify-center tabular-nums">
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white font-mono text-[9px] font-bold flex items-center justify-center tabular-nums">
               {unreadNotificationsCount}
             </span>
           )}
         </button>
 
-        {/* Help / System Architecture */}
-        <button
-          onClick={onOpenHelpModal}
-          title="USI Operational Architecture & Guide"
-          className="p-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-slate-300 hover:text-white transition-colors"
-        >
-          <HelpCircle className="w-4 h-4" />
-        </button>
-
-        {/* Role Selector / User Profile */}
+        {/* Compact Role Selector */}
         <div className="relative">
           <button
             onClick={() => setOpenDropdown(openDropdown === 'role' ? null : 'role')}
-            className="flex items-center gap-2.5 pl-2.5 pr-3 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
+            title={`Active Role View: ${selectedRole}`}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
           >
-            <div className="w-7 h-7 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-xs font-mono font-bold text-sky-300">
+            <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-[10px] font-mono font-bold text-sky-300 shrink-0">
               {selectedRole
                 .split(' ')
                 .map((w) => w[0])
                 .join('')}
             </div>
-            <div className="hidden sm:block leading-tight">
-              <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                <span>Active Role View</span>
-              </div>
-              <div className="text-xs font-semibold text-slate-100 flex items-center gap-1">
-                <span>{selectedRole}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </div>
-            </div>
+            <span className="text-[11px] font-semibold text-slate-100 max-w-[125px] truncate">
+              {selectedRole}
+            </span>
+            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
           </button>
 
           {openDropdown === 'role' && (
