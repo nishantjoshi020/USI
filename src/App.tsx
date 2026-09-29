@@ -90,6 +90,7 @@ import {
 } from './components/modals/GlobalOverlays';
 import { ConnectedModuleView } from './components/modules/ConnectedModuleView';
 import { AthleteRegistryPage } from './components/athletes/AthleteRegistryPage';
+import { EnrollmentApplicationsPage } from './components/athletes/EnrollmentApplicationsPage';
 import {
   AiAssistanceMode,
   Athlete360Page,
@@ -792,14 +793,9 @@ export default function App() {
 
   // Navigation handler
   const handleSelectNav = (nav: NavItemId) => {
-    if (nav === 'enrollment') {
-      setActiveNav('athlete-registry');
-      setIsOnboardingOpen(true);
-      return;
-    }
-    if (nav === 'verification') {
-      setActiveNav('athlete-registry');
-      triggerToast('Opened Athlete Registry — Use Verification filter or Review Application');
+    if (nav === 'enrollment' || nav === 'verification') {
+      setActiveNav(nav);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setActiveNav(nav);
@@ -1645,6 +1641,16 @@ export default function App() {
                 setApprovalModalAthleteId(ath.id)
               }
               onBulkUpdateAthletes={handleBulkUpdateAthletes}
+              onTriggerToast={triggerToast}
+            />
+          ) : activeNav === 'enrollment' || activeNav === 'verification' ? (
+            <EnrollmentApplicationsPage
+              athletes={athletes}
+              selectedRole={selectedRole}
+              onOpenReviewApplication={(ath) => setApprovalModalAthleteId(ath.id)}
+              onOpenAthlete360={handleOpenFullAthlete360}
+              onOpenAssignCoach={(ath) => setCoachModalAthleteId(ath.id)}
+              onOpenNewApplication={() => setIsOnboardingOpen(true)}
               onTriggerToast={triggerToast}
             />
           ) : activeNav === 'athlete-360' ? (
