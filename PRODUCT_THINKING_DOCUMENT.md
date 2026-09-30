@@ -2,83 +2,116 @@
 
 **Product:** Athlete Management System (AMS)  
 **Role:** Lead Product Manager  
-**Purpose:** Explain how the system works, who uses it, and how it solves real problems in elite sports.
+**Standard:** Tier-1 Olympic Federation & High-Performance Sports SaaS
 
 ---
 
-## 1. Executive Summary
+## 1. Product Reasoning
 
-### The Problem
-In most sports organizations, teams use separate tools that do not talk to each other:
-* Doctors log injuries in one system, but coaches cannot see the physical limits and run injured players too hard.
-* Wearables and GPS devices collect millions of data points, but staff only see them in weekly PDF reports when it is too late.
-* Coaches either see confidential medical records (violating privacy) or see nothing at all.
+### The Core Problem
+Most sports organizations fail not because they lack data, but because their departments work in silos:
+* **The Medical-Coaching Disconnect:** Physiotherapists log injuries in private records, while coaches build training sessions in another tool. Because the coach does not know the player's physical limit, they assign full sprint drills, causing preventable reinjuries.
+* **The Data Graveyard:** Teams buy expensive GPS vests and force plates that collect millions of numbers, but coaches only get a weekly PDF after the damage is already done.
+* **The Privacy Dilemma:** Software either shows confidential medical files to coaches (breaking privacy laws) or hides all information (leaving coaches blind to player injuries).
 
-### Our Solution
-USI connects medical, coaching, science, and administrative workflows into a single system:
-* When a physiotherapist logs an injury, the system automatically marks the player as restricted, notifies the coach, and updates the training plan.
-* Coaches see clear, practical movement rules (what the player can and cannot do) without seeing private medical files.
-* AI spots hidden fatigue early and suggests quick, 1-click actions for staff.
+### Why USI Was Built This Way
+USI is an **event-driven operating system**, not a digital filing cabinet. When something happens in one department, the rest of the system responds immediately:
+* An injury logged by a physiotherapist automatically limits the player's training status, alerts the coach, and lowers their planned running distance.
+* Instead of showing private medical notes to coaches, USI gives simple movement rules: what is **Permitted** (e.g. light jogging under 14 km/h) and what is **Prohibited** (e.g. sprinting over 22 km/h).
+* AI continuously watches for hidden fatigue and provides quick, 1-click action buttons for staff.
 
 ---
 
-## 2. Platform Structure
+## 2. Information Architecture
 
-USI organizes teams across four levels:
-1. **Federation:** National governing body or sports institute.
+USI organizes multi-sport organizations through a clear two-axis structure:
+
+### The Vertical Hierarchy
+Data flows down through four clear levels:
+1. **Federation:** The national governing body, Olympic committee, or multi-sport franchise.
 2. **Sport:** Football, Athletics, Field Hockey, Swimming, or Badminton.
-3. **Program:** Senior team, U-23 squad, or Development academy.
+3. **Program:** Senior National Team, U-23 Squad, or Youth Academy.
 4. **Squad:** Squad A, Squad B, or specific training cohorts.
+5. **Athlete:** The individual athlete profile.
 
-Staff can switch sports or squads instantly from the top bar. The system updates the roster and data immediately without losing active searches or open drawers.
+### Context Preservation & Switching
+Staff switch sports or squads using the persistent top bar. When switching from *Football* to *Athletics*:
+* The system instantly updates the roster, injury registry, and training calendar.
+* Open side drawers, active search queries, and filter states stay in place without resetting or losing work.
 
 ---
 
-## 3. The 8 User Personas
+## 3. Module Hierarchy
 
-USI adapts to 8 distinct roles. Each role has specific permissions and sees only the information they need.
+USI organizes its 9 core modules into three functional tiers:
+
+### Tier 1: Operational Execution
+* **1. Command Center:** The main dashboard showing 6 key performance indicators (KPIs), team readiness scores, and urgent alert banners.
+* **2. Athlete Management:** The athlete roster, personal 360 drawers, 6-step onboarding wizard, 3-tier approvals, and coach caseload balancing.
+* **3. Training & Periodisation:** The season calendar, daily session builder, pitchside attendance, and morning coach triage.
+
+### Tier 2: Clinical & Sports Science
+* **4. Medical & Injury Intelligence (Priority Module):** The interactive 30-region body map, clinical injury wizard, 5-stage return-to-play gating, and decoupled coach movement rules.
+* **5. Sports Science:** GPS running metrics, force-plate strength balance, overnight recovery monitoring (HRV), and acute-to-chronic workload modeling.
+* **6. Nutrition & Fueling:** Daily meal and carbohydrate periodisation, hydration tracking, and Informed-Sport supplement batch verification.
+
+### Tier 3: Governance & Intelligence
+* **7. Assessments & TID:** Standardized physical fitness tests (sprint, jump, VO2Max) and talent identification promotion pathways.
+* **8. Analytics & BI:** Cross-team injury rates per 1,000 hours, training load trends, and executive compliance reports.
+* **9. AI Copilot Layer:** A built-in assistant that surfaces hidden fatigue and provides 1-click operational action buttons with safety logs.
+
+---
+
+## 4. User Personas (8 Core Roles)
+
+USI adapts to 8 specific roles. Each role has distinct goals, daily routines, and privacy boundaries.
 
 ### 1. Athletes
-* **Main Goal:** Check daily training schedules and log wellness without filling out long forms.
+* **Role & Scope:** The individual performer.
+* **Main Job:** Check daily training schedules and log wellness in under 60 seconds.
 * **Daily Routine:**
   - *Morning:* Fill out a 60-second wellness check (Sleep, Soreness, Fatigue, Stress on a 1–10 scale).
-  - *Before Training:* Check today's session, location, and assigned exercises.
-  - *After Training:* Log session effort (RPE 1–10) and mark rehab exercises complete.
-* **What They See:** The Athlete Hub Console, their personal calendar, and assigned rehab drills.
+  - *Before Training:* Check today's assigned drills, speed limits, and meeting times.
+  - *After Training:* Log perceived effort (RPE 1–10) and mark rehab exercises complete.
+* **What They See:** The Athlete Hub Console, personal calendar, and assigned rehab exercises.
 * **Privacy Boundary:** Athletes only see their own profile. They cannot see teammates' data or private medical notes.
 
 ### 2. Coaches
-* **Main Goal:** Know who is ready to train today, adjust drills quickly, and pick the starting lineup.
+* **Role & Scope:** Head coach, assistant coach, and tactical trainers.
+* **Main Job:** Know who is ready to train today, adjust drills pitchside in one click, and pick the starting lineup.
 * **Daily Routine:**
-  - *07:15:* Review the Morning Squad Triage to see who is Ready, who needs Modifications, and who is Ruled Out.
-  - *07:45:* Use 1-click adjustments for sore players (for example: switch from sprint drills to passing drills).
-  - *13:00:* Review actual training load vs. planned load.
-  - *16:00:* Select the matchday starting lineup.
-* **What They See:** Morning Squad Triage Console, Session Builder, and Roster Selector.
-* **Privacy Boundary:** Coaches do not see private medical notes or MRI scans. Instead, they see simple movement rules: what is **Permitted** (e.g. light jogging under 14 km/h) and what is **Prohibited** (e.g. sprinting over 22 km/h).
+  - *07:15:* Review the Morning Squad Triage Console to see who is Ready, who needs Modifications, and who is Ruled Out.
+  - *07:45:* Use 1-click drill modifications for sore players (e.g. switch sprint drills to passing drills).
+  - *13:00:* Review actual training load vs. planned load with $\pm 15\%$ variance alerts.
+  - *16:00:* Pick the matchday starting lineup.
+* **What They See:** Morning Squad Triage Console, Session Builder, and Starting Roster Selector.
+* **Privacy Boundary:** Coaches do not see private medical notes or MRI scans. They see clear movement rules: what is **Permitted** and what is **Prohibited**.
 
 ### 3. Sports Scientists
-* **Main Goal:** Track training workloads, catch fatigue early, and prevent non-contact injuries.
+* **Role & Scope:** High-performance scientists and load monitors.
+* **Main Job:** Track training workloads, detect fatigue early, and prevent non-contact injuries.
 * **Daily Routine:**
   - *07:00:* Check overnight recovery metrics (Heart Rate Variability and resting heart rate).
   - *09:30:* Monitor live GPS data during training (high-speed running, sprint distance, accelerations).
-  - *12:00:* Run force plate jump tests to check for left/right strength balance.
+  - *12:00:* Run force-plate jump tests to check for left/right leg strength balance.
   - *15:00:* Calculate acute vs. chronic workloads and flag players at risk of injury.
 * **What They See:** Sports Science Telemetry Center, Workload Models, and Force Plate Analysis.
-* **Privacy Boundary:** Full access to GPS and biomechanical data. Read-only access to basic injury status; cannot change medical status.
+* **Privacy Boundary:** Full access to sensor and biomechanical data. Read-only access to basic injury status; cannot change medical status.
 
 ### 4. Physiotherapists
-* **Main Goal:** Diagnose injuries quickly, guide rehabilitation, and ensure safe return to play.
+* **Role & Scope:** Team doctors, physiotherapists, and rehab specialists.
+* **Main Job:** Diagnose injuries quickly, guide rehabilitation, and ensure safe return to play.
 * **Daily Routine:**
-  - *07:30:* Review morning pain reports from players.
+  - *07:30:* Review morning pain reports from athletes.
   - *09:00:* Examine injuries and log them using the 30-Region Interactive Body Map.
   - *11:00:* Guide rehab sessions and log daily progress with the `+5% Session` button.
-  - *14:30:* Run return-to-play tests (strength symmetry $\ge 90\%$ and pain $\le 2/10$).
+  - *14:30:* Run return-to-play tests (strength balance $\ge 90\%$ and pain $\le 2/10$).
 * **What They See:** Interactive 30-Region Body Map, 6-Step Injury Wizard, and 5-Stage Return-to-Play Tracker.
 * **Privacy Boundary:** Full read and write access to clinical medical files. Responsible for setting an athlete's training status (`Cleared`, `Restricted`, or `Injured`).
 
 ### 5. Nutritionists
-* **Main Goal:** Fuel athletes for training demands and ensure all supplements are safe and certified.
+* **Role & Scope:** Performance dietitians and fueling specialists.
+* **Main Job:** Fuel athletes for training demands and ensure all supplements are safe and certified.
 * **Daily Routine:**
   - *07:00:* Check morning hydration test results.
   - *08:15:* Adjust daily meal and carbohydrate plans based on today's training intensity.
@@ -88,7 +121,8 @@ USI adapts to 8 distinct roles. Each role has specific permissions and sees only
 * **Privacy Boundary:** Full access to diet and supplement plans. No access to confidential medical notes.
 
 ### 6. Federation Admins
-* **Main Goal:** Verify athlete identity, manage contracts, and track anti-doping compliance.
+* **Role & Scope:** National governing body registrars and compliance officers.
+* **Main Job:** Verify athlete identity, manage coach contracts, and track anti-doping compliance.
 * **Daily Routine:**
   - *09:00:* Review new athlete registrations in the 3-Tier Approval Pipeline.
   - *10:30:* Verify government IDs, birth certificates, and federation licenses.
@@ -98,7 +132,8 @@ USI adapts to 8 distinct roles. Each role has specific permissions and sees only
 * **Privacy Boundary:** Zero access to clinical medical notes. They only see administrative pass/fail verification flags.
 
 ### 7. Performance Directors
-* **Main Goal:** Keep squad availability high (above 90%), resolve staff disagreements, and oversee Olympic cycles.
+* **Role & Scope:** High Performance Directors and Olympic program leaders.
+* **Main Job:** Keep squad availability high (above 90%), resolve staff disagreements, and oversee Olympic cycles.
 * **Daily Routine:**
   - *08:00:* Check the Executive Command Center for team readiness and AI alerts.
   - *11:00:* Review cross-department communication and compliance.
@@ -107,7 +142,8 @@ USI adapts to 8 distinct roles. Each role has specific permissions and sees only
 * **Privacy Boundary:** Full high-level visibility across all sports and squads. Authorized to make supervisory overrides with a mandatory written reason.
 
 ### 8. Operations Teams
-* **Main Goal:** Keep facilities running smoothly, manage travel, and keep GPS hardware working.
+* **Role & Scope:** Team managers, travel coordinators, and facility managers.
+* **Main Job:** Keep facilities running smoothly, manage travel, and keep GPS hardware working.
 * **Daily Routine:**
   - *07:00:* Check GPS docking stations to make sure vests are charged and synced.
   - *09:00:* Schedule pitches and gym slots to avoid conflicts between teams.
@@ -118,151 +154,110 @@ USI adapts to 8 distinct roles. Each role has specific permissions and sees only
 
 ---
 
-### Persona Summary Table
+## 5. Key Operational Flows (3 Priority Tracks)
 
-| Persona | Primary Focus | Daily Cadence | Key Screen / Workspace | Privacy Boundary |
-| :--- | :--- | :--- | :--- | :--- |
-| **Athlete** | Self-readiness and simple logs | Morning & Post-training | Athlete Hub Console | Own data only; teammates hidden |
-| **Coach** | Tactical drills and lineup selection | 07:15, 08:30, 13:00, 16:00 | Morning Triage & Drill Mod | Movement rules only; no medical notes |
-| **Sports Scientist** | Workload modeling & fatigue detection | 07:00, 09:30, 12:00, 15:00 | Sports Science Telemetry | Full sensor data; cannot change medical status |
-| **Physiotherapist** | Injury diagnosis and guided rehab | 07:30, 09:00, 11:00, 14:30 | Interactive Body Map & RTP | Full clinical EHR; sets medical status |
-| **Nutritionist** | Fueling and supplement safety | 07:00, 08:15, 12:30, 15:30 | Nutrition & Fueling Hub | Diet and supplements; no medical notes |
-| **Federation Admin** | Identity verification and compliance | 09:00, 10:30, 14:00, 16:00 | 3-Tier Approval Pipeline | Legal and eligibility; no medical notes |
-| **Performance Director** | Overall squad availability and oversight | 08:00, 11:00, 14:00, 16:30 | Executive Command Center | Full visibility; authorizes final overrides |
-| **Operations Team** | Facility bookings and hardware health | 07:00, 09:00, 13:00, 16:30 | Operations & Logistics Hub | Travel rosters only; no medical or stats |
+### Track 1: Athlete Onboarding & Multi-Tier Approval
+1. **6-Step Onboarding:** Collects personal info, sport discipline, contact details, emergency contacts, medical history, and consent forms.
+2. **Profile Completion:** A weighted formula calculates progress from $0\%$ to $100\%$ across personal, sport, documentation, medical, coaching, and training domains.
+3. **Sequential 3-Tier Approval:**
+   - *Level 1 (Admin):* Approves ID and federation eligibility.
+   - *Level 2 (Coach):* Approves position and squad fit.
+   - *Level 3 (Doctor):* Clears cardiac ECG and anti-doping status.
+   *Result:* An athlete remains pending and cannot be fielded until all three sign off.
+4. **Coach Assignment:** Shows real-time coach capacity (e.g. 18 / 20 athletes) to prevent overloading staff.
 
----
+### Track 2: Tactical Periodisation & Pitchside Coaching
+1. **Session Assignment:** Assigns drills to squads while automatically leaving out injured or restricted players.
+2. **Morning Squad Triage:** Sorts players into three groups:
+   - *Ready* ($\ge 75\%$ readiness): Cleared for 100% of training.
+   - *Modify* ($50\text{--}74\%$ readiness): Needs adjusted drills and lower volume.
+   - *Review* ($<50\%$ readiness): Excluded from training; sent for medical check.
+3. **1-Click Drill Modification:** A single click adapts drills for sore players (e.g. maximal sprints become technical passing drills), automatically capping GPS speed limits.
+4. **Planned vs. Actual Review:** Compares planned training load against actual GPS exertion, flagging sessions that exceed targets by more than $15\%$.
 
-## 4. Justification of the 7 Core Evaluation Pillars
-
----
-
-### 1. Operational Depth
-* **The Problem:** Simple dropdowns like "Fit" or "Injured" are not enough. Elite teams need precise, objective numbers to make smart decisions.
-* **How USI Solves It:**
-  - **Internal Load:** Calculated as $\text{Effort (1--10)} \times \text{Duration (mins)}$.
-  - **Strength Balance:** Force plates measure left vs. right leg symmetry ($\ge 90\%$ needed to advance rehab).
-  - **Subjective Fatigue:** Uses the 4-part Hooper survey (Sleep, Soreness, Fatigue, Stress on a 1–10 scale).
-  - **Supplement Safety:** Every batch is verified with Informed-Sport lab certificates before giving it to an athlete.
-* **Real-World Example:** In the Morning Triage, when an athlete reports groin tightness, the coach clicks **Modify Session**. The drill changes instantly from maximal sprinting to passing drills, and the system caps GPS speed to under 14 km/h.
-
----
-
-### 2. Enterprise Workflow Understanding
-* **The Problem:** In elite sports, one person cannot do everything. Decisions require sign-offs across medical, coaching, and legal teams, but traditional forms do not support this.
-* **How USI Solves It:**
-  - **Sequential 3-Tier Approval:** A new athlete cannot be selected for a match until three people sign off in order:
-    1. *Admin:* Checks passport, birth certificate, and eligibility.
-    2. *Coach:* Confirms tactical role and squad fit.
-    3. *Doctor:* Clears cardiac ECG, concussion baseline, and anti-doping status.
-  - **Coach Workload Limits:** Shows live athlete-to-coach ratios (e.g. 18 / 20 assigned) to prevent coach burnout.
-  - **Decoupled Movement Rules:** Instead of showing confusing MRI text to coaches, the system gives clear rules:
-    - *Allowed:* Light jogging under 14 km/h, upper body gym work.
-    - *Prohibited:* Full sprints over 22 km/h, contact scrimmages.
-  - **Return-to-Play Sign-Off:** Physios guide Stages 1 through 4. The final step (Stage 5: Match Competition) requires the Performance Director's written sign-off.
+### Track 3: Medical Intelligence & Interactive Body Map (Priority Module)
+1. **30-Region Interactive Body Map:** A clickable anatomical map (front, back, and split views) showing injuries, mechanical strain, and rehab progress.
+2. **6-Step Injury Report:** Physios click the exact body part, select injury severity (Grade I, II, III), and attach diagnostic notes.
+3. **Daily Rehab Logging:** Staff click `+5% Session` to log daily physical therapy progress directly on the injured anatomical region.
+4. **5-Stage Return-to-Play Protocol:** Players must meet objective physical targets to advance:
+   - Stage 1: Pain reduction and light mobility.
+   - Stage 2: Strength restoration (leg symmetry $\ge 90\%$).
+   - Stage 3: Sport-specific drills without pain ($\le 2/10$).
+   - Stage 4: Full non-contact training.
+   - Stage 5: Final return to competition (requires Performance Director sign-off).
+5. **Decoupled Movement Rules:** Automatically turns medical diagnoses into clear `Allowed` vs. `Prohibited` rules for the coaching staff.
 
 ---
 
-### 3. Scalable Architecture
-* **The Problem:** Most platforms only work for one sport (like soccer) or require separate systems for each team.
-* **How USI Solves It:**
-  - **4-Tier Structure:** Federation $\rightarrow$ Sport $\rightarrow$ Program $\rightarrow$ Squad $\rightarrow$ Athlete.
-  - **Works Across 5 Sports:** Supports Football, Athletics, Field Hockey, Swimming, and Badminton. Each sport tracks its own metrics (e.g. sprint times for Athletics, stroke rates for Swimming, and distance for Football).
-  - **Fast Context Switching:** Switch sports or squads from the top bar in one click. Open drawers, search filters, and active screens stay intact.
-  - **Modular Design:** Medical, coaching, science, and admin sections are cleanly separated so that changes in one module cannot break another.
+## 6. AI Integrations & Autonomous Workflows
+
+USI uses a **Hybrid Supervisory AI Architecture** that pairs strict medical rules with smart pattern detection:
+
+### 1. Spotting Hidden Fatigue
+Athletes sometimes give themselves high scores ($2/10$ soreness) because they are afraid of being benched for an important game. USI compares self-reported soreness against overnight Heart Rate Variability (HRV):
+* If an athlete claims they feel fine, but their nocturnal HRV shows a severe $-22\%$ drop, the AI alerts staff: *Potential pain masking / acute fatigue detected*.
+* If an athlete reports severe soreness ($8/10$) but all physical and autonomic tests are normal, the AI recommends a wellness check for mental stress.
+
+### 2. Consequential 1-Click Action Buttons
+Instead of generating long walls of text, the AI provides actionable buttons that make real changes in the platform:
+* `[Apply Speed Limit]`: Caps the athlete's GPS running threshold immediately.
+* `[Schedule Staff Meeting]`: Dispatches a quick 15-minute sync between coach, doctor, and scientist.
+* `[Unlock Stage 2 Rehab]`: Advances rehab progression once objective criteria are met.
+
+### 3. Safety Classification & Audit Log
+Every AI suggestion is labeled by risk level:
+* `Informational`: General recovery summaries.
+* `Training Change`: Recommended drill or workload adjustments.
+* `Medical Restriction`: Recommended physical limits.
+All suggestions, confidence scores, and staff actions are permanently logged in the **AI Safety Audit Registry**.
 
 ---
 
-### 4. Realistic SaaS Thinking
-* **The Problem:** Many sports tools have bright white screens that cause glare outdoors, confusing popups that block the screen, and no history of who changed what.
-* **How USI Solves It:**
-  - **Glare-Free Dark Theme:** Built with a dark palette designed for tablets used pitchside in bright morning sunlight.
-  - **Clear Status Indicators:** Statuses use colors, clear text badges, and icons so color-blind staff never get confused.
-  - **Slide-Over Drawers:** Athlete profiles and injury files open in smooth side drawers so the team list stays visible behind them.
-  - **Quick Search ($\text{⌘K}$):** Staff can jump to any player, session, or medical file in two seconds using keyboard shortcuts.
-  - **Complete Audit Trail:** Every status change, drill edit, and medical sign-off logs who did it, when, and why.
+## 7. Workflow Assumptions, Constraints & Safeguards
 
----
-
-### 5. Sports-Tech Understanding
-* **The Problem:** Teams use many hardware brands (Catapult GPS, Vald force plates, Oura rings) and waste hours exporting and combining CSV files.
-* **How USI Solves It:**
-  - **GPS Integration:** Reads high-speed running ($>19.8\text{ km/h}$), sprint distance ($>25.2\text{ km/h}$), and accelerations directly.
-  - **Force Plate Integration:** Ingests jump heights and left-to-right leg strength balance.
-  - **Heart Rate Variability (HRV):** Reads overnight recovery data to measure nervous system readiness.
-  - **Smart Workload Math (EWMA):** Uses exponential decay formulas to compare acute (7-day) vs. chronic (28-day) workload without the mathematical errors found in simple rolling averages.
-  - **Anti-Doping Alerts:** Warns staff 30 days before an athlete's medical exemption (TUE) expires.
-
----
-
-### 6. Systems Integration Thinking
-* **The Problem:** When departments do not talk, mistakes happen. A doctor diagnoses an injury, but the coach never gets the message and plays the athlete anyway.
-* **How USI Solves It:**
-  - **Automatic Chain Reaction:** When a physio logs an injury on the body map:
-    1. Player status automatically changes to `RESTRICTED`.
-    2. Coach's morning triage flags the player for `REVIEW`.
-    3. The training builder removes the player from high-speed sprint drills.
-    4. The coach sees permitted vs. prohibited movement rules.
-    5. The sports science model lowers the player's 7-day workload target.
-    6. The nutritionist gets an alert to adjust calories for lower energy output.
-    7. A 5-stage rehab plan starts automatically.
-  - **Zero Double-Entry:** Staff enter information once, and the entire system updates instantly.
-
----
-
-### 7. AI-First Product Strategy
-* **The Problem:** Generic AI chatbots give vague, unhelpful advice ("make sure to stretch") or make dangerous mistakes with medical data.
-* **How USI Solves It:**
-  - **Spots Hidden Fatigue:** Athletes sometimes claim they feel fine ($2/10$ soreness) so they can play, even when their body is exhausted. The system compares reported soreness against nocturnal HRV. If HRV is dropped by $-22\%$, the system flags a hidden fatigue alert.
-  - **1-Click Action Buttons:** Instead of just generating text, the AI provides clickable buttons:
-    - `[Apply Speed Limit]`: Caps GPS speed limits immediately.
-    - `[Schedule Staff Meeting]`: Sets up a quick 15-minute sync between coach, doctor, and scientist.
-    - `[Unlock Stage 2 Rehab]`: Advances rehab once objective test scores are met.
-  - **Safety Log:** Every AI suggestion is labeled by risk level (`Informational`, `Training Change`, or `Medical Restriction`) and saved in a permanent safety audit log.
-
----
-
-## 5. Overview of Modules & Priority Workflows
-
-### The 9 Modules
-1. **Command Center:** Real-time team dashboard, Hooper readiness scores, and AI alert banners.
-2. **Athlete Management:** Athlete roster, 360 profile drawer, 6-step onboarding, and 3-tier approvals.
-3. **Training & Periodisation:** Calendar, session builder, attendance, and morning coach triage.
-4. **Medical & Injury (Priority):** Interactive 30-region body map, injury reports, and 5-stage return-to-play gating.
-5. **Sports Science:** GPS metrics, force plate asymmetries, HRV monitoring, and workload models.
-6. **Nutrition & Fueling:** Meal planning, hydration checks, and certified supplement tracking.
-7. **Assessments & TID:** Physical tests (sprint, jump, VO2Max) and academy promotion radar.
-8. **Analytics & BI:** Injury rates per 1,000 hours, training strain charts, and executive reports.
-9. **AI Copilot:** Contextual assistant with 1-click action buttons and safety logs.
-
-### The 3 Priority Workflows
-
-#### 1. Athlete Onboarding & Approval
-* A 6-step guided wizard collects personal, sport, and medical information.
-* A live formula calculates profile completeness from $0\%$ to $100\%$.
-* Requires sequential sign-offs: Admin $\rightarrow$ Coach $\rightarrow$ Chief Medical Officer before the athlete is active.
-* Coaches are assigned using a live caseload counter (e.g. 18 / 20 athletes) to prevent overloading.
-
-#### 2. Tactical Training & Coach Workflow
-* Assigns sessions to squads while automatically excluding injured or restricted players.
-* Morning triage groups players into Ready ($\ge 75\%$), Modify ($50\text{--}74\%$), and Review ($<50\%$).
-* Coaches can modify any drill in one click to reduce sprint volume.
-* Post-training review checks if actual GPS load exceeded planned targets by more than $15\%$.
-
-#### 3. Medical & Interactive Body Map (Priority Module)
-* **30-Region Interactive Body Map:** Click anywhere on the body (front, back, or split view) to view injuries, strain levels, and rehab progress.
-* **Live Progress Logging:** Click `+5% Session` to log physical therapy adherence directly on the injured body part.
-* **5-Stage Return-to-Play:** Players must meet objective physical criteria (LSI $\ge 90\%$ and pain $\le 2/10$) to advance through stages.
-* **Decoupled Movement Rules:** Replaces medical jargon with clear `Allowed` vs. `Prohibited` activity lists for coaches.
-
----
-
-## 6. Real-World Edge Cases & Safeguards
-
-| Real-World Problem | What Usually Happens | How USI Handles It |
+| Scenario | What Usually Happens | How USI Handles It |
 | :--- | :--- | :--- |
-| **No Internet Pitchside** | App crashes; attendance data is lost. | Saves data locally on the device and syncs automatically when reconnected. |
-| **Coach vs. Doctor Disagreement** | Coach plays an injured athlete in an important match. | System hard-locks the player. Only the Performance Director can sign an audited override. |
-| **Athlete Fakes Wellness Scores** | Player enters "8/10" every day to hide an injury. | AI compares scores with nocturnal HRV data. Lack of score variation triggers an administrative review. |
+| **No Internet Pitchside** | App crashes; attendance and session data are lost. | Saves data locally on the device and syncs automatically when reconnected. |
+| **Coach vs. Doctor Conflict** | Coach plays an injured athlete in an important match. | System hard-locks the player. Only the Performance Director can sign an audited override. |
+| **Athlete Fakes Scores** | Player enters "8/10" every day to avoid attention. | AI compares scores with nocturnal HRV data. Lack of score variation triggers a review. |
 | **Emergency Field Injury** | Paperwork takes too long while the player is rushed to hospital. | A 10-second Field Incident button immediately locks the player's training status. |
 | **Expired Medical Exemption** | Athlete takes prescribed medication and gets suspended. | System warns staff 30 days before any anti-doping certificate expires. |
+
+---
+
+## 8. Justification of the 7 Evaluation Pillars
+
+### 1. Operational Depth
+* **Problem:** Simple dropdowns ("Fit", "Injured") lead to poor decisions.
+* **Solution:** Uses validated micro-metrics: Internal Load ($\text{Effort} \times \text{Mins}$), Limb Symmetry Index ($\ge 90\%$), 4-part Hooper survey, and Informed-Sport supplement batch verification.
+* **Proof:** 1-click drill modifications cap GPS speed under 14 km/h; live `+5% Session` logging on the body map.
+
+### 2. Enterprise Workflow Understanding
+* **Problem:** Single-user forms fail in organizations where decisions require multi-department sign-offs.
+* **Solution:** 3-tier sequential approval (Admin $\rightarrow$ Coach $\rightarrow$ Doctor), coach caseload limits (under 20 athletes), and decoupled movement rules (`Permitted` vs. `Prohibited`).
+* **Proof:** Athletes cannot be selected until all three departments sign off; coaches receive clear rules without seeing private medical files.
+
+### 3. Scalable Architecture
+* **Problem:** Most platforms only work for soccer or require separate databases for each team.
+* **Solution:** 4-tier hierarchy (Federation $\rightarrow$ Sport $\rightarrow$ Program $\rightarrow$ Squad $\rightarrow$ Athlete) running across 5 Olympic sports with instant context switching and modular domain isolation.
+* **Proof:** Seamless switching between Football, Athletics, Field Hockey, Swimming, and Badminton without losing active filters or open drawers.
+
+### 4. Realistic SaaS Thinking
+* **Problem:** Bright white screens cause glare outdoors, modal popups block the screen, and lack of history causes accountability issues.
+* **Solution:** Dark-mode pitchside theme, non-blocking slide-over drawers, quick search ($\text{⌘K}$), color-blind accessible badges, and complete audit logs for every change.
+* **Proof:** Glare-free morning triage; instant navigation across modules; immutable logs for all sign-offs.
+
+### 5. Sports-Tech Understanding
+* **Problem:** Teams waste hours manually combining CSV files from different hardware brands.
+* **Solution:** Direct ingestion of GPS metrics, force-plate jump asymmetries, and nocturnal HRV, combined with exponential workload decay math (EWMA).
+* **Proof:** Accurately flags acute-to-chronic workload spikes ($\text{ACWR} > 1.45$) and warns 30 days before medical exemptions expire.
+
+### 6. Systems Integration Thinking
+* **Problem:** Medical, coaching, and science data live in separate silos, causing communication breakdowns.
+* **Solution:** Event-driven closed-loop cascade: when an injury is logged on the body map, the player is marked restricted, triage updates, sprint drills are locked, load envelopes drop, and rehab starts automatically.
+* **Proof:** Zero double-entry; changes in one department update the entire system in real time.
+
+### 7. AI-First Product Strategy
+* **Problem:** Chatbots give generic fitness advice and cannot be trusted with player welfare.
+* **Solution:** Spots hidden fatigue mathematically ($\Delta_{\text{Discordance}} = z(\text{Soreness}) - z(\text{HRV Suppression})$), provides 1-click action buttons, and logs every recommendation to a safety registry.
+* **Proof:** Catches players hiding soreness ($2/10$) when HRV is depressed ($-22\%$); mutates GPS speed limits with one click.
