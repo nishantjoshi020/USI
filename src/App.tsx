@@ -5,10 +5,15 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  CheckCircle2,
+  Bot,
   Calendar,
+  CheckCircle2,
+  Dumbbell,
+  HeartPulse,
+  LayoutDashboard,
   ShieldCheck,
   Sparkles,
+  Users,
   X,
 } from 'lucide-react';
 import {
@@ -70,7 +75,7 @@ import {
   INITIAL_REHAB_PLANS,
 } from './data/medicalMockData';
 import { Sidebar } from './components/navigation/Sidebar';
-import { TopContextBar } from './components/navigation/TopContextBar';
+import { TopContextBar, ViewportMode } from './components/navigation/TopContextBar';
 import { KpiFilterKey, KpiGrid } from './components/command-center/KpiGrid';
 import { RoleDashboardBanner } from './components/command-center/RoleDashboardBanner';
 import { RoleSpecificAnalyticsView } from './components/command-center/RoleSpecificAnalyticsView';
@@ -180,6 +185,7 @@ import {
   exportToJSON,
   triggerFallbackExportForToast,
 } from './utils/exportEngine';
+import { generateContextDataset } from './utils/contextDataGenerator';
 
 const RTP_STAGE_NAMES: Record<number, string> = {
   1: 'Pain Reduction',
@@ -195,6 +201,8 @@ export default function App() {
   const [context, setContext] = useState<HierarchyContext>(INITIAL_CONTEXT);
   const [selectedRole, setSelectedRole] = useState<UserRole>('Performance Director');
   const [isSidebarCompact, setIsSidebarCompact] = useState<boolean>(false);
+  const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
   // Iteration 5: AI Copilot & AI-Native Operations Shared State
   const [aiMessages, setAiMessages] = useState<AICopilotMessage[]>(
@@ -859,13 +867,22 @@ export default function App() {
   };
 
   const handleUpdateContext = (partial: Partial<HierarchyContext>) => {
-    setContext((prev) => {
-      const next = { ...prev, ...partial };
-      const changedKey = Object.keys(partial)[0];
-      const changedVal = Object.values(partial)[0];
-      triggerToast(`Global context updated: ${changedKey?.toUpperCase()} → ${changedVal}`);
-      return next;
-    });
+    const next = { ...context, ...partial };
+    setContext(next);
+    const dataset = generateContextDataset(next);
+    setAthletes(dataset.athletes);
+    setInjuries(dataset.injuries);
+    setSessions(dataset.sessions);
+    setNutritionPlans(dataset.nutritionPlans);
+    setRehabPlans(dataset.rehabPlans);
+    if (dataset.athletes[0]) {
+      setActiveAthlete360Id(dataset.athletes[0].id);
+    }
+    const changedKey = Object.keys(partial)[0];
+    const changedVal = Object.values(partial)[0];
+    triggerToast(
+      `Global context updated: ${changedKey?.toUpperCase()} → ${changedVal} (${dataset.athletes.length} athletes loaded)`
+    );
   };
 
   const handleSelectRole = (role: UserRole) => {
@@ -1915,44 +1932,74 @@ export default function App() {
     activeNav === 'facilities';
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-[#F8FAFC] flex">
-      {/* Persistent Left Sidebar */}
-      <Sidebar
-        activeNav={
-          activeNav === 'athlete-360' ? 'athlete-registry' : activeNav
+    <div
+      className={`min-h-screen text-[#F8FAFC] ${
+        viewportMode === 'desktop'
+          ? 'bg-[#090D16] flex'
+          : 'bg-[#05080F] flex justify-center'
+      }`}
+    >
+      <div
+        className={
+          viewportMode === 'desktop'
+            ? 'flex w-full min-h-screen'
+            : viewportMode === 'tablet'
+              ? 'viewport-tablet flex w-full max-w-[834px] min-h-screen bg-[#090D16] border-x border-slate-800/90 shadow-2xl relative'
+              : 'viewport-mobile flex w-full max-w-[430px] min-h-screen bg-[#090D16] border-x border-slate-800/90 shadow-2xl relative'
         }
-        onSelectNav={handleSelectNav}
-        attentionCount={18}
-        activeInjuryCount={injuries.length}
-        selectedRole={selectedRole}
-        isCompact={isSidebarCompact}
-        onToggleCompact={setIsSidebarCompact}
-      />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Persistent Top Global Hierarchy Context Bar */}
-        <TopContextBar
-          context={context}
-          onUpdateContext={handleUpdateContext}
-          selectedRole={selectedRole}
-          onSelectRole={handleSelectRole}
-          unreadNotificationsCount={unreadNotificationsCount}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onToggleNotifications={() =>
-            setIsNotificationsOpen((prev) => !prev)
+      >
+        {/* Persistent Left Sidebar */}
+        <Sidebar
+          activeNav={
+            activeNav === 'athlete-360' ? 'athlete-registry' : activeNav
           }
-          onOpenHelpModal={() => setIsHelpModalOpen(true)}
-          onOpenAICopilot={() => setIsGlobalCopilotOpen(true)}
-          pendingAIActionsCount={pendingAIActionsCount}
-          onResetDemoState={handleResetDemoState}
-          isSidebarOpen={!isSidebarCompact}
-          activeAthlete={activeAthlete360}
-          athletes={athletes}
-          onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
-          onOpenOnboarding={() => setIsOnboardingOpen(true)}
-          onGlobalExport={handleGlobalExport}
+          onSelectNav={handleSelectNav}
+          attentionCount={18}
+          activeInjuryCount={injuries.length}
+          selectedRole={selectedRole}
+          viewportMode={viewportMode}
+          isMobileDrawerOpen={isMobileDrawerOpen}
+          onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
+          isCompact={isSidebarCompact}
+          onToggleCompact={setIsSidebarCompact}
         />
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Persistent Top Global Hierarchy Context Bar */}
+          <TopContextBar
+            context={context}
+            onUpdateContext={handleUpdateContext}
+            selectedRole={selectedRole}
+            onSelectRole={handleSelectRole}
+            unreadNotificationsCount={unreadNotificationsCount}
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onToggleNotifications={() =>
+              setIsNotificationsOpen((prev) => !prev)
+            }
+            onOpenHelpModal={() => setIsHelpModalOpen(true)}
+            onOpenAICopilot={() => setIsGlobalCopilotOpen(true)}
+            pendingAIActionsCount={pendingAIActionsCount}
+            onResetDemoState={handleResetDemoState}
+            viewportMode={viewportMode}
+            onChangeViewportMode={(mode) => {
+              setViewportMode(mode);
+              setIsMobileDrawerOpen(false);
+            }}
+            onToggleMobileSidebar={() => {
+              if (viewportMode === 'mobile') {
+                setIsMobileDrawerOpen((prev) => !prev);
+              } else {
+                setIsSidebarCompact((prev) => !prev);
+              }
+            }}
+            isSidebarOpen={!isSidebarCompact}
+            activeAthlete={activeAthlete360}
+            athletes={athletes}
+            onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
+            onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            onGlobalExport={handleGlobalExport}
+          />
 
         {/* Workspace Viewport */}
         <main className="flex-1 p-5 lg:p-6 max-w-[1600px] w-full mx-auto space-y-5">
@@ -2655,6 +2702,56 @@ export default function App() {
           )}
           </ErrorBoundary>
         </main>
+
+        {viewportMode === 'mobile' && (
+          <nav className="sticky bottom-0 inset-x-0 z-30 h-14 bg-[#090D16]/95 backdrop-blur-md border-t border-slate-800/90 px-2 flex items-center justify-around">
+            {[
+              {
+                id: 'command-center' as NavItemId,
+                label: 'Command',
+                icon: LayoutDashboard,
+              },
+              {
+                id: 'athlete-registry' as NavItemId,
+                label: 'Athletes',
+                icon: Users,
+              },
+              {
+                id: 'sessions' as NavItemId,
+                label: 'Training',
+                icon: Dumbbell,
+              },
+              {
+                id: 'injury-intelligence' as NavItemId,
+                label: 'Medical',
+                icon: HeartPulse,
+              },
+              {
+                id: 'ai-copilot' as NavItemId,
+                label: 'Copilot',
+                icon: Bot,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              const active = activeNav === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelectNav(item.id)}
+                  className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                    active
+                      ? 'text-sky-400 font-semibold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
+      </div>
       </div>
 
       {/* Athlete Detail Drawer (With [Open Full Profile] navigation to Athlete 360) */}

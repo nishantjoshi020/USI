@@ -736,18 +736,38 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
         {onGlobalExport && (
           <div className="relative">
             <button
-              onClick={() =>
-                setOpenDropdown(openDropdown === 'export' ? null : 'export')
+              disabled={selectedRole === 'Athlete'}
+              onClick={() => {
+                if (selectedRole === 'Athlete') return;
+                setOpenDropdown(openDropdown === 'export' ? null : 'export');
+              }}
+              title={
+                selectedRole === 'Athlete'
+                  ? 'Global Data Export is disabled for Athlete persona'
+                  : 'Export Active Workspace Data (PDF, CSV, Excel, JSON)'
               }
-              title="Export Active Workspace Data (PDF, CSV, Excel, JSON)"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-[11px] font-semibold text-slate-200 transition-colors whitespace-nowrap"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                selectedRole === 'Athlete'
+                  ? 'bg-[#0B101B] border-slate-800/70 text-slate-500 opacity-60 cursor-not-allowed'
+                  : 'bg-[#0F1623] hover:bg-[#151E2E] border-slate-700 text-slate-200'
+              }`}
             >
-              <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <Download
+                className={`w-3.5 h-3.5 shrink-0 ${
+                  selectedRole === 'Athlete'
+                    ? 'text-slate-500'
+                    : 'text-emerald-400'
+                }`}
+              />
               {!isIconOnly && <span>Export</span>}
-              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              {selectedRole === 'Athlete' ? (
+                <Lock className="w-3 h-3 text-slate-500 shrink-0" />
+              ) : (
+                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              )}
             </button>
 
-            {openDropdown === 'export' && (
+            {openDropdown === 'export' && selectedRole !== 'Athlete' && (
               <div className="absolute right-0 mt-1.5 w-64 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50 text-xs">
                 <div className="px-3.5 py-2 border-b border-slate-800">
                   <div className="font-semibold text-slate-100 flex items-center gap-1.5">

@@ -433,6 +433,8 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             <option value="Football">Football</option>
             <option value="Athletics">Athletics</option>
             <option value="Field Hockey">Field Hockey</option>
+            <option value="Swimming">Swimming</option>
+            <option value="Badminton">Badminton</option>
           </select>
 
           {/* [Program] */}
@@ -444,7 +446,9 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
           >
             <option value="All">Program: All</option>
             <option value="Senior Men's Program">Senior Men's Program</option>
+            <option value="Senior Women's Program">Senior Women's Program</option>
             <option value="U-23 Olympic Development Program">U-23 Olympic Dev</option>
+            <option value="U-19 Elite Pathway">U-19 Elite Pathway</option>
           </select>
 
           {/* [Squad] */}
@@ -455,8 +459,11 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             className="px-2.5 py-1.5 bg-[#090D16] border border-slate-800 rounded-md text-xs text-slate-200 focus:outline-none focus:border-sky-500"
           >
             <option value="All">Squad: All</option>
+            <option value="Senior National Squad">Senior National Squad</option>
             <option value="Senior Squad">Senior Squad</option>
             <option value="U23">U23</option>
+            <option value="Squad A — Match Day Group">Squad A — Match Day Group</option>
+            <option value="Rehabilitation & RTP Unit">Rehabilitation & RTP Unit</option>
           </select>
 
           {/* [Status] */}
