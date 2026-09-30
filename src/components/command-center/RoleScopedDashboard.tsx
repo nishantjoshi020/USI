@@ -20,6 +20,7 @@ import {
   Mic,
   Plus,
   Shield,
+  ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,

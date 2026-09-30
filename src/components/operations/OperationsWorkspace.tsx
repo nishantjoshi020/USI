@@ -245,6 +245,8 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
   const [campLocation, setCampLocation] = useState('Ooty / Nilgiris High Altitude Complex');
   const [campVenue, setCampVenue] = useState('SAI High Altitude Training Center');
   const [campDates, setCampDates] = useState('15 Nov – 30 Nov 2026');
+  const [campHeadcount, setCampHeadcount] = useState(24);
+  const [campBudget, setCampBudget] = useState('₹18.5 L');
   const [campCoordinator, setCampCoordinator] = useState('Kavita Rao');
 
   // Causal Facility Maintenance Cascade State

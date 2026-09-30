@@ -247,6 +247,13 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
   const activeRehabInjury =
     injuries.find((i) => i.id === activeRehabPlan?.injuryId) || injuries[0];
 
+  const canEditMedical = [
+    'Physiotherapist',
+    'Performance Director',
+    'Sports Scientist',
+    'Coach',
+  ].includes(selectedRole);
+
   const handleKpiClick = (kpiId: string, label: string) => {
     if (activeKpiFilter === kpiId) {
       setActiveKpiFilter(null);

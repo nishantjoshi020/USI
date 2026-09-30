@@ -515,7 +515,6 @@ export interface TrainingSession {
     modification: string;
   }[];
   notes: string;
-  attendedAthletes?: string[];
   tacticalUnit?: 'Starting XI' | 'Defensive Unit' | 'Midfield Engine' | 'Attacking Line' | 'Rehab Group' | 'Full Squad';
   livePitchsideSubstitutions?: {
     athleteId: string;

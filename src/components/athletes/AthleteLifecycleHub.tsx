@@ -679,7 +679,7 @@ export const AthleteLifecycleHub: React.FC<AthleteLifecycleHubProps> = ({
           onOpenCoachAssignment={onOpenCoachAssignment}
           onOpenAthlete360={onOpenAthlete360}
           onOpenReportInjury={onOpenReportInjury}
-          onOpenSessionAssignment={onOpenSessionAssignment}
+          onOpenSessionAssignment={onOpenSessionAssignment || (() => {})}
           onOpenCreateRehab={onOpenCreateRehab}
           onOpenAdvanceRtp={onOpenAdvanceRtp}
           onNavigate={onNavigate}

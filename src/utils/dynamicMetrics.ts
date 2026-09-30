@@ -42,7 +42,7 @@ export function computeDynamicRoleMetrics(
   const injuredCount = athletes.filter((a) => a.trainingStatus === 'INJURED').length;
   const pendingVerificationCount = athletes.filter((a) => a.verificationStatus === 'Pending').length;
   const verifiedCount = athletes.filter((a) => a.verificationStatus === 'Verified').length;
-  const activeInjuries = injuries.filter((i) => i.stage !== 'Resolved');
+  const activeInjuries = injuries.filter((i) => i.medicalStatus !== 'Cleared');
   const meanReadiness = Math.round(
     athletes.reduce((acc, a) => acc + (a.readiness || 75), 0) / totalAthletes
   );

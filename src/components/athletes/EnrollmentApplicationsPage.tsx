@@ -224,7 +224,9 @@ export const EnrollmentApplicationsPage: React.FC<EnrollmentApplicationsPageProp
                         <div className="font-bold text-slate-100 flex items-center gap-1.5">
                           <span>{a.name}</span>
                           {stage === 'ACTIVATED' && (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" title="Activated Athlete" />
+                            <span title="Activated Athlete">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            </span>
                           )}
                         </div>
                         <div className="text-[10px] font-mono text-slate-400 mt-0.5">

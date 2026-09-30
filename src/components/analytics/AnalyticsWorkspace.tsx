@@ -272,17 +272,17 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
       {
         label: 'Nutrition & Hydration',
         value: `${activeAthletePlan?.compliancePct ?? activeAthlete.nutritionCompliancePct}%`,
-        sub: `Hydration ${activeAthletePlan?.hydrationCompliancePct ?? 85}% (${activeAthletePlan?.hydrationIntakeL ?? activeAthlete.hydrationLiters}L/${activeAthletePlan?.hydrationTargetL ?? activeAthlete.hydrationTargetLiters}L)`,
+        sub: `Hydration ${activeAthletePlan?.hydrationCompliancePct ?? 85}% (${activeAthletePlan?.currentHydrationL ?? 2.8}L/${activeAthletePlan?.targetHydrationL ?? 3.5}L)`,
       },
       {
         label: 'Performance Score',
         value: `${activeAthlete.performanceScore}`,
-        sub: `Talent Index ${activeAthlete.talentIndex} (${activeAthlete.pathwayStage})`,
+        sub: `Talent Index ${activeAthlete.talentBenchmarkAlignment ?? 88}% (${activeAthlete.squad})`,
       },
       {
         label: 'Assessments (30m / CMJ)',
         value: `${activeAthlete.performanceMetrics.sprint30m.current} / ${activeAthlete.performanceMetrics.cmj.current}`,
-        sub: `Yo-Yo ${activeAthlete.performanceMetrics.yoYoIr2.current}`,
+        sub: `Yo-Yo ${activeAthlete.performanceMetrics.yoYo.current}`,
       },
     ];
   };
@@ -844,7 +844,7 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                                 training: `Microcycle Baseline Load (${activeAthlete.chronicLoadAu} AU)`,
                                 medical: 'Baseline musculoskeletal check verified',
                                 recovery: `Readiness ${Math.max(55, activeAthlete.readiness - activeAthlete.readinessDelta)}% · Baseline HRV ${activeAthlete.hrvBaselineMs}ms`,
-                                assessment: `Baseline 30m: ${activeAthlete.performanceMetrics.sprint30m.points[0]?.value ?? activeAthlete.performanceMetrics.sprint30m.current}`,
+                                assessment: `Baseline 30m: ${activeAthlete.performanceMetrics.sprint30m.cycles[0]?.value ? `${activeAthlete.performanceMetrics.sprint30m.cycles[0].value}s` : activeAthlete.performanceMetrics.sprint30m.current}`,
                                 nutrition: `Hydration Status: ${activeAthlete.hydrationStatus}`,
                               },
                             ]

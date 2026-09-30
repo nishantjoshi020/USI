@@ -56,9 +56,11 @@ export const TrainingAndInjurySection: React.FC<TrainingAndInjurySectionProps> =
           { part: 'Hamstring', count: 0, pct: 0, color: 'bg-rose-500' },
         ];
 
-  const rehabCount = injuries.filter((i) => i.status === 'In Rehab').length;
-  const rtpCount = injuries.filter((i) => i.status === 'Return-to-Play').length;
-  const escalatedCount = injuries.filter((i) => i.status === 'Escalated').length;
+  const rehabCount = injuries.filter(
+    (i) => i.stage === 'In Rehabilitation' || i.stage === 'Rehabilitation'
+  ).length;
+  const rtpCount = injuries.filter((i) => i.stage === 'Return-to-Play').length;
+  const escalatedCount = injuries.filter((i) => i.stage === 'Escalated').length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

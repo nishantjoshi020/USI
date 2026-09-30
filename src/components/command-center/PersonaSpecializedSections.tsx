@@ -38,6 +38,8 @@ import {
   Gauge,
   Info,
   ChevronRight,
+  Dumbbell,
+  Send,
 } from 'lucide-react';
 import {
   Athlete,

@@ -75,6 +75,7 @@ import { KpiFilterKey, KpiGrid } from './components/command-center/KpiGrid';
 import { RoleDashboardBanner } from './components/command-center/RoleDashboardBanner';
 import { RoleSpecificAnalyticsView } from './components/command-center/RoleSpecificAnalyticsView';
 import { PersonaSpecializedSections } from './components/command-center/PersonaSpecializedSections';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ReadinessAndAlertSection } from './components/command-center/ReadinessAndAlertSection';
 import { TrainingAndInjurySection } from './components/command-center/TrainingAndInjurySection';
 import { AthleteAttentionTable } from './components/command-center/AthleteAttentionTable';
@@ -1509,6 +1510,7 @@ export default function App() {
 
         {/* Workspace Viewport */}
         <main className="flex-1 p-5 lg:p-6 max-w-[1600px] w-full mx-auto space-y-5">
+          <ErrorBoundary fallbackTitle="Workspace Viewport Encountered an Issue">
           {activeNav === 'command-center' ? (
             <>
               {/* Dynamic 8-Persona Role Dashboard Banner */}
@@ -1547,27 +1549,29 @@ export default function App() {
               />
 
               {/* Specialized Persona Hubs for All 8 Personas */}
-              <PersonaSpecializedSections
-                selectedRole={selectedRole}
-                activeAthlete={activeAthlete360}
-                allAthletes={athletes}
-                sessions={sessions}
-                injuries={injuries}
-                onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
-                onOpenOnboarding={() => setIsOnboardingOpen(true)}
-                onOpenApproval={(ath) => setApprovalModalAthleteId(ath.id)}
-                onOpenCoachAssignment={(ath) => setCoachModalAthleteId(ath.id)}
-                onOpenSessionAssignment={() => setIsSessionAssignmentOpen(true)}
-                onOpenReportInjury={(athId) => {
-                  if (athId) setReportInjuryInitialAthleteId(athId);
-                  setIsReportInjuryOpen(true);
-                }}
-                onOpenCreateRehab={(inj) => setRehabSessionModalInjuryId(inj.id)}
-                onOpenAdvanceRtp={(inj) => setRtpGateModalInjuryId(inj.id)}
-                onTriggerToast={triggerToast}
-                onNavigateSection={(sec) => setActiveNav(sec as any)}
-                onUpdateAthleteWellness={handleAthleteWellnessSurveySubmit}
-              />
+              <ErrorBoundary fallbackTitle={`${selectedRole} Specialized Dashboard View`}>
+                <PersonaSpecializedSections
+                  selectedRole={selectedRole}
+                  activeAthlete={activeAthlete360}
+                  allAthletes={athletes}
+                  sessions={sessions}
+                  injuries={injuries}
+                  onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
+                  onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                  onOpenApproval={(ath) => setApprovalModalAthleteId(ath.id)}
+                  onOpenCoachAssignment={(ath) => setCoachModalAthleteId(ath.id)}
+                  onOpenSessionAssignment={() => setIsSessionAssignmentOpen(true)}
+                  onOpenReportInjury={(athId) => {
+                    if (athId) setReportInjuryInitialAthleteId(athId);
+                    setIsReportInjuryOpen(true);
+                  }}
+                  onOpenCreateRehab={(inj) => setRehabSessionModalInjuryId(inj.id)}
+                  onOpenAdvanceRtp={(inj) => setRtpGateModalInjuryId(inj.id)}
+                  onTriggerToast={triggerToast}
+                  onNavigateSection={(sec) => setActiveNav(sec as any)}
+                  onUpdateAthleteWellness={handleAthleteWellnessSurveySubmit}
+                />
+              </ErrorBoundary>
 
               {/* Standard Tactical & Clinical Squad Sections (Hidden for Athlete, Nutritionist, Operations, Federation Admin) */}
               {['Performance Director', 'Coach', 'Sports Scientist', 'Physiotherapist'].includes(selectedRole) && (
@@ -2064,7 +2068,7 @@ export default function App() {
           ) : isTrainingRoute ? (
             <TrainingWorkspace
               activeSubTab={activeNav as TrainingSubTab}
-              onSelectSubTab={(tab) => setActiveNav(tab)}
+              onSelectSubTab={(tab) => setActiveNav(tab as any)}
               selectedRole={selectedRole}
               sessions={sessions}
               athletes={athletes}
@@ -2144,6 +2148,7 @@ export default function App() {
               onSelectSession={(sess) => setSelectedSession(sess)}
             />
           )}
+          </ErrorBoundary>
         </main>
       </div>
 
@@ -2356,6 +2361,7 @@ export default function App() {
       <NotificationPanel
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
+        selectedRole={selectedRole}
         notifications={notifications}
         onMarkRead={(id) =>
           setNotifications((prev) =>

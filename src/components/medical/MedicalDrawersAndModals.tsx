@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  FileCheck,
   FileText,
   HeartPulse,
   Lock,
