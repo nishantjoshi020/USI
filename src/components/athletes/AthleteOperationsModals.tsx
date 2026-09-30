@@ -496,6 +496,7 @@ export const AthleteApprovalModal: React.FC<AthleteApprovalModalProps> = ({
 interface AiAthleteAssistanceDrawerProps {
   athlete: Athlete | null;
   mode: AiAssistanceMode | null;
+  selectedRole?: UserRole;
   onSwitchMode: (mode: AiAssistanceMode) => void;
   onClose: () => void;
   onApplySuggestedAction: (actionLabel: string) => void;
@@ -503,8 +504,26 @@ interface AiAthleteAssistanceDrawerProps {
 
 export const AiAthleteAssistanceDrawer: React.FC<
   AiAthleteAssistanceDrawerProps
-> = ({ athlete, mode, onSwitchMode, onClose, onApplySuggestedAction }) => {
+> = ({
+  athlete,
+  mode,
+  selectedRole = 'Performance Director',
+  onSwitchMode,
+  onClose,
+  onApplySuggestedAction,
+}) => {
   if (!athlete || !mode) return null;
+
+  const availableTabs = (
+    [
+      { id: 'readiness', label: 'Explain Readiness' },
+      { id: 'summary', label: 'AI Summary' },
+      { id: 'risk', label: 'Identify Risk Factors' },
+      ...(selectedRole !== 'Athlete'
+        ? [{ id: 'coach-brief' as const, label: 'Prepare Coach Brief' }]
+        : []),
+    ] as const
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -539,14 +558,7 @@ export const AiAthleteAssistanceDrawer: React.FC<
 
         {/* Mode Switcher Tabs */}
         <div className="shrink-0 px-5 py-2.5 bg-[#0B101B] border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs">
-          {(
-            [
-              { id: 'readiness', label: 'Explain Readiness' },
-              { id: 'summary', label: 'AI Summary' },
-              { id: 'risk', label: 'Identify Risk Factors' },
-              { id: 'coach-brief', label: 'Prepare Coach Brief' },
-            ] as const
-          ).map((tab) => (
+          {availableTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onSwitchMode(tab.id)}
@@ -650,6 +662,7 @@ export const AiAthleteAssistanceDrawer: React.FC<
 
 interface EditAthleteProfileModalProps {
   athlete: Athlete | null;
+  selectedRole?: UserRole;
   onClose: () => void;
   onSaveProfile: (
     athleteId: string,
@@ -660,7 +673,13 @@ interface EditAthleteProfileModalProps {
 
 export const EditAthleteProfileModal: React.FC<
   EditAthleteProfileModalProps
-> = ({ athlete, onClose, onSaveProfile }) => {
+> = ({
+  athlete,
+  selectedRole = 'Performance Director',
+  onClose,
+  onSaveProfile,
+}) => {
+  const isAthleteSelf = selectedRole === 'Athlete';
   const [name, setName] = useState(athlete?.name || '');
   const [sport, setSport] = useState(athlete?.sport || 'Football');
   const [position, setPosition] = useState(athlete?.position || 'Forward');
@@ -703,10 +722,10 @@ export const EditAthleteProfileModal: React.FC<
         <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div>
             <div className="text-xs font-mono text-sky-400">
-              ATHLETE PROFILE EDITOR
+              {isAthleteSelf ? 'MY PERSONAL DETAILS EDITOR' : 'ATHLETE PROFILE EDITOR'}
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5">
-              Edit Profile — {athlete.name} ({athlete.athleteId})
+              {isAthleteSelf ? 'Update Personal & Emergency Details' : `Edit Profile — ${athlete.name} (${athlete.athleteId})`}
             </h2>
           </div>
           <button
@@ -718,6 +737,12 @@ export const EditAthleteProfileModal: React.FC<
         </div>
 
         <div className="p-5 space-y-3.5 text-xs overflow-y-auto flex-1">
+          {isAthleteSelf && (
+            <div className="p-3 rounded bg-sky-500/10 border border-sky-500/30 text-sky-200 text-[11px]">
+              <strong>Athlete Self-Service Scope:</strong> You can update your personal identity, position preference, and emergency contact details. Squad assignment, clinical clearance, and training status are governed by coaching &amp; medical staff.
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-slate-400 mb-1">Full Name</label>
@@ -733,8 +758,13 @@ export const EditAthleteProfileModal: React.FC<
               <label className="block text-slate-400 mb-1">Sport</label>
               <select
                 value={sport}
+                disabled={isAthleteSelf}
                 onChange={(e) => setSport(e.target.value)}
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               >
                 <option value="Football">Football</option>
                 <option value="Athletics">Athletics</option>
@@ -756,8 +786,13 @@ export const EditAthleteProfileModal: React.FC<
               <label className="block text-slate-400 mb-1">Squad</label>
               <select
                 value={squad}
+                disabled={isAthleteSelf}
                 onChange={(e) => setSquad(e.target.value)}
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               >
                 <option value="Senior Squad">Senior Squad</option>
                 <option value="U23">U23</option>
@@ -768,10 +803,15 @@ export const EditAthleteProfileModal: React.FC<
               <label className="block text-slate-400 mb-1">Training Status</label>
               <select
                 value={trainingStatus}
+                disabled={isAthleteSelf}
                 onChange={(e) =>
                   setTrainingStatus(e.target.value as Athlete['trainingStatus'])
                 }
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               >
                 <option value="ACTIVE">ACTIVE</option>
                 <option value="RESTRICTED">RESTRICTED</option>
@@ -787,10 +827,15 @@ export const EditAthleteProfileModal: React.FC<
               <label className="block text-slate-400 mb-1">Medical Clearance</label>
               <select
                 value={medicalStatus}
+                disabled={isAthleteSelf}
                 onChange={(e) =>
                   setMedicalStatus(e.target.value as Athlete['medicalStatus'])
                 }
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               >
                 <option value="Cleared">Cleared</option>
                 <option value="Pending">Pending</option>
@@ -807,9 +852,14 @@ export const EditAthleteProfileModal: React.FC<
                 type="number"
                 min={0}
                 max={100}
+                disabled={isAthleteSelf}
                 value={readiness}
                 onChange={(e) => setReadiness(Number(e.target.value))}
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 font-mono text-sky-400"
+                className={`w-full p-2.5 rounded border font-mono ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-sky-400'
+                }`}
               />
             </div>
 
@@ -826,17 +876,19 @@ export const EditAthleteProfileModal: React.FC<
             </div>
           </div>
 
-          <div>
-            <label className="block text-slate-400 mb-1">
-              Operational Medical / Readiness Note
-            </label>
-            <input
-              type="text"
-              value={medicalNote}
-              onChange={(e) => setMedicalNote(e.target.value)}
-              className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-            />
-          </div>
+          {!isAthleteSelf && (
+            <div>
+              <label className="block text-slate-400 mb-1">
+                Operational Medical / Readiness Note
+              </label>
+              <input
+                type="text"
+                value={medicalNote}
+                onChange={(e) => setMedicalNote(e.target.value)}
+                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+              />
+            </div>
+          )}
         </div>
 
         <div className="p-4 border-t border-slate-800 bg-[#090D16] flex justify-end gap-2">

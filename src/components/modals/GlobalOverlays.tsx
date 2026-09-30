@@ -27,6 +27,7 @@ import { RiskBadge, StatusBadge } from '../ui/Badges';
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedRole?: UserRole;
   athletes: Athlete[];
   sessions: TrainingSession[];
   injuries: Injury[];
@@ -39,6 +40,7 @@ interface GlobalSearchModalProps {
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   isOpen,
   onClose,
+  selectedRole,
   athletes,
   sessions,
   injuries,
@@ -53,7 +55,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   const q = query.trim().toLowerCase();
 
-  const matchedAthletes = athletes.filter(
+  const visibleAthletes =
+    selectedRole === 'Athlete' ? athletes.slice(0, 1) : athletes;
+
+  const matchedAthletes = visibleAthletes.filter(
     (a) =>
       q === '' ||
       a.name.toLowerCase().includes(q) ||
@@ -70,20 +75,31 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
       s.category.toLowerCase().includes(q)
   );
 
-  const matchedInjuries = injuries.filter(
-    (inj) =>
-      q === '' ||
-      inj.athleteName.toLowerCase().includes(q) ||
-      inj.bodyPart.toLowerCase().includes(q) ||
-      inj.diagnosis.toLowerCase().includes(q)
-  );
+  const matchedInjuries =
+    selectedRole === 'Athlete'
+      ? []
+      : injuries.filter(
+          (inj) =>
+            q === '' ||
+            inj.athleteName.toLowerCase().includes(q) ||
+            inj.bodyPart.toLowerCase().includes(q) ||
+            inj.diagnosis.toLowerCase().includes(q)
+        );
 
-  const matchedAssessments = assessments.filter(
-    (as) =>
-      q === '' ||
-      as.title.toLowerCase().includes(q) ||
-      as.category.toLowerCase().includes(q)
-  );
+  const matchedAssessments =
+    selectedRole === 'Athlete'
+      ? []
+      : assessments.filter(
+          (as) =>
+            q === '' ||
+            as.title.toLowerCase().includes(q) ||
+            as.category.toLowerCase().includes(q)
+        );
+
+  const presets =
+    selectedRole === 'Athlete'
+      ? ['Arjun Mehta', 'Tactical', 'S&C', 'Recovery']
+      : ['Arjun Mehta', 'Rahul Singh', 'Kabir Rao', 'Hamstring', 'Tactical', 'CMJ'];
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
@@ -101,7 +117,11 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search athletes (e.g. Arjun Mehta), squads, sessions, injuries, assessments..."
+            placeholder={
+              selectedRole === 'Athlete'
+                ? 'Search my sessions, readiness, or profile...'
+                : 'Search athletes (e.g. Arjun Mehta), squads, sessions, injuries, assessments...'
+            }
             className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
           />
           {query && (
@@ -123,21 +143,19 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         {/* Quick Search Presets */}
         <div className="px-4 py-2 bg-[#0B101B] border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto text-xs">
           <span className="text-slate-500 text-[11px]">Quick Queries:</span>
-          {['Arjun Mehta', 'Rahul Singh', 'Kabir Rao', 'Hamstring', 'Tactical', 'CMJ'].map(
-            (preset) => (
-              <button
-                key={preset}
-                onClick={() => setQuery(preset)}
-                className={`px-2 py-0.5 rounded border text-[11px] transition-colors whitespace-nowrap ${
-                  query === preset
-                    ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
-                    : 'bg-[#0F1623] border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {preset}
-              </button>
-            )
-          )}
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              onClick={() => setQuery(preset)}
+              className={`px-2 py-0.5 rounded border text-[11px] transition-colors whitespace-nowrap ${
+                query === preset
+                  ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
+                  : 'bg-[#0F1623] border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
         </div>
 
         {/* Results Container */}

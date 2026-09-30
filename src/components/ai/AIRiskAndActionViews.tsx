@@ -119,6 +119,13 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
     const filteredActions = actionItems.filter((item) => {
       const matchesStatus =
         actionStatusFilter === 'All' || item.status === actionStatusFilter;
+      if (selectedRole === 'Athlete') {
+        const isOwnAthleteAction =
+          item.affectedAthleteId === 'ath-arjun-mehta' ||
+          item.affectedAthleteName.includes('Arjun Mehta') ||
+          item.targetRoles?.includes('Athlete');
+        return matchesStatus && isOwnAthleteAction;
+      }
       const matchesRole =
         roleScopeFilter === 'all' ||
         !item.targetRoles ||
@@ -131,41 +138,53 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
         <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-5 flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="text-[11px] font-mono text-sky-400 uppercase">
-              HUMAN-IN-THE-LOOP GOVERNANCE QUEUE · {selectedRole.toUpperCase()}
+              {selectedRole === 'Athlete'
+                ? 'PERSONAL ATHLETE AI GUIDANCE QUEUE'
+                : `HUMAN-IN-THE-LOOP GOVERNANCE QUEUE · ${selectedRole.toUpperCase()}`}
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5">
-              AI ACTION CENTRE — {roleScopeFilter === 'role' ? `${selectedRole.toUpperCase()} RECOMMENDATIONS` : 'ALL FEDERATION RECOMMENDATIONS'}
+              {selectedRole === 'Athlete'
+                ? 'MY AI ACTION ITEMS & ADVISORY GUIDANCE'
+                : `AI ACTION CENTRE — ${
+                    roleScopeFilter === 'role'
+                      ? `${selectedRole.toUpperCase()} RECOMMENDATIONS`
+                      : 'ALL FEDERATION RECOMMENDATIONS'
+                  }`}
             </h2>
             <p className="text-slate-400 mt-0.5">
-              Consequential and advisory AI recommendations requiring {selectedRole} review and approval.
+              {selectedRole === 'Athlete'
+                ? 'Personalised readiness, recovery, and fueling recommendations linked to your athlete profile.'
+                : `Consequential and advisory AI recommendations requiring ${selectedRole} review and approval.`}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center rounded bg-[#090D16] border border-slate-800 p-0.5">
-              <button
-                type="button"
-                onClick={() => setRoleScopeFilter('role')}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                  roleScopeFilter === 'role'
-                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {selectedRole} Queue
-              </button>
-              <button
-                type="button"
-                onClick={() => setRoleScopeFilter('all')}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                  roleScopeFilter === 'all'
-                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                All Roles ({actionItems.length})
-              </button>
-            </div>
+            {selectedRole !== 'Athlete' && (
+              <div className="flex items-center rounded bg-[#090D16] border border-slate-800 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setRoleScopeFilter('role')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                    roleScopeFilter === 'role'
+                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {selectedRole} Queue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleScopeFilter('all')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                    roleScopeFilter === 'all'
+                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  All Roles ({actionItems.length})
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-1.5">
               {(
@@ -293,30 +312,39 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
                 </button>
 
                 <div className="flex items-center gap-2">
-                  {act.id === 'ai-act-01' && (
-                    <button
-                      onClick={onOpenTrainingModModal}
-                      className="px-3.5 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
-                    >
-                      Review Proposed Changes
-                    </button>
-                  )}
-                  {act.status === 'Pending Review' && (
+                  {selectedRole === 'Athlete' ? (
+                    <span className="px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-[11px] font-mono text-slate-300 flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-amber-400" />
+                      <span>Coach / Staff Sign-Off Required ({act.approverRole})</span>
+                    </span>
+                  ) : (
                     <>
-                      <button
-                        disabled={['Federation Admin', 'Athlete'].includes(selectedRole)}
-                        onClick={() => onUpdateActionStatus(act.id, 'Approved')}
-                        className="px-3 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold disabled:opacity-45 disabled:cursor-not-allowed"
-                      >
-                        Approve & Apply
-                      </button>
-                      <button
-                        disabled={['Federation Admin', 'Athlete'].includes(selectedRole)}
-                        onClick={() => onUpdateActionStatus(act.id, 'Rejected')}
-                        className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-45 disabled:cursor-not-allowed"
-                      >
-                        Reject
-                      </button>
+                      {act.id === 'ai-act-01' && (
+                        <button
+                          onClick={onOpenTrainingModModal}
+                          className="px-3.5 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold"
+                        >
+                          Review Proposed Changes
+                        </button>
+                      )}
+                      {act.status === 'Pending Review' && (
+                        <>
+                          <button
+                            disabled={['Federation Admin', 'Athlete'].includes(selectedRole)}
+                            onClick={() => onUpdateActionStatus(act.id, 'Approved')}
+                            className="px-3 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold disabled:opacity-45 disabled:cursor-not-allowed"
+                          >
+                            Approve & Apply
+                          </button>
+                          <button
+                            disabled={['Federation Admin', 'Athlete'].includes(selectedRole)}
+                            onClick={() => onUpdateActionStatus(act.id, 'Rejected')}
+                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-45 disabled:cursor-not-allowed"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>

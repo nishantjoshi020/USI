@@ -290,8 +290,14 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
   const [ingestProgress, setIngestProgress] = useState<number | null>(null);
   const [workloadEngineMode, setWorkloadEngineMode] = useState<'ewma' | 'rolling'>('ewma');
 
+  const visibleGpsTelemetry =
+    selectedRole === 'Athlete' ? GPS_TELEMETRY_DATA.slice(0, 1) : GPS_TELEMETRY_DATA;
+  const visibleForcePlateData =
+    selectedRole === 'Athlete' ? FORCE_PLATE_DATA.slice(0, 1) : FORCE_PLATE_DATA;
+
   const selectedGpsAthlete =
-    GPS_TELEMETRY_DATA.find((g) => g.athleteId === selectedGpsAthleteId) || GPS_TELEMETRY_DATA[0];
+    visibleGpsTelemetry.find((g) => g.athleteId === selectedGpsAthleteId) ||
+    visibleGpsTelemetry[0];
 
   return (
     <div className="space-y-5">
@@ -400,36 +406,46 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
               <Download className="w-3.5 h-3.5 text-emerald-400" />
               <span>Export PDF</span>
             </button>
-            <button
-              onClick={() => setIsIngestModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-cyan-500/10"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Ingest Sensor Telemetry</span>
-            </button>
-            <button
-              onClick={() => {
-                setLiveStreamActive((prev) => !prev);
-                onTriggerToast(liveStreamActive ? 'Paused live GNSS pod stream' : 'Resumed live GNSS pod stream (10 Hz)');
-              }}
-              className="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5 inline mr-1" />
-              <span>Sync Pods</span>
-            </button>
+            {selectedRole !== 'Athlete' && (
+              <>
+                <button
+                  onClick={() => setIsIngestModalOpen(true)}
+                  className="px-3.5 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-cyan-500/10"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Ingest Sensor Telemetry</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setLiveStreamActive((prev) => !prev);
+                    onTriggerToast(liveStreamActive ? 'Paused live GNSS pod stream' : 'Resumed live GNSS pod stream (10 Hz)');
+                  }}
+                  className="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 inline mr-1" />
+                  <span>Sync Pods</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Subtabs Bar */}
         <div className="flex flex-wrap items-center gap-1 pt-3">
-          {(
-            [
-              { id: 'readiness', label: 'Readiness & Autonomic HRV', icon: HeartPulse },
-              { id: 'fatigue', label: 'Neuromuscular CMJ Force Plates', icon: Cpu },
-              { id: 'gps-wearables', label: 'GPS Microtechnology Stream', icon: Zap },
-              { id: 'recovery', label: 'Recovery Protocols', icon: Moon },
-              { id: 'anomaly-matrix', label: 'Multi-Variable Anomaly Matrix', icon: AlertTriangle },
-            ] as const
+          {(selectedRole === 'Athlete'
+            ? ([
+                { id: 'readiness', label: 'My Readiness & Autonomic HRV', icon: HeartPulse },
+                { id: 'fatigue', label: 'My CMJ Force Plate Profile', icon: Cpu },
+                { id: 'gps-wearables', label: 'My GPS Sprint Telemetry', icon: Zap },
+                { id: 'recovery', label: 'My Recovery Protocols', icon: Moon },
+              ] as const)
+            : ([
+                { id: 'readiness', label: 'Readiness & Autonomic HRV', icon: HeartPulse },
+                { id: 'fatigue', label: 'Neuromuscular CMJ Force Plates', icon: Cpu },
+                { id: 'gps-wearables', label: 'GPS Microtechnology Stream', icon: Zap },
+                { id: 'recovery', label: 'Recovery Protocols', icon: Moon },
+                { id: 'anomaly-matrix', label: 'Multi-Variable Anomaly Matrix', icon: AlertTriangle },
+              ] as const)
           ).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
@@ -587,7 +603,7 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {FORCE_PLATE_DATA.map((fp) => (
+                  {visibleForcePlateData.map((fp) => (
                     <tr key={fp.athleteId} className="hover:bg-[#121927]">
                       <td className="py-3 px-3 font-semibold text-slate-100">{fp.athleteName}</td>
                       <td className="py-3 px-3 font-mono font-bold text-slate-200">{fp.jumpHeightCm} cm</td>
@@ -642,17 +658,19 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
                 </p>
               </div>
 
-              <select
-                value={selectedGpsAthleteId}
-                onChange={(e) => setSelectedGpsAthleteId(e.target.value)}
-                className="px-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-cyan-300"
-              >
-                {GPS_TELEMETRY_DATA.map((g) => (
-                  <option key={g.athleteId} value={g.athleteId}>
-                    {g.athleteName} ({g.position})
-                  </option>
-                ))}
-              </select>
+              {selectedRole !== 'Athlete' && (
+                <select
+                  value={selectedGpsAthleteId}
+                  onChange={(e) => setSelectedGpsAthleteId(e.target.value)}
+                  className="px-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-cyan-300"
+                >
+                  {visibleGpsTelemetry.map((g) => (
+                    <option key={g.athleteId} value={g.athleteId}>
+                      {g.athleteName} ({g.position})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* EWMA Scientific Workload Engine Banner */}
@@ -781,7 +799,7 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {GPS_TELEMETRY_DATA.map((g) => (
+                  {visibleGpsTelemetry.map((g) => (
                     <tr key={g.athleteId} className="hover:bg-[#121927]">
                       <td className="py-3 px-3 font-semibold text-slate-100">{g.athleteName}</td>
                       <td className="py-3 px-3 text-slate-300">{g.position}</td>

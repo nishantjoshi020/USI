@@ -145,6 +145,8 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
   // Add Supplement Form State (Section 7)
   const [suppAthleteId, setSuppAthleteId] =
     useState<string>('ath-arjun-mehta');
+  const [selectedAthleteSuppId, setSelectedAthleteSuppId] =
+    useState<string>('');
   const [suppName, setSuppName] = useState('Omega-3 Fish Oil');
   const [suppPurpose, setSuppPurpose] =
     useState<Supplement['purpose']>('Recovery');
@@ -180,6 +182,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           p.athleteId === athletes[0]?.id
       );
       if (sourcePlans.length === 0 && plans.length > 0) sourcePlans = [plans[0]];
+      return sourcePlans;
     }
 
     return sourcePlans.filter((p) => {
@@ -382,7 +385,9 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
+              disabled={selectedRole === 'Athlete'}
               onClick={() => {
+                if (selectedRole === 'Athlete') return;
                 const file = exportToCSV(
                   'usi_nutrition_and_hydration_plans',
                   [
@@ -415,13 +420,15 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 );
                 onTriggerToast(`Exported Nutrition & Hydration CSV (${file}) ✓`);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-3.5 h-3.5 text-sky-400" />
               <span>Export CSV</span>
             </button>
             <button
+              disabled={selectedRole === 'Athlete'}
               onClick={() => {
+                if (selectedRole === 'Athlete') return;
                 const file = exportToPDF('usi_nutrition_metabolic_dossier', {
                   title: 'PERFORMANCE NUTRITION, HYDRATION & BODY COMPOSITION DOSSIER',
                   subtitle: `Focus Athlete: ${activePlan.athleteName} (${activePlan.planName}) | Squad Plans: ${filteredPlans.length}`,
@@ -454,7 +461,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 });
                 onTriggerToast(`Exported Performance Nutrition Dossier PDF (${file}) ✓`);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
               <span>Export PDF</span>
@@ -536,64 +543,105 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             })}
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-[11px] font-mono text-slate-400">
-              Active Athlete Focus:
-            </span>
-            <select
-              value={activePlan.id}
-              onChange={(e) => setActiveProfilePlanId(e.target.value)}
-              className="px-2.5 py-1 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-sky-300 focus:outline-none focus:border-sky-500"
-            >
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.athleteName} ({p.planName})
-                </option>
-              ))}
-            </select>
-          </div>
+          {selectedRole !== 'Athlete' && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-[11px] font-mono text-slate-400">
+                Active Athlete Focus:
+              </span>
+              <select
+                value={activePlan.id}
+                onChange={(e) => setActiveProfilePlanId(e.target.value)}
+                className="px-2.5 py-1 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-sky-300 focus:outline-none focus:border-sky-500"
+              >
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.athleteName} ({p.planName})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
       {/* 1. TOP 5 NUTRITION KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5">
-        {[
-          {
-            label: 'Athletes With Active Plans',
-            value: '162',
-            sub: '88% of federation registry',
-            accent: 'text-slate-100',
-            targetTab: 'nutrition' as NutritionSubTab,
-          },
-          {
-            label: 'Plan Compliance',
-            value: '84%',
-            sub: '+2.1% vs last 7-day block',
-            accent: 'text-emerald-400',
-            targetTab: 'nutrition-plans' as NutritionSubTab,
-          },
-          {
-            label: 'Hydration Compliance',
-            value: '76%',
-            sub: 'Arjun Mehta at 74% (Monitor)',
-            accent: 'text-sky-400',
-            targetTab: 'nutrition-hydration' as NutritionSubTab,
-          },
-          {
-            label: 'Supplement Compliance',
-            value: '91%',
-            sub: '96% for Arjun Mehta',
-            accent: 'text-emerald-300',
-            targetTab: 'nutrition-supplements' as NutritionSubTab,
-          },
-          {
-            label: 'Athletes Requiring Review',
-            value: '12',
-            sub: 'High load + sub-target hydration',
-            accent: 'text-amber-400',
-            targetTab: 'nutrition' as NutritionSubTab,
-          },
-        ].map((kpi) => (
+        {(selectedRole === 'Athlete'
+          ? [
+              {
+                label: 'My Active Fueling Plan',
+                value: `${activePlan.targetCalories} kcal`,
+                sub: `${activePlan.planName} (${activePlan.goal})`,
+                accent: 'text-slate-100',
+                targetTab: 'nutrition' as NutritionSubTab,
+              },
+              {
+                label: 'My Meal Compliance',
+                value: `${activePlan.compliancePct}%`,
+                sub: `${activePlan.currentCalories} / ${activePlan.targetCalories} kcal logged`,
+                accent: 'text-emerald-400',
+                targetTab: 'nutrition-plans' as NutritionSubTab,
+              },
+              {
+                label: 'My Hydration Index',
+                value: `${dailyHydrationCompliancePct}%`,
+                sub: `${totalHydrationL}L / ${hydrationTargetL}L (${hydrationStatusLabel})`,
+                accent: 'text-sky-400',
+                targetTab: 'nutrition-hydration' as NutritionSubTab,
+              },
+              {
+                label: 'My Supplements',
+                value: `${activePlan.supplementCompliancePct}%`,
+                sub: `${athleteSupplements.length} WADA-cleared protocols`,
+                accent: 'text-emerald-300',
+                targetTab: 'nutrition-supplements' as NutritionSubTab,
+              },
+              {
+                label: 'My Body Composition',
+                value: `${activeBodyComposition.weightKg} kg`,
+                sub: `${activeBodyComposition.bodyFatPct}% BF · ${activeBodyComposition.statusLabel}`,
+                accent: 'text-amber-400',
+                targetTab: 'nutrition-body-composition' as NutritionSubTab,
+              },
+            ]
+          : [
+              {
+                label: 'Athletes With Active Plans',
+                value: '162',
+                sub: '88% of federation registry',
+                accent: 'text-slate-100',
+                targetTab: 'nutrition' as NutritionSubTab,
+              },
+              {
+                label: 'Plan Compliance',
+                value: '84%',
+                sub: '+2.1% vs last 7-day block',
+                accent: 'text-emerald-400',
+                targetTab: 'nutrition-plans' as NutritionSubTab,
+              },
+              {
+                label: 'Hydration Compliance',
+                value: '76%',
+                sub: 'Arjun Mehta at 74% (Monitor)',
+                accent: 'text-sky-400',
+                targetTab: 'nutrition-hydration' as NutritionSubTab,
+              },
+              {
+                label: 'Supplement Compliance',
+                value: '91%',
+                sub: '96% for Arjun Mehta',
+                accent: 'text-emerald-300',
+                targetTab: 'nutrition-supplements' as NutritionSubTab,
+              },
+              {
+                label: 'Athletes Requiring Review',
+                value: '12',
+                sub: 'High load + sub-target hydration',
+                accent: 'text-amber-400',
+                targetTab: 'nutrition' as NutritionSubTab,
+              },
+            ]
+        ).map((kpi) => (
           <button
             key={kpi.label}
             onClick={() => onSelectSubTab(kpi.targetTab)}
@@ -662,39 +710,63 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-bold tracking-wide text-slate-100 uppercase">
-                  NUTRITION ATHLETE OPERATIONAL TABLE
+                  {selectedRole === 'Athlete'
+                    ? 'MY NUTRITION & FUELING STATUS'
+                    : 'NUTRITION ATHLETE OPERATIONAL TABLE'}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Click any athlete row to open the Athlete Nutrition Detail Drawer
+                  {selectedRole === 'Athlete'
+                    ? 'Click your row to open your full Daily Meal Checklist Drawer'
+                    : 'Click any athlete row to open the Athlete Nutrition Detail Drawer'}
                 </p>
               </div>
 
-              {/* 5 Required Filters: Sport, Squad, Compliance, Hydration, Status */}
+              {/* 5 Required Filters: Sport, Squad, Compliance, Hydration, Status (Disabled for Athlete) */}
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    value={searchQuery}
+                    disabled={selectedRole === 'Athlete'}
+                    value={selectedRole === 'Athlete' ? '' : searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search athlete..."
-                    className="pl-8 pr-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 w-40"
+                    title={
+                      selectedRole === 'Athlete'
+                        ? 'Cohort search is disabled for Athlete persona'
+                        : 'Search athlete...'
+                    }
+                    className="pl-8 pr-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-100 w-40 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 <select
-                  value={sportFilter}
+                  disabled={selectedRole === 'Athlete'}
+                  value={selectedRole === 'Athlete' ? 'Football' : sportFilter}
                   onChange={(e) => setSportFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200"
+                  title={
+                    selectedRole === 'Athlete'
+                      ? 'Sport filter is disabled for Athlete persona'
+                      : 'Filter by Sport'
+                  }
+                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="All">Sport: All</option>
                   <option value="Football">Football</option>
                 </select>
 
                 <select
-                  value={squadFilter}
+                  disabled={selectedRole === 'Athlete'}
+                  value={
+                    selectedRole === 'Athlete' ? 'Senior Squad' : squadFilter
+                  }
                   onChange={(e) => setSquadFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200"
+                  title={
+                    selectedRole === 'Athlete'
+                      ? 'Squad filter is disabled for Athlete persona'
+                      : 'Filter by Squad'
+                  }
+                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="All">Squad: All</option>
                   <option value="Senior Squad">Senior Squad</option>
@@ -702,9 +774,17 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 </select>
 
                 <select
-                  value={complianceFilter}
+                  disabled={selectedRole === 'Athlete'}
+                  value={
+                    selectedRole === 'Athlete' ? 'All' : complianceFilter
+                  }
                   onChange={(e) => setComplianceFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200"
+                  title={
+                    selectedRole === 'Athlete'
+                      ? 'Compliance filter is disabled for Athlete persona'
+                      : 'Filter by Compliance'
+                  }
+                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="All">Compliance: All</option>
                   <option value="High (≥85%)">High (≥85%)</option>
@@ -712,9 +792,15 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 </select>
 
                 <select
-                  value={hydrationFilter}
+                  disabled={selectedRole === 'Athlete'}
+                  value={selectedRole === 'Athlete' ? 'All' : hydrationFilter}
                   onChange={(e) => setHydrationFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200"
+                  title={
+                    selectedRole === 'Athlete'
+                      ? 'Hydration filter is disabled for Athlete persona'
+                      : 'Filter by Hydration'
+                  }
+                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="All">Hydration: All</option>
                   <option value="Optimal (≥80%)">Optimal (≥80%)</option>
@@ -722,9 +808,15 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                 </select>
 
                 <select
-                  value={statusFilter}
+                  disabled={selectedRole === 'Athlete'}
+                  value={selectedRole === 'Athlete' ? 'All' : statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200"
+                  title={
+                    selectedRole === 'Athlete'
+                      ? 'Status filter is disabled for Athlete persona'
+                      : 'Filter by Status'
+                  }
+                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="All">Status: All</option>
                   <option value="On Track">On Track</option>
@@ -1244,11 +1336,16 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               <button
                 onClick={() => {
                   setSuppAthleteId(activePlan.athleteId);
+                  if (athleteSupplements.length > 0) {
+                    setSelectedAthleteSuppId(athleteSupplements[0].id);
+                  }
                   setIsAddSupplementOpen(true);
                 }}
                 className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
               >
-                + Add Supplement
+                {selectedRole === 'Athlete'
+                  ? 'View & Log Supplement'
+                  : '+ Add Supplement'}
               </button>
             </div>
           </div>
@@ -1269,7 +1366,18 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-800/70">
                 {athleteSupplements.map((supp) => (
-                  <tr key={supp.id} className="hover:bg-[#141D2E]">
+                  <tr
+                    key={supp.id}
+                    onClick={() => {
+                      if (selectedRole === 'Athlete') {
+                        setSelectedAthleteSuppId(supp.id);
+                        setIsAddSupplementOpen(true);
+                      }
+                    }}
+                    className={`hover:bg-[#141D2E] ${
+                      selectedRole === 'Athlete' ? 'cursor-pointer' : ''
+                    }`}
+                  >
                     <td className="py-3 px-4 font-bold text-slate-100">
                       {supp.name}
                     </td>
@@ -1294,7 +1402,13 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (selectedRole === 'Athlete') {
+                            setSelectedAthleteSuppId(supp.id);
+                            setIsAddSupplementOpen(true);
+                            return;
+                          }
                           onToggleSupplementLogged(supp.id);
                           onTriggerToast(
                             `Logged ${supp.name} dose for ${activePlan.athleteName} ✓`
@@ -1302,7 +1416,9 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                         }}
                         className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium"
                       >
-                        Log Dose ✓
+                        {selectedRole === 'Athlete'
+                          ? 'View & Mark Taken'
+                          : 'Log Dose ✓'}
                       </button>
                     </td>
                   </tr>
@@ -1331,18 +1447,20 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               <span className="px-3 py-1.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold">
                 Status: {activeBodyComposition.statusLabel}
               </span>
-              <button
-                onClick={() => {
-                  setScanWeightKg(activeBodyComposition.weightKg);
-                  setScanBodyFatPct(activeBodyComposition.bodyFatPct);
-                  setScanLeanMassKg(activeBodyComposition.leanMassKg);
-                  setScanStatusLabel(activeBodyComposition.statusLabel);
-                  setIsLogBodyCompOpen(true);
-                }}
-                className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
-              >
-                + Log Body Composition Scan
-              </button>
+              {selectedRole !== 'Athlete' && (
+                <button
+                  onClick={() => {
+                    setScanWeightKg(activeBodyComposition.weightKg);
+                    setScanBodyFatPct(activeBodyComposition.bodyFatPct);
+                    setScanLeanMassKg(activeBodyComposition.leanMassKg);
+                    setScanStatusLabel(activeBodyComposition.statusLabel);
+                    setIsLogBodyCompOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+                >
+                  + Log Body Composition Scan
+                </button>
+              )}
             </div>
           </div>
 
@@ -1732,17 +1850,28 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
             <div className="space-y-3">
               <div>
                 <label className="block text-slate-400 mb-1">Athlete</label>
-                <select
-                  value={intakeAthleteId}
-                  onChange={(e) => setIntakeAthleteId(e.target.value)}
-                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-                >
-                  {athletes.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.athleteId})
-                    </option>
-                  ))}
-                </select>
+                {selectedRole === 'Athlete' ? (
+                  <div className="w-full p-2.5 rounded bg-[#090D16] border border-slate-800 text-slate-100 font-semibold flex items-center justify-between">
+                    <span>
+                      {activeAthleteObj.name} ({activeAthleteObj.athleteId})
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] text-sky-300">
+                      Self Only
+                    </span>
+                  </div>
+                ) : (
+                  <select
+                    value={intakeAthleteId}
+                    onChange={(e) => setIntakeAthleteId(e.target.value)}
+                    className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                  >
+                    {athletes.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} ({a.athleteId})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">Time</label>
@@ -1809,7 +1938,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
       )}
 
       {/* =========================================================
-       * MODAL 3: ADD SUPPLEMENT (SECTION 7)
+       * MODAL 3: ADD SUPPLEMENT / ATHLETE SUPPLEMENT DETAILS & INTAKE (SECTION 7)
        * ========================================================= */}
       {isAddSupplementOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1820,7 +1949,9 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           <div className="relative w-full max-w-md bg-[#0F1623] border border-slate-700 rounded-lg p-5 space-y-4 z-10 text-xs">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <span className="font-bold text-sm text-slate-100 uppercase">
-                + Add Supplement to Protocol
+                {selectedRole === 'Athlete'
+                  ? 'Prescribed Supplement Protocol Details'
+                  : '+ Add Supplement to Protocol'}
               </span>
               <button
                 onClick={() => setIsAddSupplementOpen(false)}
@@ -1830,96 +1961,240 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-slate-400 mb-1">Athlete</label>
-                <select
-                  value={suppAthleteId}
-                  onChange={(e) => setSuppAthleteId(e.target.value)}
-                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-                >
-                  {athletes.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.athleteId})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">
-                  Supplement Name
-                </label>
-                <input
-                  type="text"
-                  value={suppName}
-                  onChange={(e) => setSuppName(e.target.value)}
-                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Purpose</label>
-                <select
-                  value={suppPurpose}
-                  onChange={(e) =>
-                    setSuppPurpose(e.target.value as Supplement['purpose'])
-                  }
-                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-                >
-                  <option value="Recovery">Recovery</option>
-                  <option value="Hydration">Hydration</option>
-                  <option value="General">General</option>
-                  <option value="Performance">Performance</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Dosage</label>
-                <input
-                  type="text"
-                  value={suppDosage}
-                  onChange={(e) => setSuppDosage(e.target.value)}
-                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Schedule</label>
-                <input
-                  type="text"
-                  value={suppSchedule}
-                  onChange={(e) => setSuppSchedule(e.target.value)}
-                  className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
-                />
-              </div>
-            </div>
+            {selectedRole === 'Athlete' ? (
+              (() => {
+                const currentSupp =
+                  athleteSupplements.find(
+                    (s) => s.id === selectedAthleteSuppId
+                  ) || athleteSupplements[0];
+                return (
+                  <>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">
+                          Athlete
+                        </label>
+                        <div className="w-full p-2.5 rounded bg-[#090D16] border border-slate-800 text-slate-100 font-semibold flex items-center justify-between">
+                          <span>
+                            {activeAthleteObj.name} ({activeAthleteObj.athleteId})
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] text-sky-300">
+                            Self Profile
+                          </span>
+                        </div>
+                      </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-              <button
-                onClick={() => setIsAddSupplementOpen(false)}
-                className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  onAddSupplement({
-                    athleteId: suppAthleteId,
-                    name: suppName,
-                    purpose: suppPurpose,
-                    dosage: suppDosage,
-                    schedule: suppSchedule,
-                    compliancePct: 100,
-                    status: 'Active',
-                  });
-                  const matchPlan = plans.find(
-                    (p) => p.athleteId === suppAthleteId
-                  );
-                  if (matchPlan) setActiveProfilePlanId(matchPlan.id);
-                  setIsAddSupplementOpen(false);
-                }}
-                className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
-              >
-                Save Supplement
-              </button>
-            </div>
+                      {athleteSupplements.length > 1 && (
+                        <div>
+                          <label className="block text-slate-400 mb-1">
+                            My Prescribed Supplements ({athleteSupplements.length})
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {athleteSupplements.map((s) => {
+                              const isSel = currentSupp?.id === s.id;
+                              return (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() => setSelectedAthleteSuppId(s.id)}
+                                  className={`px-2.5 py-1.5 rounded border text-xs font-medium transition-colors ${
+                                    isSel
+                                      ? 'bg-sky-500/20 border-sky-500/50 text-sky-300 font-semibold'
+                                      : 'bg-[#090D16] border-slate-800 text-slate-400 hover:text-slate-200'
+                                  }`}
+                                >
+                                  {s.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {currentSupp && (
+                        <div className="p-3.5 rounded-lg bg-[#090D16] border border-slate-800 space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div>
+                              <span className="text-[10px] font-mono text-slate-400 uppercase block">
+                                Supplement Name
+                              </span>
+                              <strong className="text-sm font-bold text-slate-100">
+                                {currentSupp.name}
+                              </strong>
+                            </div>
+                            <span className="inline-flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30 font-mono text-[10px] text-emerald-300">
+                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                              WADA Cleared
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800/80">
+                              <span className="text-[10px] font-mono text-slate-400 uppercase block">
+                                Purpose
+                              </span>
+                              <span className="font-semibold text-sky-300 mt-0.5 block">
+                                {currentSupp.purpose}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800/80">
+                              <span className="text-[10px] font-mono text-slate-400 uppercase block">
+                                Prescribed Dosage
+                              </span>
+                              <span className="font-mono font-semibold text-slate-100 mt-0.5 block">
+                                {currentSupp.dosage}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800/80">
+                              <span className="text-[10px] font-mono text-slate-400 uppercase block">
+                                Timing Schedule
+                              </span>
+                              <span className="font-semibold text-slate-200 mt-0.5 block">
+                                {currentSupp.schedule}
+                              </span>
+                            </div>
+                            <div className="p-2.5 rounded bg-[#0F1623] border border-slate-800/80">
+                              <span className="text-[10px] font-mono text-slate-400 uppercase block">
+                                Adherence Compliance
+                              </span>
+                              <span className="font-mono font-bold text-emerald-400 mt-0.5 block">
+                                {currentSupp.compliancePct}% ({currentSupp.status})
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="pt-1 text-[11px] text-slate-400 flex items-center justify-between">
+                            <span>Batch Certificate: LGC-BATCH-88219 (Pass)</span>
+                            <span className="font-mono text-[10px] text-slate-500">
+                              Nutritionist Prescribed
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                      <button
+                        onClick={() => setIsAddSupplementOpen(false)}
+                        className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                      >
+                        Cancel
+                      </button>
+                      {currentSupp && (
+                        <button
+                          onClick={() => {
+                            onToggleSupplementLogged(currentSupp.id);
+                            onTriggerToast(
+                              `Supplement Taken ✓ — Logged ${currentSupp.name} (${currentSupp.dosage}) for ${activeAthleteObj.name}`
+                            );
+                            setIsAddSupplementOpen(false);
+                          }}
+                          className="px-4 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold inline-flex items-center gap-1.5"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Supplement Taken</span>
+                        </button>
+                      )}
+                    </div>
+                  </>
+                );
+              })()
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-slate-400 mb-1">Athlete</label>
+                    <select
+                      value={suppAthleteId}
+                      onChange={(e) => setSuppAthleteId(e.target.value)}
+                      className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                    >
+                      {athletes.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.athleteId})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">
+                      Supplement Name
+                    </label>
+                    <input
+                      type="text"
+                      value={suppName}
+                      onChange={(e) => setSuppName(e.target.value)}
+                      className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Purpose</label>
+                    <select
+                      value={suppPurpose}
+                      onChange={(e) =>
+                        setSuppPurpose(e.target.value as Supplement['purpose'])
+                      }
+                      className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                    >
+                      <option value="Recovery">Recovery</option>
+                      <option value="Hydration">Hydration</option>
+                      <option value="General">General</option>
+                      <option value="Performance">Performance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Dosage</label>
+                    <input
+                      type="text"
+                      value={suppDosage}
+                      onChange={(e) => setSuppDosage(e.target.value)}
+                      className="w-full p-2 rounded bg-[#090D16] border border-slate-700 font-mono text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">
+                      Schedule
+                    </label>
+                    <input
+                      type="text"
+                      value={suppSchedule}
+                      onChange={(e) => setSuppSchedule(e.target.value)}
+                      className="w-full p-2 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                  <button
+                    onClick={() => setIsAddSupplementOpen(false)}
+                    className="px-3 py-1.5 rounded bg-slate-800 text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      onAddSupplement({
+                        athleteId: suppAthleteId,
+                        name: suppName,
+                        purpose: suppPurpose,
+                        dosage: suppDosage,
+                        schedule: suppSchedule,
+                        compliancePct: 100,
+                        status: 'Active',
+                      });
+                      const matchPlan = plans.find(
+                        (p) => p.athleteId === suppAthleteId
+                      );
+                      if (matchPlan) setActiveProfilePlanId(matchPlan.id);
+                      setIsAddSupplementOpen(false);
+                    }}
+                    className="px-4 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+                  >
+                    Save Supplement
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

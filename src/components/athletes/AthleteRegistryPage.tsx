@@ -168,8 +168,11 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
         a.verificationStatus !== verificationFilter
       )
         return false;
-      if (medicalFilter !== 'All' && a.medicalStatus !== medicalFilter)
+      if (medicalFilter === 'Not Cleared') {
+        if (a.medicalStatus === 'Cleared') return false;
+      } else if (medicalFilter !== 'All' && a.medicalStatus !== medicalFilter) {
         return false;
+      }
       if (wadaFilter === 'Compliant' && a.wadaWhereabouts?.filingStatus !== 'Compliant')
         return false;
       if (wadaFilter === 'TUE Active' && !a.wadaWhereabouts?.tueActive)
@@ -223,7 +226,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
     } else if (kpiId === 'incomplete') {
       setIncompleteOnly(true);
     } else if (kpiId === 'medical-pending') {
-      setMedicalFilter('Pending');
+      setMedicalFilter('Not Cleared');
     }
   };
 
@@ -345,35 +348,35 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             {
               id: 'total',
               label: 'Total Athletes',
-              value: filteredAthletes.length,
+              value: athletes.length,
               sub: `Of ${athletes.length} cohort records in context`,
               tone: 'text-slate-100',
             },
             {
               id: 'active',
               label: 'Active',
-              value: filteredAthletes.filter((a) => a.trainingStatus === 'ACTIVE').length,
+              value: athletes.filter((a) => a.trainingStatus === 'ACTIVE').length,
               sub: 'Cleared for squad operations',
               tone: 'text-emerald-400',
             },
             {
               id: 'pending-verification',
               label: 'Pending Verification',
-              value: filteredAthletes.filter((a) => a.verificationStatus === 'Pending').length,
+              value: athletes.filter((a) => a.verificationStatus === 'Pending').length,
               sub: 'Awaiting federation sign-off',
               tone: 'text-amber-400',
             },
             {
               id: 'incomplete',
               label: 'Incomplete Profiles',
-              value: filteredAthletes.filter((a) => a.profileCompletion < 95).length,
+              value: athletes.filter((a) => a.profileCompletion < 95).length,
               sub: 'Missing doc or clearance',
               tone: 'text-amber-300',
             },
             {
               id: 'medical-pending',
               label: 'Medical Clearance Pending',
-              value: filteredAthletes.filter((a) => a.medicalStatus !== 'Cleared').length,
+              value: athletes.filter((a) => a.medicalStatus !== 'Cleared').length,
               sub: 'Requires clinician sign-off',
               tone: 'text-rose-400',
             },
@@ -433,8 +436,6 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             <option value="Football">Football</option>
             <option value="Athletics">Athletics</option>
             <option value="Field Hockey">Field Hockey</option>
-            <option value="Swimming">Swimming</option>
-            <option value="Badminton">Badminton</option>
           </select>
 
           {/* [Program] */}
@@ -446,9 +447,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
           >
             <option value="All">Program: All</option>
             <option value="Senior Men's Program">Senior Men's Program</option>
-            <option value="Senior Women's Program">Senior Women's Program</option>
             <option value="U-23 Olympic Development Program">U-23 Olympic Dev</option>
-            <option value="U-19 Elite Pathway">U-19 Elite Pathway</option>
           </select>
 
           {/* [Squad] */}
@@ -459,11 +458,8 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
             className="px-2.5 py-1.5 bg-[#090D16] border border-slate-800 rounded-md text-xs text-slate-200 focus:outline-none focus:border-sky-500"
           >
             <option value="All">Squad: All</option>
-            <option value="Senior National Squad">Senior National Squad</option>
             <option value="Senior Squad">Senior Squad</option>
             <option value="U23">U23</option>
-            <option value="Squad A — Match Day Group">Squad A — Match Day Group</option>
-            <option value="Rehabilitation & RTP Unit">Rehabilitation & RTP Unit</option>
           </select>
 
           {/* [Status] */}

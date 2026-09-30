@@ -11,7 +11,7 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react';
-import { Athlete, NavItemId } from '../../types/usi';
+import { Athlete, NavItemId, UserRole } from '../../types/usi';
 import {
   AthleteAvatar,
   LoadBadge,
@@ -23,6 +23,7 @@ import {
 
 interface AthleteDetailDrawerProps {
   athlete: Athlete | null;
+  selectedRole?: UserRole;
   onClose: () => void;
   onOpenFullProfile: (athlete: Athlete) => void;
   onNavigateModuleWithAthlete: (module: NavItemId, athlete: Athlete) => void;
@@ -35,6 +36,7 @@ interface AthleteDetailDrawerProps {
 
 export const AthleteDetailDrawer: React.FC<AthleteDetailDrawerProps> = ({
   athlete,
+  selectedRole = 'Performance Director',
   onClose,
   onOpenFullProfile,
   onNavigateModuleWithAthlete,
@@ -109,7 +111,9 @@ export const AthleteDetailDrawer: React.FC<AthleteDetailDrawerProps> = ({
           <div className="flex items-center gap-1.5 overflow-x-auto">
             {[
               { id: 'overview', label: 'View Athlete', icon: User },
-              { id: 'medical', label: 'Medical', icon: HeartPulse },
+              ...(selectedRole !== 'Athlete'
+                ? [{ id: 'medical', label: 'Medical', icon: HeartPulse }]
+                : []),
               { id: 'training', label: 'Training', icon: Dumbbell },
               { id: 'performance', label: 'Performance', icon: Activity },
             ].map((btn) => {
@@ -348,30 +352,32 @@ export const AthleteDetailDrawer: React.FC<AthleteDetailDrawerProps> = ({
 
         {/* Operational Decision Footer inside Drawer */}
         <div className="p-4 border-t border-slate-800 bg-[#090D16] flex flex-wrap items-center justify-between gap-2">
-          <button
-            onClick={() =>
-              onUpdateAthleteLoadOrStatus(
-                athlete.id,
-                {
-                  trainingLoad: 'Moderate',
-                  status: 'Restricted',
-                  trainingStatus: 'RESTRICTED',
-                },
-                `Applied -25% high-speed running cap for ${athlete.name}`
-              )
-            }
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-colors whitespace-nowrap"
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Apply Modified Load Cap</span>
-          </button>
+          {selectedRole !== 'Athlete' && (
+            <button
+              onClick={() =>
+                onUpdateAthleteLoadOrStatus(
+                  athlete.id,
+                  {
+                    trainingLoad: 'Moderate',
+                    status: 'Restricted',
+                    trainingStatus: 'RESTRICTED',
+                  },
+                  `Applied -25% high-speed running cap for ${athlete.name}`
+                )
+              }
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-colors whitespace-nowrap"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Apply Modified Load Cap</span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenFullProfile(athlete)}
             className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-semibold transition-colors whitespace-nowrap"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            <span>Open Full Athlete 360</span>
+            <span>{selectedRole === 'Athlete' ? 'Open My Full Profile' : 'Open Full Athlete 360'}</span>
           </button>
         </div>
       </aside>

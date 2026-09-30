@@ -144,7 +144,19 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
   const activeAthlete =
     athletes.find((a) => a.id === activeAthleteId) || athletes[0];
 
-  const pendingActionsCount = actionItems.filter(
+  const visibleActionItems = useMemo(() => {
+    if (selectedRole === 'Athlete') {
+      return actionItems.filter(
+        (a) =>
+          a.affectedAthleteId === activeAthlete.id ||
+          a.affectedAthleteName === activeAthlete.name ||
+          a.targetRoles?.includes('Athlete')
+      );
+    }
+    return actionItems;
+  }, [actionItems, selectedRole, activeAthlete]);
+
+  const pendingActionsCount = visibleActionItems.filter(
     (a) => a.status === 'Pending Review'
   ).length;
   const activeRiskCount = riskSignals.filter(
@@ -1232,10 +1244,14 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
               <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                 <div>
                   <h3 className="font-bold text-slate-100 uppercase">
-                    PENDING HUMAN APPROVALS ({pendingActionsCount})
+                    {selectedRole === 'Athlete'
+                      ? `MY AI RECOMMENDATIONS (${pendingActionsCount})`
+                      : `PENDING HUMAN APPROVALS (${pendingActionsCount})`}
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Consequential AI recommendations awaiting sign-off
+                    {selectedRole === 'Athlete'
+                      ? 'Personal recovery & training recommendations linked to your profile'
+                      : 'Consequential AI recommendations awaiting sign-off'}
                   </p>
                 </div>
                 <button
@@ -1247,7 +1263,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
               </div>
 
               <div className="space-y-2.5">
-                {actionItems.slice(0, 3).map((item) => (
+                {visibleActionItems.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
                     className="p-3 rounded bg-[#090D16] border border-slate-800 space-y-1.5"
@@ -1281,14 +1297,15 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                         >
                           Evidence
                         </button>
-                        {item.status === 'Pending Review' && (
-                          <button
-                            onClick={onOpenTrainingModModal}
-                            className="px-2 py-0.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[10px]"
-                          >
-                            Review
-                          </button>
-                        )}
+                        {item.status === 'Pending Review' &&
+                          selectedRole !== 'Athlete' && (
+                            <button
+                              onClick={onOpenTrainingModModal}
+                              className="px-2 py-0.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[10px]"
+                            >
+                              Review
+                            </button>
+                          )}
                       </div>
                     </div>
                   </div>

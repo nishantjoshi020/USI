@@ -499,16 +499,21 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
 
         {/* Subtabs Bar */}
         <div className="flex flex-wrap items-center gap-1 pt-3">
-          {(
-            [
-              { id: 'periodisation', label: 'Macro/Meso/Micro Cycles', icon: Calendar },
-              { id: 'sessions', label: 'Operational Sessions', icon: Dumbbell },
-              { id: 'live-pitchside', label: '⚡ Live Pitchside Swaps', icon: Radio },
-              { id: 'builder', label: 'Session Builder', icon: Plus },
-              { id: 'attendance-rpe', label: 'Coach Attendance & sRPE Log', icon: UserCheck },
-              { id: 'exercises', label: 'Exercise & Drill Library', icon: Layers },
-              { id: 'workload', label: 'Workload & ACWR Monitor', icon: Activity },
-            ] as const
+          {(selectedRole === 'Athlete'
+            ? ([
+                { id: 'sessions', label: 'My Scheduled Sessions', icon: Dumbbell },
+                { id: 'workload', label: 'My Workload & ACWR', icon: Activity },
+                { id: 'exercises', label: 'Prescribed Drill Library', icon: Layers },
+              ] as const)
+            : ([
+                { id: 'periodisation', label: 'Macro/Meso/Micro Cycles', icon: Calendar },
+                { id: 'sessions', label: 'Operational Sessions', icon: Dumbbell },
+                { id: 'live-pitchside', label: '⚡ Live Pitchside Swaps', icon: Radio },
+                { id: 'builder', label: 'Session Builder', icon: Plus },
+                { id: 'attendance-rpe', label: 'Coach Attendance & sRPE Log', icon: UserCheck },
+                { id: 'exercises', label: 'Exercise & Drill Library', icon: Layers },
+                { id: 'workload', label: 'Workload & ACWR Monitor', icon: Activity },
+              ] as const)
           ).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
@@ -655,14 +660,18 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0F1623] border border-slate-800 p-4 rounded-lg">
             <div>
               <h2 className="text-sm font-bold text-slate-100">
-                ACTIVE SQUAD TRAINING SESSIONS & SCHEDULE
+                {selectedRole === 'Athlete'
+                  ? 'MY SCHEDULED TRAINING SESSIONS & LOAD TARGETS'
+                  : 'ACTIVE SQUAD TRAINING SESSIONS & SCHEDULE'}
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Click any session card to open the operational detail drawer, drill blueprints, and athlete modifications.
+                {selectedRole === 'Athlete'
+                  ? 'Click any session card to inspect your prescribed drills, target intensity, and personal load adjustments.'
+                  : 'Click any session card to open the operational detail drawer, drill blueprints, and athlete modifications.'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {onOpenSessionAssignment && (
+              {onOpenSessionAssignment && selectedRole !== 'Athlete' && (
                 <button
                   onClick={onOpenSessionAssignment}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors"
@@ -1146,18 +1155,20 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
                 </p>
               </div>
 
-              {/* Select Athlete for Simulation */}
-              <select
-                value={selectedSimAthleteId}
-                onChange={(e) => setSelectedSimAthleteId(e.target.value)}
-                className="px-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-sky-300"
-              >
-                {athletes.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} ({a.position} · Current ACWR: {a.acwr.toFixed(2)})
-                  </option>
-                ))}
-              </select>
+              {/* Select Athlete for Simulation (Hidden for Athlete persona) */}
+              {selectedRole !== 'Athlete' && (
+                <select
+                  value={selectedSimAthleteId}
+                  onChange={(e) => setSelectedSimAthleteId(e.target.value)}
+                  className="px-3 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs font-semibold text-sky-300"
+                >
+                  {athletes.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.position} · Current ACWR: {a.acwr.toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Simulator Grid */}
@@ -1246,7 +1257,9 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
           {/* Squad Workload Table */}
           <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5">
             <h3 className="text-sm font-bold text-slate-100 uppercase mb-3">
-              Squad Longitudinal ACWR Register
+              {selectedRole === 'Athlete'
+                ? 'My Longitudinal ACWR & Workload Register'
+                : 'Squad Longitudinal ACWR Register'}
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">

@@ -240,9 +240,21 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
     key: keyof Athlete['profileCompletionBreakdown'],
     label: string
   ) => {
+    if (
+      selectedRole === 'Athlete' &&
+      (key === 'medicalClearance' || key === 'coachAssignment')
+    ) {
+      onTriggerToast(
+        `${label} is governed by Federation & Clinical staff and cannot be self-approved by an Athlete.`
+      );
+      return;
+    }
+
     if (athlete.profileCompletionBreakdown[key]) {
       if (key === 'documents') setActiveTab('Documents');
-      if (key === 'coachAssignment') onOpenAssignCoach(athlete);
+      if (key === 'coachAssignment' && selectedRole !== 'Athlete') {
+        onOpenAssignCoach(athlete);
+      }
       return;
     }
 
@@ -531,7 +543,9 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
           >
             <div className="text-[11px] text-slate-400 flex items-center justify-between">
               <span>Medical Status</span>
-              <span className="text-[10px] text-sky-400">Update →</span>
+              <span className="text-[10px] text-sky-400">
+                {selectedRole === 'Athlete' ? 'Status →' : 'Update →'}
+              </span>
             </div>
             <div className="mt-1.5 font-mono font-bold uppercase">
               <span
@@ -689,12 +703,14 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                   >
                     Identify Risk Factors
                   </button>
-                  <button
-                    onClick={() => onOpenAiAssistance('coach-brief')}
-                    className="px-2.5 py-1 rounded bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300"
-                  >
-                    Prepare Coach Brief
-                  </button>
+                  {selectedRole !== 'Athlete' && (
+                    <button
+                      onClick={() => onOpenAiAssistance('coach-brief')}
+                      className="px-2.5 py-1 rounded bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300"
+                    >
+                      Prepare Coach Brief
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -2228,31 +2244,37 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
               {activeMetricDrawer === 'medical' && (
                 <div className="space-y-3 text-xs">
                   <p className="text-slate-300">{athlete.medicalNote}</p>
-                  <div className="pt-2 flex gap-2">
-                    <button
-                      onClick={() => {
-                        onUpdateAthlete(
-                          athlete.id,
-                          {
-                            medicalStatus: 'Cleared',
-                            trainingStatus: 'ACTIVE',
-                            status: 'Ready',
-                            profileCompletion: 100,
-                            profileCompletionBreakdown: {
-                              ...athlete.profileCompletionBreakdown,
-                              medicalClearance: true,
+                  {['Physiotherapist', 'Performance Director'].includes(selectedRole) ? (
+                    <div className="pt-2 flex gap-2">
+                      <button
+                        onClick={() => {
+                          onUpdateAthlete(
+                            athlete.id,
+                            {
+                              medicalStatus: 'Cleared',
+                              trainingStatus: 'ACTIVE',
+                              status: 'Ready',
+                              profileCompletion: 100,
+                              profileCompletionBreakdown: {
+                                ...athlete.profileCompletionBreakdown,
+                                medicalClearance: true,
+                              },
                             },
-                          },
-                          'Updated Medical Status to Cleared',
-                          `${athlete.name} medical status updated to Cleared`
-                        );
-                        setCompleteMetricDrawer(null);
-                      }}
-                      className="px-3 py-2 rounded bg-emerald-500 text-slate-950 font-semibold"
-                    >
-                      Mark Medical Cleared
-                    </button>
-                  </div>
+                            'Updated Medical Status to Cleared',
+                            `${athlete.name} medical status updated to Cleared`
+                          );
+                          setCompleteMetricDrawer(null);
+                        }}
+                        className="px-3 py-2 rounded bg-emerald-500 text-slate-950 font-semibold"
+                      >
+                        Mark Medical Cleared
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800 text-slate-400 text-[11px]">
+                      Medical clearance updates require Chief Medical Officer or Physiotherapist sign-off.
+                    </div>
+                  )}
                 </div>
               )}
 

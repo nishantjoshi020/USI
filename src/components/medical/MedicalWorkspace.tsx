@@ -978,13 +978,13 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                     'Hamstring',
                     'Ankle',
                     'Shoulder',
-                    ...filteredInjuries.map((i) => i.bodyPart),
+                    ...injuries.map((i) => i.bodyPart),
                   ])
                 ).map((bodyPart, idx) => {
-                  const count = filteredInjuries.filter(
+                  const count = injuries.filter(
                     (i) => i.bodyPart === bodyPart
                   ).length;
-                  const total = Math.max(1, filteredInjuries.length);
+                  const total = Math.max(1, injuries.length);
                   const pct = Math.round((count / total) * 100);
                   const colors = [
                     'bg-rose-500',
@@ -1021,21 +1021,21 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                   {[
                     {
                       label: 'Critical',
-                      count: filteredInjuries.filter(
+                      count: injuries.filter(
                         (i) => i.severity === 'Critical'
                       ).length,
                       style: 'border-slate-800 text-slate-400',
                     },
                     {
                       label: 'Severe',
-                      count: filteredInjuries.filter(
+                      count: injuries.filter(
                         (i) => i.severity === 'Severe'
                       ).length,
                       style: 'border-rose-500/40 text-rose-300 bg-rose-500/10',
                     },
                     {
                       label: 'Moderate',
-                      count: filteredInjuries.filter(
+                      count: injuries.filter(
                         (i) => i.severity === 'Moderate'
                       ).length,
                       style:
@@ -1043,7 +1043,7 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                     },
                     {
                       label: 'Minor',
-                      count: filteredInjuries.filter(
+                      count: injuries.filter(
                         (i) => i.severity === 'Minor'
                       ).length,
                       style: 'border-sky-500/40 text-sky-300 bg-sky-500/10',
@@ -1056,7 +1056,9 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
                           severityFilter === s.label ? 'All' : s.label
                         )
                       }
-                      className={`p-3 rounded border text-left transition-colors ${s.style}`}
+                      className={`p-3 rounded border text-left transition-colors ${s.style} ${
+                        severityFilter === s.label ? 'ring-1 ring-sky-400 border-sky-400' : ''
+                      }`}
                     >
                       <div className="text-[11px] opacity-80">{s.label}</div>
                       <div className="text-base font-mono font-bold mt-0.5">
