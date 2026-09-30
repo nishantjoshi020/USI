@@ -249,7 +249,7 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
 
     if (athlete.profileCompletionBreakdown[key]) {
       if (key === 'documents') setActiveTab('Documents');
-      if (key === 'coachAssignment' && selectedRole !== 'Athlete') {
+      if (key === 'coachAssignment') {
         onOpenAssignCoach(athlete);
       }
       return;
