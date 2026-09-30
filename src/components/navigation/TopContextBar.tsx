@@ -19,6 +19,7 @@ import {
   Medal,
   Menu,
   Monitor,
+  RotateCcw,
   ShieldCheck,
   Smartphone,
   Tablet,
@@ -53,7 +54,7 @@ interface TopContextBarProps {
   onOpenHelpModal: () => void;
   onOpenAICopilot?: () => void;
   pendingAIActionsCount?: number;
-  onResetDemoState?: () => void;
+  onResetDemoState?: (targetRole?: UserRole) => void;
   viewportMode?: ViewportMode;
   onChangeViewportMode?: (mode: ViewportMode) => void;
   onToggleMobileSidebar?: () => void;
@@ -246,6 +247,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
   onToggleNotifications,
   onOpenAICopilot,
   pendingAIActionsCount = 0,
+  onResetDemoState,
   viewportMode = 'desktop',
   onChangeViewportMode,
   onToggleMobileSidebar,
@@ -259,6 +261,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
     | 'program'
     | 'squad'
     | 'mobile-context'
+    | 'mobile-right-menu'
     | 'role'
     | 'viewport'
     | 'export'
@@ -279,8 +282,8 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
 
   const isMobile = viewportMode === 'mobile';
   const isTablet = viewportMode === 'tablet';
-  // When sidebar is open (or on mobile), use expressive icon-only layout; when sidebar is closed, show full text labels
-  const isIconOnly = isSidebarOpen || isMobile;
+  // When sidebar is open (or on mobile/tablet), use expressive icon-only layout; when sidebar is closed on desktop, show full text labels
+  const isIconOnly = isSidebarOpen || isMobile || isTablet;
 
   const perm =
     PERSONA_HIERARCHY_PERMISSIONS[selectedRole] ||
@@ -868,208 +871,436 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
           )}
         </button>
 
-        {/* Compact Role Selector */}
-        <div className="relative">
-          <button
-            onClick={() =>
-              setOpenDropdown(openDropdown === 'role' ? null : 'role')
-            }
-            title={`Active Role View: ${selectedRole}`}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
-          >
-            <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center shrink-0">
-              {renderRoleIcon(selectedRole)}
-            </div>
-            {!isIconOnly && (
-              <span
-                className={`text-[11px] font-semibold text-slate-100 ${
-                  isTablet ? 'truncate max-w-[85px]' : 'whitespace-nowrap'
-                }`}
-              >
-                {selectedRole}
-              </span>
-            )}
-            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
-          </button>
-
-          {openDropdown === 'role' && (
-            <div className="absolute right-0 mt-1.5 w-72 sm:w-80 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50">
-              <div className="px-3.5 py-2 border-b border-slate-800">
-                <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Role-Based Operational Lens</span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Switch active specialist role to preview permissions and workflow emphasis.
-                </p>
-              </div>
-              <div className="py-1 max-h-80 overflow-y-auto">
-                {ROLES.map((role) => {
-                  const active = selectedRole === role;
-                  const meta = ROLE_DESCRIPTIONS[role];
-                  const rolePerm = PERSONA_HIERARCHY_PERMISSIONS[role];
-                  return (
-                    <button
-                      key={role}
-                      onClick={() => {
-                        onSelectRole(role);
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full text-left px-3.5 py-2 transition-colors ${
-                        active
-                          ? 'bg-sky-500/15 border-l-2 border-sky-400'
-                          : 'hover:bg-slate-800/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className={`text-xs font-semibold flex items-center gap-2 ${
-                            active ? 'text-sky-300' : 'text-slate-200'
-                          }`}
-                        >
-                          {renderRoleIcon(role)}
-                          <span>{role}</span>
-                        </span>
-                        {rolePerm && (
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold shrink-0 ${
-                              rolePerm.canSwitchFederation
-                                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                                : !rolePerm.canSwitchSquad
-                                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                  : 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
-                            }`}
-                          >
-                            {rolePerm.scopeBadge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
-                        {meta.focus}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Screen / Viewport Switcher Dropdown (styled like Role Switcher) */}
-        {onChangeViewportMode && (
+        {/* Mobile & Tablet Top-Right Hamburger Menu (Role Switcher, Device Switcher & Reset Button) */}
+        {isMobile || isTablet ? (
           <div className="relative">
             <button
               onClick={() =>
                 setOpenDropdown(
-                  openDropdown === 'viewport' ? null : 'viewport'
+                  openDropdown === 'mobile-right-menu'
+                    ? null
+                    : 'mobile-right-menu'
                 )
               }
-              title={`Active Screen View: ${
-                viewportMode === 'desktop'
-                  ? 'Desktop'
-                  : viewportMode === 'tablet'
-                    ? 'Tablet'
-                    : 'Mobile'
-              }`}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
+              title="Open Role Switcher, Device Switcher & Reset Menu"
+              className="p-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 text-slate-300 hover:text-white transition-colors shrink-0 flex items-center justify-center"
             >
-              <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 shrink-0">
-                {viewportMode === 'desktop' ? (
-                  <Monitor className="w-3.5 h-3.5" />
-                ) : viewportMode === 'tablet' ? (
-                  <Tablet className="w-3.5 h-3.5" />
-                ) : (
-                  <Smartphone className="w-3.5 h-3.5" />
-                )}
-              </div>
-              {!isIconOnly && (
-                <span className="text-[11px] font-semibold text-slate-100">
-                  {viewportMode === 'desktop'
-                    ? 'Desktop'
-                    : viewportMode === 'tablet'
-                      ? 'Tablet'
-                      : 'Mobile'}
-                </span>
-              )}
-              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              <Menu className="w-4 h-4 text-sky-400" />
             </button>
 
-            {openDropdown === 'viewport' && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50">
-                <div className="px-3.5 py-2 border-b border-slate-800">
-                  <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                    <Monitor className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Responsive Screen Switcher</span>
+            {openDropdown === 'mobile-right-menu' && (
+              <div className="absolute right-0 top-full mt-1.5 w-80 sm:w-96 bg-[#0F1623] border border-slate-700 rounded-lg shadow-2xl p-3 z-50 space-y-3">
+                {/* 1. Active Persona & Quick Reset Section */}
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-800">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center shrink-0">
+                      {renderRoleIcon(selectedRole)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono text-slate-400 uppercase">
+                        Active Persona
+                      </div>
+                      <div className="text-xs font-bold text-white truncate">
+                        {selectedRole}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Switch active screen layout while preserving full feature parity.
-                  </p>
+
+                  {onResetDemoState && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onResetDemoState(selectedRole);
+                        setOpenDropdown(null);
+                      }}
+                      title={`Reset ${selectedRole} Persona State & Telemetry`}
+                      className="px-2.5 py-1.5 rounded-md bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Reset Persona</span>
+                    </button>
+                  )}
                 </div>
 
-                <div className="py-1">
-                  {(
-                    [
-                      {
-                        id: 'desktop' as const,
-                        label: 'Desktop',
-                        spec: 'Full Width',
-                        desc: 'Multi-column command center & expanded sidebar',
-                        icon: Monitor,
-                      },
-                      {
-                        id: 'tablet' as const,
-                        label: 'Tablet',
-                        spec: '834px Slate',
-                        desc: 'Compact icon-rail sidebar & adaptive 2–3 col grids',
-                        icon: Tablet,
-                      },
-                      {
-                        id: 'mobile' as const,
-                        label: 'Mobile',
-                        spec: '430px Handheld',
-                        desc: 'Slide-over drawer, bottom dock & stacked cards',
-                        icon: Smartphone,
-                      },
-                    ] as const
-                  ).map((item) => {
-                    const Icon = item.icon;
-                    const active = viewportMode === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          onChangeViewportMode(item.id);
-                          setOpenDropdown(null);
-                        }}
-                        className={`w-full text-left px-3.5 py-2 transition-colors ${
-                          active
-                            ? 'bg-sky-500/15 border-l-2 border-sky-400'
-                            : 'hover:bg-slate-800/60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`text-xs font-semibold flex items-center gap-1.5 ${
-                              active ? 'text-sky-300' : 'text-slate-200'
+                {/* 2. Device / Viewport Switcher */}
+                {onChangeViewportMode && (
+                  <div className="space-y-1.5 pb-2.5 border-b border-slate-800">
+                    <div className="text-[11px] font-semibold text-slate-200 flex items-center gap-1.5">
+                      <Monitor className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Device / Screen Switcher</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(
+                        [
+                          {
+                            id: 'desktop' as const,
+                            label: 'Desktop',
+                            icon: Monitor,
+                          },
+                          {
+                            id: 'tablet' as const,
+                            label: 'Tablet',
+                            icon: Tablet,
+                          },
+                          {
+                            id: 'mobile' as const,
+                            label: 'Mobile',
+                            icon: Smartphone,
+                          },
+                        ] as const
+                      ).map((item) => {
+                        const Icon = item.icon;
+                        const active = viewportMode === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              onChangeViewportMode(item.id);
+                              setOpenDropdown(null);
+                            }}
+                            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md border text-xs font-semibold transition-colors ${
+                              active
+                                ? 'bg-sky-500/20 border-sky-400 text-sky-300'
+                                : 'bg-[#090D16] border-slate-800 text-slate-300 hover:bg-slate-800/70'
                             }`}
                           >
-                            <Icon className="w-3.5 h-3.5 text-sky-400" />
+                            <Icon className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                             <span>{item.label}</span>
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-400">
-                            {item.spec}
-                          </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Role Switcher & Per-Persona Reset List */}
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-semibold text-slate-200 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Switch Role or Reset Specific Persona</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-1 pr-0.5">
+                    {ROLES.map((role) => {
+                      const active = selectedRole === role;
+                      const meta = ROLE_DESCRIPTIONS[role];
+                      const rolePerm = PERSONA_HIERARCHY_PERMISSIONS[role];
+                      return (
+                        <div
+                          key={role}
+                          className={`w-full px-2.5 py-2 rounded-md transition-colors flex items-center justify-between gap-2 ${
+                            active
+                              ? 'bg-sky-500/15 border border-sky-500/40'
+                              : 'bg-[#090D16]/70 border border-slate-800/80 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onSelectRole(role);
+                              setOpenDropdown(null);
+                            }}
+                            className="flex-1 text-left min-w-0"
+                          >
+                            <div className="flex items-center justify-between gap-1.5">
+                              <span
+                                className={`text-xs font-semibold flex items-center gap-1.5 ${
+                                  active ? 'text-sky-300' : 'text-slate-200'
+                                }`}
+                              >
+                                {renderRoleIcon(role)}
+                                <span className="truncate">{role}</span>
+                              </span>
+                              {rolePerm && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold shrink-0 ${
+                                    rolePerm.canSwitchFederation
+                                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                      : !rolePerm.canSwitchSquad
+                                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                        : 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
+                                  }`}
+                                >
+                                  {rolePerm.scopeBadge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+                              {meta.focus}
+                            </p>
+                          </button>
+
+                          {onResetDemoState && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onResetDemoState(role);
+                                setOpenDropdown(null);
+                              }}
+                              title={`Reset ${role} persona state`}
+                              className="px-2 py-1 rounded bg-slate-800/90 hover:bg-amber-500/20 border border-slate-700 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 text-[10px] font-mono font-semibold flex items-center gap-1 shrink-0 transition-colors"
+                            >
+                              <RotateCcw className="w-3 h-3 text-amber-400" />
+                              <span>Reset</span>
+                            </button>
+                          )}
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
-                          {item.desc}
-                        </p>
-                      </button>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
           </div>
+        ) : (
+          <>
+            {/* Desktop: Compact Role Selector & Per-Persona Reset */}
+            <div className="relative flex items-center gap-1">
+              <button
+                onClick={() =>
+                  setOpenDropdown(openDropdown === 'role' ? null : 'role')
+                }
+                title={`Active Role View: ${selectedRole}`}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
+              >
+                <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center shrink-0">
+                  {renderRoleIcon(selectedRole)}
+                </div>
+                {!isIconOnly && (
+                  <span className="text-[11px] font-semibold text-slate-100 whitespace-nowrap">
+                    {selectedRole}
+                  </span>
+                )}
+                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              </button>
+
+              {onResetDemoState && (
+                <button
+                  onClick={() => onResetDemoState(selectedRole)}
+                  title={`Reset ${selectedRole} Persona State & Telemetry`}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-amber-500/15 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 transition-colors text-[11px] font-semibold whitespace-nowrap"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  {!isIconOnly && <span>Reset</span>}
+                </button>
+              )}
+
+              {openDropdown === 'role' && (
+                <div className="absolute right-0 top-full mt-1.5 w-80 sm:w-96 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50">
+                  <div className="px-3.5 py-2 border-b border-slate-800 flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Role-Based Operational Lens</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Switch active specialist role or reset any persona to default state.
+                      </p>
+                    </div>
+                    {onResetDemoState && (
+                      <button
+                        onClick={() => {
+                          onResetDemoState(selectedRole);
+                          setOpenDropdown(null);
+                        }}
+                        title={`Reset ${selectedRole} to baseline`}
+                        className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1 shrink-0 transition-colors"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Reset Active</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1 max-h-80 overflow-y-auto">
+                    {ROLES.map((role) => {
+                      const active = selectedRole === role;
+                      const meta = ROLE_DESCRIPTIONS[role];
+                      const rolePerm = PERSONA_HIERARCHY_PERMISSIONS[role];
+                      return (
+                        <div
+                          key={role}
+                          className={`w-full px-3.5 py-2 transition-colors flex items-center justify-between gap-2 ${
+                            active
+                              ? 'bg-sky-500/15 border-l-2 border-sky-400'
+                              : 'hover:bg-slate-800/60'
+                          }`}
+                        >
+                          <button
+                            onClick={() => {
+                              onSelectRole(role);
+                              setOpenDropdown(null);
+                            }}
+                            className="flex-1 text-left min-w-0"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`text-xs font-semibold flex items-center gap-2 ${
+                                  active ? 'text-sky-300' : 'text-slate-200'
+                                }`}
+                              >
+                                {renderRoleIcon(role)}
+                                <span>{role}</span>
+                              </span>
+                              {rolePerm && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold shrink-0 ${
+                                    rolePerm.canSwitchFederation
+                                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                      : !rolePerm.canSwitchSquad
+                                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                        : 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
+                                  }`}
+                                >
+                                  {rolePerm.scopeBadge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                              {meta.focus}
+                            </p>
+                          </button>
+
+                          {onResetDemoState && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onResetDemoState(role);
+                                setOpenDropdown(null);
+                              }}
+                              title={`Reset ${role} persona state`}
+                              className="px-2 py-1 rounded bg-slate-800/90 hover:bg-amber-500/20 border border-slate-700 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 text-[10px] font-mono font-semibold flex items-center gap-1 shrink-0 transition-colors"
+                            >
+                              <RotateCcw className="w-3 h-3 text-amber-400" />
+                              <span>Reset</span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop: Screen / Viewport Switcher Dropdown */}
+            {onChangeViewportMode && (
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    setOpenDropdown(
+                      openDropdown === 'viewport' ? null : 'viewport'
+                    )
+                  }
+                  title={`Active Screen View: ${
+                    viewportMode === 'desktop'
+                      ? 'Desktop'
+                      : viewportMode === 'tablet'
+                        ? 'Tablet'
+                        : 'Mobile'
+                  }`}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-800 transition-colors text-left whitespace-nowrap"
+                >
+                  <div className="w-5 h-5 rounded bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-300 shrink-0">
+                    {viewportMode === 'desktop' ? (
+                      <Monitor className="w-3.5 h-3.5" />
+                    ) : viewportMode === 'tablet' ? (
+                      <Tablet className="w-3.5 h-3.5" />
+                    ) : (
+                      <Smartphone className="w-3.5 h-3.5" />
+                    )}
+                  </div>
+                  {!isIconOnly && (
+                    <span className="text-[11px] font-semibold text-slate-100">
+                      {viewportMode === 'desktop'
+                        ? 'Desktop'
+                        : viewportMode === 'tablet'
+                          ? 'Tablet'
+                          : 'Mobile'}
+                    </span>
+                  )}
+                  <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                </button>
+
+                {openDropdown === 'viewport' && (
+                  <div className="absolute right-0 mt-1.5 w-64 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50">
+                    <div className="px-3.5 py-2 border-b border-slate-800">
+                      <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                        <Monitor className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Responsive Screen Switcher</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Switch active screen layout while preserving full feature parity.
+                      </p>
+                    </div>
+
+                    <div className="py-1">
+                      {(
+                        [
+                          {
+                            id: 'desktop' as const,
+                            label: 'Desktop',
+                            spec: 'Full Width',
+                            desc: 'Multi-column command center & expanded sidebar',
+                            icon: Monitor,
+                          },
+                          {
+                            id: 'tablet' as const,
+                            label: 'Tablet',
+                            spec: '834px Slate',
+                            desc: 'Compact icon-rail sidebar & adaptive 2–3 col grids',
+                            icon: Tablet,
+                          },
+                          {
+                            id: 'mobile' as const,
+                            label: 'Mobile',
+                            spec: '430px Handheld',
+                            desc: 'Slide-over drawer, bottom dock & stacked cards',
+                            icon: Smartphone,
+                          },
+                        ] as const
+                      ).map((item) => {
+                        const Icon = item.icon;
+                        const active = viewportMode === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              onChangeViewportMode(item.id);
+                              setOpenDropdown(null);
+                            }}
+                            className={`w-full text-left px-3.5 py-2 transition-colors ${
+                              active
+                                ? 'bg-sky-500/15 border-l-2 border-sky-400'
+                                : 'hover:bg-slate-800/60'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={`text-xs font-semibold flex items-center gap-1.5 ${
+                                  active ? 'text-sky-300' : 'text-slate-200'
+                                }`}
+                              >
+                                <Icon className="w-3.5 h-3.5 text-sky-400" />
+                                <span>{item.label}</span>
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                {item.spec}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                              {item.desc}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </header>

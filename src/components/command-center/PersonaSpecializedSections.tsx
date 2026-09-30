@@ -39,6 +39,7 @@ import {
   Info,
   ChevronRight,
   Dumbbell,
+  RotateCcw,
   Send,
 } from 'lucide-react';
 import {
@@ -73,6 +74,7 @@ interface PersonaSpecializedSectionsProps {
     stress: number;
     readiness: number;
   }) => void;
+  onResetPersona?: () => void;
 }
 
 export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProps> = ({
@@ -92,6 +94,7 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
   onTriggerToast,
   onNavigateSection,
   onUpdateAthleteWellness,
+  onResetPersona,
 }) => {
   // Athlete Wellness State
   const [wellnessLogged, setWellnessLogged] = useState(false);
@@ -127,6 +130,39 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
     { id: 'ath-vikram-nair', name: 'Vikramaditya Nair', sport: 'Football (Forward)', state: 'Kerala', docs: 'Senior Passport · Biometrics Cleared', status: 'Approved' },
     { id: 'ath-arjun-mehta', name: 'Arjun Mehta', sport: 'Football (Forward)', state: 'Maharashtra', docs: 'Passport 48d Expiry · Tatkal Dispatched', status: 'Urgent Flag' },
   ]);
+
+  const handleResetPersonaHub = () => {
+    setWellnessLogged(false);
+    setSorenessLevel(activeAthlete?.sorenessScore || 2);
+    setFatigueLevel(3);
+    setStressLevel(2);
+    setSleepScore(88);
+    setWellnessEntryMode('3tap');
+    setSquadIntensityPct(95);
+    setWorkOrders([
+      { id: 'WO-101', title: 'Pitch 1 Sprinkler Valve Calibration', zone: 'Zone A Turf', status: 'IN_PROGRESS', priority: 'HIGH', time: '11:45 IST' },
+      { id: 'WO-102', title: 'Cryo-Chamber Liquid Nitrogen Refill', zone: 'Medical Wing', status: 'COMPLETED', priority: 'MEDIUM', time: '09:15 IST' },
+      { id: 'WO-103', title: 'Gym Cable Pulley Friction Inspection', zone: 'Olympic Gym', status: 'PENDING', priority: 'LOW', time: '14:00 IST' },
+    ]);
+    setHydrationQueue([
+      { id: 'ath-arjun-mehta', name: 'Arjun Mehta', squad: 'Senior Squad', usg: 1.024, status: 'MONITOR', action: '500ml Hypotonic Bolus' },
+      { id: 'ath-vikram-nair', name: 'Vikramaditya Nair', squad: 'Senior Squad', usg: 1.026, status: 'CRITICAL', action: '750ml Electrolyte + Carbs' },
+      { id: 'ath-kabir-rao', name: 'Kabir Rao', squad: 'National U-23', usg: 1.018, status: 'NORMAL', action: 'Standard Electrolyte' },
+      { id: 'ath-devansh-kulkarni', name: 'Devansh Kulkarni', squad: 'Senior Squad', usg: 1.019, status: 'NORMAL', action: 'Collagen Recovery Shake' },
+      { id: 'ath-rahul-singh', name: 'Rahul Singh', squad: 'Senior Squad', usg: 1.012, status: 'OPTIMAL', action: 'Pre-Hydrated' },
+    ]);
+    setRegistryQueue([
+      { id: 'ath-zorawar-gill', name: 'Zorawar Gill', sport: 'Football (Midfield)', state: 'Punjab', docs: 'National Camp Call-up · Insurance Pending', status: 'Review Required' },
+      { id: 'ath-pranav-sundaram', name: 'Pranav Sundaram', sport: 'Football (Forward)', state: 'Tamil Nadu', docs: 'U-23 Contract · NOC Cleared', status: 'Awaiting Seal' },
+      { id: 'ath-vikram-nair', name: 'Vikramaditya Nair', sport: 'Football (Forward)', state: 'Kerala', docs: 'Senior Passport · Biometrics Cleared', status: 'Approved' },
+      { id: 'ath-arjun-mehta', name: 'Arjun Mehta', sport: 'Football (Forward)', state: 'Maharashtra', docs: 'Passport 48d Expiry · Tatkal Dispatched', status: 'Urgent Flag' },
+    ]);
+    if (onResetPersona) {
+      onResetPersona();
+    } else {
+      onTriggerToast(`Reset ${selectedRole} persona state to baseline ✓`);
+    }
+  };
 
   /* =========================================================================
      1. ATHLETE PORTAL SPECIALIZED HUB
@@ -171,28 +207,13 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
             </div>
 
             <div className="flex items-center gap-2">
-              {allAthletes.length > 1 && onSelectActiveAthlete && (
-                <select
-                  value={currentAth.id}
-                  onChange={(e) => onSelectActiveAthlete(e.target.value)}
-                  className="px-2.5 py-1.5 rounded bg-[#090D16] border border-slate-700 text-xs text-slate-200"
-                >
-                  {allAthletes.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.athleteId}) — {a.trainingStatus}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {onOpenOnboarding && (
-                <button
-                  onClick={onOpenOnboarding}
-                  className="px-3 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Register New Candidate</span>
-                </button>
-              )}
+              <button
+                onClick={handleResetPersonaHub}
+                className="px-2.5 py-1.5 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Reset Athlete View</span>
+              </button>
               <button
                 onClick={() => onNavigateSection?.('athlete-360')}
                 className="px-3 py-1.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-200 font-semibold text-xs flex items-center gap-1 transition-colors"
@@ -641,6 +662,13 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={handleResetPersonaHub}
+                  className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[11px] font-semibold text-amber-200 flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3 text-amber-400" />
+                  <span>Reset</span>
+                </button>
+                <button
                   onClick={() => onTriggerToast('Hydration test batch refreshed with latest lab refractometer data')}
                   className="text-[11px] font-mono text-amber-400 hover:text-amber-300 font-semibold"
                 >
@@ -818,9 +846,18 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                     Facility Work Orders & Maintenance
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">
-                  {workOrders.filter(w => w.status !== 'COMPLETED').length} Active
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {workOrders.filter(w => w.status !== 'COMPLETED').length} Active
+                  </span>
+                  <button
+                    onClick={handleResetPersonaHub}
+                    className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-mono font-semibold text-amber-300 flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    <span>Reset</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2.5">
@@ -887,6 +924,13 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                 <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-mono text-cyan-300">
                   {allAthletes.length} National Athletes
                 </span>
+                <button
+                  onClick={handleResetPersonaHub}
+                  className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-200 font-semibold text-xs flex items-center gap-1 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3 text-amber-400" />
+                  <span>Reset</span>
+                </button>
                 {onOpenOnboarding && (
                   <button
                     onClick={onOpenOnboarding}
@@ -1218,9 +1262,18 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                     Live Tactical Training Load Controller
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">
-                  Senior Squad
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Senior Squad
+                  </span>
+                  <button
+                    onClick={handleResetPersonaHub}
+                    className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-mono font-semibold text-amber-300 flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    <span>Reset</span>
+                  </button>
+                </div>
               </div>
 
               {/* Intensity Slider */}
@@ -1299,9 +1352,18 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                   Dual Force-Plate Countermovement Jump (CMJ) Asymmetry Console
                 </h3>
               </div>
-              <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300 font-bold">
-                Hawkin Dynamics / Vald Live Sync
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-[10px] font-mono text-sky-300 font-bold">
+                  Hawkin Dynamics / Vald Live Sync
+                </span>
+                <button
+                  onClick={handleResetPersonaHub}
+                  className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-mono font-semibold text-amber-300 flex items-center gap-1"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -1457,9 +1519,18 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                   5-Stage Return-to-Play Protocol Gate Controller
                 </h3>
               </div>
-              <span className="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] font-mono text-rose-300 font-bold">
-                {injuries.length} Active Clinical Cases
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] font-mono text-rose-300 font-bold">
+                  {injuries.length} Active Clinical Cases
+                </span>
+                <button
+                  onClick={handleResetPersonaHub}
+                  className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-mono font-semibold text-amber-300 flex items-center gap-1"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -1589,9 +1660,18 @@ export const PersonaSpecializedSections: React.FC<PersonaSpecializedSectionsProp
                   LA 2028 Olympic Pathway Carding & Interdisciplinary Matrix
                 </h3>
               </div>
-              <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono text-amber-300 font-bold">
-                10 Carded Tier-1 Athletes
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono text-amber-300 font-bold">
+                  10 Carded Tier-1 Athletes
+                </span>
+                <button
+                  onClick={handleResetPersonaHub}
+                  className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-mono font-semibold text-amber-300 flex items-center gap-1"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">

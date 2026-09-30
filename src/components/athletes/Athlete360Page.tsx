@@ -240,12 +240,9 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
     key: keyof Athlete['profileCompletionBreakdown'],
     label: string
   ) => {
-    if (
-      selectedRole === 'Athlete' &&
-      (key === 'medicalClearance' || key === 'coachAssignment')
-    ) {
+    if (selectedRole === 'Athlete') {
       onTriggerToast(
-        `${label} is governed by Federation & Clinical staff and cannot be self-approved by an Athlete.`
+        'Profile details and completion status are read-only for the Athlete persona.'
       );
       return;
     }
@@ -405,8 +402,21 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
             )}
 
             <button
-              onClick={() => onOpenEditProfile(athlete)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              onClick={() => {
+                if (selectedRole === 'Athlete') return;
+                onOpenEditProfile(athlete);
+              }}
+              disabled={selectedRole === 'Athlete'}
+              title={
+                selectedRole === 'Athlete'
+                  ? 'Editing profile details is disabled for Athlete persona'
+                  : 'Edit Athlete Profile'
+              }
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors whitespace-nowrap ${
+                selectedRole === 'Athlete'
+                  ? 'bg-[#090D16]/50 border-slate-800/70 text-slate-500 cursor-not-allowed opacity-50'
+                  : 'bg-[#0B101B] hover:bg-slate-800 border border-slate-700 text-slate-200'
+              }`}
             >
               <Edit3 className="w-3.5 h-3.5 text-slate-400" />
               <span>{selectedRole === 'Athlete' ? 'Edit My Details' : 'Edit Profile'}</span>
@@ -859,13 +869,16 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                   return (
                     <button
                       key={item.key}
+                      disabled={selectedRole === 'Athlete'}
                       onClick={() =>
                         handleCompleteProfileItem(item.key, item.label)
                       }
                       className={`w-full text-left px-3 py-2 rounded-md border flex items-center justify-between text-xs transition-colors ${
-                        isDone
-                          ? 'bg-[#0B101B] border-slate-800/80 text-slate-200 hover:bg-slate-800/50'
-                          : 'bg-amber-950/20 border-amber-500/40 text-amber-200 hover:bg-amber-950/30'
+                        selectedRole === 'Athlete'
+                          ? 'bg-[#0B101B] border-slate-800/80 text-slate-400 cursor-not-allowed opacity-75'
+                          : isDone
+                            ? 'bg-[#0B101B] border-slate-800/80 text-slate-200 hover:bg-slate-800/50'
+                            : 'bg-amber-950/20 border-amber-500/40 text-amber-200 hover:bg-amber-950/30'
                       }`}
                     >
                       <span>{item.label}</span>
@@ -929,8 +942,16 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
 
               <div className="flex items-center justify-between pt-1 text-xs">
                 <button
-                  onClick={() => setIsWhereaboutsModalOpen(true)}
-                  className="text-sky-400 hover:text-sky-300 font-semibold"
+                  disabled={selectedRole === 'Athlete'}
+                  onClick={() => {
+                    if (selectedRole === 'Athlete') return;
+                    setIsWhereaboutsModalOpen(true);
+                  }}
+                  className={
+                    selectedRole === 'Athlete'
+                      ? 'text-slate-500 cursor-not-allowed opacity-50 font-semibold'
+                      : 'text-sky-400 hover:text-sky-300 font-semibold'
+                  }
                 >
                   Edit 60-min Window ✎
                 </button>
@@ -1159,13 +1180,19 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                 </span>
               </div>
               <button
+                disabled={selectedRole === 'Athlete'}
                 onClick={() => {
+                  if (selectedRole === 'Athlete') return;
                   const targetDoc = athlete.documents.find(
                     (d) => d.status === 'Expiring Soon' || d.status === 'Expired'
                   );
                   if (targetDoc) handleReplaceDocument(targetDoc);
                 }}
-                className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs whitespace-nowrap"
+                className={`px-3 py-1.5 rounded font-semibold text-xs whitespace-nowrap ${
+                  selectedRole === 'Athlete'
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
               >
                 Renew Expiring Certificate
               </button>
@@ -1201,7 +1228,9 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
             </div>
 
             <button
+              disabled={selectedRole === 'Athlete'}
               onClick={() => {
+                if (selectedRole === 'Athlete') return;
                 const newDoc: AthleteDocument = {
                   id: `doc-${Date.now()}`,
                   name: 'Supplemental ECG & Blood Panel Clearance',
@@ -1222,7 +1251,11 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                   'Uploaded and verified new athlete document'
                 );
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md font-semibold text-xs ${
+                selectedRole === 'Athlete'
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                  : 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+              }`}
             >
               <Upload className="w-3.5 h-3.5" />
               <span>+ Upload Document</span>
@@ -1323,8 +1356,16 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                             <span>Download</span>
                           </button>
                           <button
-                            onClick={() => handleReplaceDocument(doc)}
-                            className="px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-medium"
+                            disabled={selectedRole === 'Athlete'}
+                            onClick={() => {
+                              if (selectedRole === 'Athlete') return;
+                              handleReplaceDocument(doc);
+                            }}
+                            className={`px-2.5 py-1 rounded border font-medium ${
+                              selectedRole === 'Athlete'
+                                ? 'bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                                : 'bg-sky-500/15 hover:bg-sky-500/25 border-sky-500/30 text-sky-300'
+                            }`}
                           >
                             Replace
                           </button>
@@ -1937,8 +1978,16 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                       ADAMS STATUS: {athlete.wadaWhereabouts?.filingStatus || 'COMPLIANT ✓'}
                     </span>
                     <button
-                      onClick={() => setIsWhereaboutsModalOpen(true)}
-                      className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors"
+                      disabled={selectedRole === 'Athlete'}
+                      onClick={() => {
+                        if (selectedRole === 'Athlete') return;
+                        setIsWhereaboutsModalOpen(true);
+                      }}
+                      className={`px-3.5 py-1.5 rounded font-semibold transition-colors ${
+                        selectedRole === 'Athlete'
+                          ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                          : 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+                      }`}
                     >
                       Update 60-min Window
                     </button>
@@ -2000,8 +2049,16 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                     </div>
                   </div>
                   <button
-                    onClick={() => setIsWhereaboutsModalOpen(true)}
-                    className="w-full py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-center transition-colors"
+                    disabled={selectedRole === 'Athlete'}
+                    onClick={() => {
+                      if (selectedRole === 'Athlete') return;
+                      setIsWhereaboutsModalOpen(true);
+                    }}
+                    className={`w-full py-2 rounded font-medium text-center transition-colors ${
+                      selectedRole === 'Athlete'
+                        ? 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                    }`}
                   >
                     Modify Schedule / Travel Location →
                   </button>
@@ -2038,8 +2095,16 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                     )}
                   </div>
                   <button
-                    onClick={() => setIsTueApplicationModalOpen(true)}
-                    className="w-full py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-center transition-colors"
+                    disabled={selectedRole === 'Athlete'}
+                    onClick={() => {
+                      if (selectedRole === 'Athlete') return;
+                      setIsTueApplicationModalOpen(true);
+                    }}
+                    className={`w-full py-2 rounded font-medium text-center transition-colors ${
+                      selectedRole === 'Athlete'
+                        ? 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                    }`}
                   >
                     Submit New TUE Medical Dossier →
                   </button>

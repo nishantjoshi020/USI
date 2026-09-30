@@ -5,7 +5,7 @@ import {
   CheckCircle2,
   X,
 } from 'lucide-react';
-import { Athlete, CoachProfile } from '../../types/usi';
+import { Athlete, CoachProfile, UserRole } from '../../types/usi';
 import { AVAILABLE_COACHES } from '../../data/athlete360Defaults';
 import { AiAssistanceMode } from './Athlete360Page';
 
@@ -722,10 +722,10 @@ export const EditAthleteProfileModal: React.FC<
         <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div>
             <div className="text-xs font-mono text-sky-400">
-              {isAthleteSelf ? 'MY PERSONAL DETAILS EDITOR' : 'ATHLETE PROFILE EDITOR'}
+              {isAthleteSelf ? 'ATHLETE PROFILE DETAILS (READ-ONLY)' : 'ATHLETE PROFILE EDITOR'}
             </div>
             <h2 className="text-base font-bold text-slate-100 mt-0.5">
-              {isAthleteSelf ? 'Update Personal & Emergency Details' : `Edit Profile — ${athlete.name} (${athlete.athleteId})`}
+              {isAthleteSelf ? `Profile Details — ${athlete.name} (${athlete.athleteId})` : `Edit Profile — ${athlete.name} (${athlete.athleteId})`}
             </h2>
           </div>
           <button
@@ -738,8 +738,8 @@ export const EditAthleteProfileModal: React.FC<
 
         <div className="p-5 space-y-3.5 text-xs overflow-y-auto flex-1">
           {isAthleteSelf && (
-            <div className="p-3 rounded bg-sky-500/10 border border-sky-500/30 text-sky-200 text-[11px]">
-              <strong>Athlete Self-Service Scope:</strong> You can update your personal identity, position preference, and emergency contact details. Squad assignment, clinical clearance, and training status are governed by coaching &amp; medical staff.
+            <div className="p-3 rounded bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px]">
+              <strong>Read-Only Profile Governance:</strong> Athlete persona cannot edit personal, sporting, or clinical profile details. Contact Federation Administration or Coaching Staff to request profile modifications.
             </div>
           )}
 
@@ -749,8 +749,13 @@ export const EditAthleteProfileModal: React.FC<
               <input
                 type="text"
                 value={name}
+                disabled={isAthleteSelf}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               />
             </div>
 
@@ -777,8 +782,13 @@ export const EditAthleteProfileModal: React.FC<
               <input
                 type="text"
                 value={position}
+                disabled={isAthleteSelf}
                 onChange={(e) => setPosition(e.target.value)}
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               />
             </div>
 
@@ -870,8 +880,13 @@ export const EditAthleteProfileModal: React.FC<
               <input
                 type="text"
                 value={emergencyContact}
+                disabled={isAthleteSelf}
                 onChange={(e) => setEmergencyContact(e.target.value)}
-                className="w-full p-2.5 rounded bg-[#090D16] border border-slate-700 text-slate-100"
+                className={`w-full p-2.5 rounded border ${
+                  isAthleteSelf
+                    ? 'bg-[#070A12] border-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#090D16] border-slate-700 text-slate-100'
+                }`}
               />
             </div>
           </div>
@@ -896,10 +911,12 @@ export const EditAthleteProfileModal: React.FC<
             onClick={onClose}
             className="px-3.5 py-2 rounded bg-slate-800 text-xs text-slate-300"
           >
-            Cancel
+            {isAthleteSelf ? 'Close' : 'Cancel'}
           </button>
           <button
+            disabled={isAthleteSelf}
             onClick={() => {
+              if (isAthleteSelf) return;
               const updatedBreakdown = {
                 ...athlete.profileCompletionBreakdown,
                 medicalClearance: medicalStatus === 'Cleared',
@@ -948,7 +965,11 @@ export const EditAthleteProfileModal: React.FC<
               );
               onClose();
             }}
-            className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs"
+            className={`px-4 py-2 rounded font-semibold text-xs ${
+              isAthleteSelf
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                : 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+            }`}
           >
             Save Profile Changes
           </button>

@@ -35,11 +35,13 @@ import { ROLE_DASHBOARDS_CONFIG } from '../../data/roleDashboardConfig';
 interface RoleDashboardBannerProps {
   selectedRole: UserRole;
   onTriggerQuickAction?: (actionId: string, label: string) => void;
+  onResetPersona?: (role: UserRole) => void;
 }
 
 export const RoleDashboardBanner: React.FC<RoleDashboardBannerProps> = ({
   selectedRole,
   onTriggerQuickAction,
+  onResetPersona,
 }) => {
   const config = ROLE_DASHBOARDS_CONFIG[selectedRole] || ROLE_DASHBOARDS_CONFIG['Performance Director'];
 
@@ -157,7 +159,7 @@ export const RoleDashboardBanner: React.FC<RoleDashboardBannerProps> = ({
           </p>
         </div>
 
-        {/* Quick Action Shortcuts for This Persona */}
+        {/* Quick Action Shortcuts & Reset Button for This Persona */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           {config.quickActions.map((action) => (
             <button
@@ -173,6 +175,17 @@ export const RoleDashboardBanner: React.FC<RoleDashboardBannerProps> = ({
               <span>{action.label}</span>
             </button>
           ))}
+          {onResetPersona && (
+            <button
+              type="button"
+              onClick={() => onResetPersona(selectedRole)}
+              title={`Reset ${selectedRole} persona state and telemetry`}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/35 text-xs font-semibold text-amber-200 hover:text-amber-100 transition-all shadow-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Reset {selectedRole}</span>
+            </button>
+          )}
         </div>
       </div>
 

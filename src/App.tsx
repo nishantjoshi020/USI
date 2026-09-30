@@ -62,6 +62,7 @@ import {
   ANALYTICS_14D_SERIES,
   ASSESSMENTS_LIST,
   ATHLETES,
+  getEnforcedContextForRole,
   INITIAL_CONTEXT,
   INITIAL_NOTIFICATIONS,
   INITIAL_RECOMMENDATIONS,
@@ -203,6 +204,7 @@ export default function App() {
   const [activeNav, setActiveNav] = useState<NavItemId>('command-center');
   const [context, setContext] = useState<HierarchyContext>(INITIAL_CONTEXT);
   const [selectedRole, setSelectedRole] = useState<UserRole>('Performance Director');
+  const [personaResetKey, setPersonaResetKey] = useState<number>(0);
   const [isSidebarCompact, setIsSidebarCompact] = useState<boolean>(false);
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
@@ -910,6 +912,11 @@ export default function App() {
 
   const handleSelectRole = (role: UserRole) => {
     setSelectedRole(role);
+    if (role === 'Athlete' && athletes[0]) {
+      setActiveAthlete360Id(athletes[0].id);
+      setEditProfileAthleteId(null);
+      setDrawerAthleteId(null);
+    }
     setAiMessages(getPersonaInitialMessages(role));
     setSessionMemoryTopic(null);
     triggerToast(`Switched operational view to ${role}`);
@@ -1152,8 +1159,8 @@ export default function App() {
     stress: number;
     readiness: number;
   }) => {
-    const targetAthId = 'ath-01'; // Default active athlete Ananya Sen
-    const target = athletes.find((a) => a.id === targetAthId) || athletes[0];
+    const target =
+      athletes.find((a) => a.id === activeAthlete360Id) || athletes[0];
     if (!target) return;
 
     updateAthleteWithAudit(
@@ -1869,8 +1876,10 @@ export default function App() {
     );
   };
 
-  const handleResetDemoState = () => {
-    const base = generateContextDataset(INITIAL_CONTEXT);
+  const handleResetDemoState = (targetRole?: UserRole) => {
+    const roleToReset = targetRole || selectedRole;
+    const resetContext = getEnforcedContextForRole(roleToReset, INITIAL_CONTEXT);
+    const base = generateContextDataset(resetContext);
     setAthletes(base.athletes);
     setSessions(base.sessions);
     setInjuries(base.injuries);
@@ -1886,21 +1895,36 @@ export default function App() {
     setTests(base.tests);
     setTestResults(base.testResults);
     setTalentProfiles(base.talentProfiles);
+    setTalentWeights(INITIAL_TALENT_WEIGHTS);
     setReports(base.reports);
     setAnalyticsSeries(base.analyticsSeries);
     setRecommendations(base.recommendations);
-    setAiMessages(INITIAL_COPILOT_MESSAGES);
+    setNotifications(INITIAL_NOTIFICATIONS);
+    setAiMessages(getPersonaInitialMessages(roleToReset));
     setAiActionItems(base.aiActionItems);
     setAiRiskSignals(base.aiRiskSignals);
     setAiTrainingModifications(base.aiTrainingModifications);
     setAiAutomationRules(INITIAL_AUTOMATION_RULES);
+    setAiAutomationAuditEvents(INITIAL_AUTOMATION_AUDIT_EVENTS);
     setAiAuditTrail(INITIAL_AI_AUDIT_TRAIL);
-    setContext(INITIAL_CONTEXT);
-    setSelectedRole('Performance Director');
+    setContext(resetContext);
+    setSelectedRole(roleToReset);
+    setActiveKpi(null);
+    setSelectedReadinessTier(null);
+    setTableStatusFilter('All');
+    setDrawerAthleteId(null);
+    setSelectedSession(null);
+    setSelectedInjuryDrawerId(null);
+    setEditProfileAthleteId(null);
+    setApprovalModalAthleteId(null);
+    setCoachModalAthleteId(null);
+    setAiAssistanceMode(null);
+    setSessionMemoryTopic(null);
+    setPersonaResetKey((prev) => prev + 1);
     if (base.athletes[0]) {
       setActiveAthlete360Id(base.athletes[0].id);
     }
-    triggerToast('Reset all USI modules & telemetry to initial demo baseline ✓');
+    triggerToast(`Reset ${roleToReset} persona workspace & telemetry to initial baseline ✓`);
   };
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
@@ -2039,12 +2063,13 @@ export default function App() {
 
         {/* Workspace Viewport */}
         <main className="flex-1 p-5 lg:p-6 max-w-[1600px] w-full mx-auto space-y-5">
-          <ErrorBoundary fallbackTitle="Workspace Viewport Encountered an Issue">
+          <ErrorBoundary key={personaResetKey} fallbackTitle="Workspace Viewport Encountered an Issue">
           {activeNav === 'command-center' ? (
             <>
               {/* Dynamic 8-Persona Role Dashboard Banner */}
               <RoleDashboardBanner
                 selectedRole={selectedRole}
+                onResetPersona={(role) => handleResetDemoState(role)}
                 onTriggerQuickAction={(id, label) => {
                   if (id === 'qa-pd-1') setActiveNav('return-to-play');
                   else if (id === 'qa-pd-2') setActiveNav('assessments-talent');
@@ -2150,6 +2175,7 @@ export default function App() {
                   onTriggerToast={triggerToast}
                   onNavigateSection={(sec) => setActiveNav(sec as any)}
                   onUpdateAthleteWellness={handleAthleteWellnessSurveySubmit}
+                  onResetPersona={() => handleResetDemoState(selectedRole)}
                 />
               </ErrorBoundary>
 
@@ -2265,7 +2291,10 @@ export default function App() {
               onOpenReviewApplication={(ath) =>
                 setApprovalModalAthleteId(ath.id)
               }
-              onOpenEditProfile={(ath) => setEditProfileAthleteId(ath.id)}
+              onOpenEditProfile={(ath) => {
+                if (selectedRole === 'Athlete') return;
+                setEditProfileAthleteId(ath.id);
+              }}
               onOpenAiAssistance={(mode) => setAiAssistanceMode(mode)}
               onSelectInjuryDrawer={(inj) => setSelectedInjuryDrawerId(inj.id)}
               onOpenCreateRehabSession={(inj) =>
@@ -2793,6 +2822,7 @@ export default function App() {
       {/* Athlete Detail Drawer (With [Open Full Profile] navigation to Athlete 360) */}
       <AthleteDetailDrawer
         athlete={drawerAthlete}
+        selectedRole={selectedRole}
         onClose={() => setDrawerAthleteId(null)}
         onOpenFullProfile={handleOpenFullAthlete360}
         onNavigateModuleWithAthlete={(module, ath) => {
@@ -2949,6 +2979,7 @@ export default function App() {
       {/* Edit Athlete Profile Modal */}
       <EditAthleteProfileModal
         athlete={editProfileAthlete}
+        selectedRole={selectedRole}
         onClose={() => setEditProfileAthleteId(null)}
         onSaveProfile={(athleteId, updates, auditAction) =>
           updateAthleteWithAudit(
@@ -2964,9 +2995,25 @@ export default function App() {
       <AiAthleteAssistanceDrawer
         athlete={activeAthlete360}
         mode={aiAssistanceMode}
+        selectedRole={selectedRole}
         onSwitchMode={(m) => setAiAssistanceMode(m)}
         onClose={() => setAiAssistanceMode(null)}
-        onApplySuggestedAction={(actionLabel) =>
+        onApplySuggestedAction={(actionLabel) => {
+          if (selectedRole === 'Athlete') {
+            updateAthleteWithAudit(
+              activeAthlete360.id,
+              { lastUpdated: 'Just now' },
+              actionLabel,
+              'Logged personal AI readiness review note',
+              {
+                title: 'Athlete reviewed AI readiness telemetry',
+                description: actionLabel,
+                category: 'AI',
+                detailNotes: actionLabel,
+              }
+            );
+            return;
+          }
           updateAthleteWithAudit(
             activeAthlete360.id,
             { trainingStatus: 'RESTRICTED', lastUpdated: 'Just now' },
@@ -2978,14 +3025,15 @@ export default function App() {
               category: 'AI',
               detailNotes: actionLabel,
             }
-          )
-        }
+          );
+        }}
       />
 
       {/* Global Search Modal (⌘K) */}
       <GlobalSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
+        selectedRole={selectedRole}
         athletes={athletes}
         sessions={sessions}
         injuries={injuries}
