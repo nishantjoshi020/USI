@@ -654,20 +654,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [activeNav]);
 
-  const rawNavGroups = getNavGroupsForRole();
-  const operationalWorkflowsGroup: NavGroup = {
-    id: 'operational-workflows',
-    label: 'OPERATIONAL WORKFLOWS',
-    icon: ClipboardCheck,
-    navId: 'athlete-lifecycle',
-    badgeCount: 4,
-    badgeTone: 'sky',
-  };
-  const navGroups = rawNavGroups.length > 0 ? [
-    rawNavGroups[0],
-    operationalWorkflowsGroup,
-    ...rawNavGroups.slice(1),
-  ] : [operationalWorkflowsGroup];
+  const navGroups = getNavGroupsForRole();
 
   if (viewportMode === 'mobile' && !isMobileDrawerOpen) {
     return null;

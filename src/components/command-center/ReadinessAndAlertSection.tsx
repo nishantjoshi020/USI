@@ -91,12 +91,91 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
     },
   };
 
-  const subsystemMetrics = [
-    { label: 'Neuromuscular (CMJ Power)', value: 81, status: 'Nominal' },
-    { label: 'Autonomic HRV (rMSSD)', value: 74, status: '3 Depressed' },
-    { label: 'Metabolic & Glycogen Load', value: 79, status: 'Optimal' },
-    { label: 'Sleep & Subjective Wellness', value: 76, status: 'Monitor' },
-  ];
+  const subsystemMetrics = React.useMemo(() => {
+    if (!athletes || athletes.length === 0) {
+      return [
+        { label: 'Neuromuscular (CMJ Power)', value: 81, status: 'Nominal' },
+        { label: 'Autonomic HRV (rMSSD)', value: 74, status: '3 Depressed' },
+        { label: 'Metabolic & Glycogen Load', value: 79, status: 'Optimal' },
+        { label: 'Sleep & Subjective Wellness', value: 76, status: 'Monitor' },
+      ];
+    }
+    const total = athletes.length;
+    const meanReadiness = Math.round(
+      athletes.reduce((s, a) => s + a.readiness, 0) / total
+    );
+    const meanNutrition = Math.round(
+      athletes.reduce((s, a) => s + a.nutritionCompliancePct, 0) / total
+    );
+    const depressedHrvCount = athletes.filter(
+      (a) => a.hrvMs < a.hrvBaselineMs - 4
+    ).length;
+    const meanSleepScore = Math.min(
+      96,
+      Math.round(
+        athletes.reduce((s, a) => s + (a.sleepHours / 8) * 85, 0) / total
+      )
+    );
+    return [
+      {
+        label: 'Neuromuscular (CMJ Power)',
+        value: Math.min(96, meanReadiness + 3),
+        status: meanReadiness >= 78 ? 'Nominal' : 'Monitor',
+      },
+      {
+        label: 'Autonomic HRV (rMSSD)',
+        value: Math.max(60, meanReadiness - 2),
+        status: `${depressedHrvCount} Depressed`,
+      },
+      {
+        label: 'Metabolic & Glycogen Load',
+        value: meanNutrition,
+        status: meanNutrition >= 85 ? 'Optimal' : 'Monitor',
+      },
+      {
+        label: 'Sleep & Subjective Wellness',
+        value: meanSleepScore,
+        status: meanSleepScore >= 80 ? 'Optimal' : 'Monitor',
+      },
+    ];
+  }, [athletes]);
+
+  const dynamicAlert = React.useMemo(() => {
+    if (!athletes || athletes.length === 0) return AI_OPERATIONAL_ALERT;
+    const riskAthletes = athletes.filter(
+      (a) => a.injuryRisk === 'High' || a.status === 'Attention'
+    );
+    const count = riskAthletes.length || 1;
+    const sport = athletes[0]?.sport || 'Football';
+    const program = athletes[0]?.program || "Senior Men's Program";
+    const maxAcwr = Math.max(...athletes.map((a) => a.acwr || 1.1)).toFixed(2);
+    const minHrv = Math.min(...athletes.map((a) => a.hrvMs || 52));
+    return {
+      ...AI_OPERATIONAL_ALERT,
+      message: `${count} ${sport} athletes in ${program} (${riskAthletes
+        .slice(0, 3)
+        .map((a) => a.name.split(' ')[0])
+        .join(', ')}) are showing elevated injury-risk patterns based on recent workload, recovery and wellness signals.`,
+      signals: [
+        {
+          label: 'Acute workload increased',
+          detail: `Peak ACWR ${maxAcwr} recorded in ${sport} block`,
+        },
+        {
+          label: 'Recovery markers declined',
+          detail: `Morning HRV rMSSD dipped to ${minHrv} ms in flagged cohort`,
+        },
+        {
+          label: 'Sleep consistency decreased',
+          detail: `${riskAthletes[0]?.sleepFormatted || '6h 12m'} sleep logged for ${riskAthletes[0]?.name.split(' ')[0] || 'lead case'}`,
+        },
+        {
+          label: 'Previous injury history detected',
+          detail: riskAthletes[0]?.previousInjuryHistory || AI_OPERATIONAL_ALERT.signals[3].detail,
+        },
+      ],
+    };
+  }, [athletes]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -257,7 +336,7 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
 
           {/* Primary Operational Message */}
           <p className="mt-3.5 text-sm font-medium text-slate-100 leading-relaxed">
-            "{AI_OPERATIONAL_ALERT.message}"
+            "{dynamicAlert.message}"
           </p>
 
           {/* Signals List */}
@@ -265,11 +344,11 @@ export const ReadinessAndAlertSection: React.FC<ReadinessAndAlertSectionProps> =
             <div className="text-[11px] font-semibold text-slate-400 mb-2 flex items-center justify-between">
               <span>DETECTED MULTI-VARIABLE SIGNALS</span>
               <span className="font-mono text-sky-400">
-                {AI_OPERATIONAL_ALERT.confidence}
+                {dynamicAlert.confidence}
               </span>
             </div>
             <ul className="space-y-1.5">
-              {AI_OPERATIONAL_ALERT.signals.map((sig) => (
+              {dynamicAlert.signals.map((sig) => (
                 <li
                   key={sig.label}
                   className="flex items-start justify-between gap-2 text-xs py-1 px-2.5 rounded bg-[#0B101B] border border-slate-800/80"
