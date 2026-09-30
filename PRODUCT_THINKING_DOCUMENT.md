@@ -293,117 +293,239 @@ USI deploys an **Adaptive 8-Persona Role-Based Architecture**. The interface alt
 
 ---
 
+### Executive Justification Matrix: Legacy AMS Flaws vs. USI Solutions
+
+| Evaluation Pillar | Legacy AMS Industry Anti-Pattern | USI Architectural Solution | Mathematical / Technical Mechanism | Concrete Prototype Proof & Impact |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Operational Depth** | High-level status dropdowns ("Fit", "Injured") and weekly PDF post-mortems. | Real-time pitchside micro-metric triage, 1-click drill adaptations, and live anatomical rehab logging. | $\text{Internal Load} = \text{sRPE} \times \text{mins}$; $\text{LSI} \ge 90\%$; $\text{Pain VAS} \le 2/10$; $\text{Tolerance} = \pm 15\%$. | 1-Click drill modification drops high-speed running $<14\text{ km/h}$; live $+5\%$ rehab logging on 30 anatomical regions. |
+| **2. Enterprise Workflow Understanding** | Monolithic single-user forms; coaches view private MRI scans or are left completely blind. | Asynchronous 3-tier sequential approval, coach caseload load balancing, and decoupled movement prescriptions. | Sequential state machine: $\text{Level 1 (Admin)} \rightarrow \text{Level 2 (Coach)} \rightarrow \text{Level 3 (CMO)}$; Coach Caseload Quotas ($N \le 20$). | Athletes cannot be fielded until all 3 departments sign off; coaches receive `Permitted` vs `Prohibited` rules. |
+| **3. Scalable Architecture** | Hardcoded single-sport silos or separate database instances per sports club. | 4-tier multi-tenant hierarchy engine supporting polymorphic sport metrics with persistent global context. | Vertical: $\text{Federation} \rightarrow \text{Sport} \rightarrow \text{Program} \rightarrow \text{Squad} \rightarrow \text{Athlete}$; Persistent Central State Engine. | Seamless hot-switching across Football, Athletics, Field Hockey, Swimming, and Badminton without state loss. |
+| **4. Realistic SaaS Thinking** | Modal trap popups, blinding light interfaces, missing audit trails, and flat data access. | Dark-mode ergonomic UI, slide-over drawers, keyboard command palette ($\text{⌘K}$), and immutable audit logs. | High-contrast WCAG 2.1 AA tokens; non-blocking slide-over drawers; atomic state mutation audit trails. | Pitchside glare-free triage; instant $\text{⌘K}$ navigation across 5 modules; zero accidental data overwrites. |
+| **5. Sports-Tech Understanding** | Disconnected vendor hardware portals (Catapult, Vald, Oura) requiring manual CSV export. | Native ingestion of 10Hz GPS telemetry, dual-force plate asymmetries, nocturnal HRV, and WADA TUE alerts. | $\text{EWMA}_{\text{today}} = L_t \lambda + \text{EWMA}_{t-1}(1-\lambda)$ ($\lambda_a=0.25, \lambda_c=0.069$); 30-day TUE proactive alert. | Continuous ACWR load spike detection; eccentric knee flexor asymmetry monitoring; automatic TUE expiration flags. |
+| **6. Systems Integration Thinking** | Data silos requiring manual emails and phone calls between doctors, coaches, and scientists. | Event-driven closed-loop cascade: a clinical tag instantly adapts coaching sessions and load models. | Event Dispatcher: $\Delta(\text{Clinical Status}) \Longrightarrow \Delta(\text{Triage}) \wedge \Delta(\text{Drills}) \wedge \Delta(\text{Load}) \wedge \Delta(\text{Rehab})$. | Zero double-entry; acute hamstring diagnosis immediately locks sprint drills and resets scientific load envelope. |
+| **7. AI-First Product Strategy** | Generic text-only chatbot widgets giving generalized fitness advice without context. | Hybrid supervisory AI: deterministic safety gates paired with semantic pattern recognition and 1-click actions. | $\Delta_{\text{Discordance}} = z(\text{Soreness}) - z(\text{HRV Suppression})$; Action Chips with Evidence Bundles & Safety Registry. | Detects hidden player fatigue (soreness $2/10$ vs HRV $-22\%$); executes 1-click pitchside running caps with audit log. |
+
+---
+
 ### 4.1 Justification 1: Operational Depth
-* **The Reality of Elite Sports Operations:** Elite high-performance programs do not operate on generic averages or hand-waving status updates. They operate on specific, empirical micro-metrics:
-  1. **Internal Workload Modeling:**
-     $$\text{Internal Load (Arbitrary Units)} = \text{Session RPE (0--10)} \times \text{Duration (mins)}$$
-  2. **Bilateral Neuromuscular Symmetry:**
-     $$\text{Limb Symmetry Index (LSI \%)} = \left(\frac{\text{Involved Limb Force}}{\text{Uninvolved Limb Force}}\right) \times 100 \quad (\text{Threshold: } \ge 90\%)$$
-  3. **Subjective Fatigue Index:** Hooper-Mackinnon composite survey measuring Sleep Quality, Muscle Soreness, General Fatigue, and Mental Stress (1–10 scale).
-  4. **Anti-Doping Security:** Informed-Sport batch verification certificates registered per supplement SKU before dispensing.
-* **Operational Implementation & Proof:**
-  - **1-Click Drill Modification:** In the Coach Triage Console, clicking **Modify Session** on an adductor-tightness athlete immediately adapts the drill:
-    $$\text{Max Sprint Acceleration 8}\times 60\text{m} \longrightarrow \text{Technical Passing Drills + Active Recovery}$$
-    This automatically sets the athlete's GPS high-speed running threshold to $<14\text{ km/h}$.
-  - **Planned vs. Actual Workload Review:** Flags $> +15\%$ deviations between planned coaching targets and GPS-measured exertion, allowing coaches to approve with an audit note or trigger scientific load reviews.
-  - **Live Anatomical Adherence Logging:** On the Interactive Body Map, clicking `+5% Session` directly increments physical therapy compliance on the selected anatomical structure.
+
+#### The Enterprise Problem Solved
+Legacy AMS software treats athlete readiness as an abstract, qualitative status label ("Fit", "Injured", "Resting"). In elite sports, availability is continuous, non-binary, and multi-factorial. When a system lacks micro-metric granularity, coaching staff make crude binary decisions—either benching an athlete unnecessarily or playing an athlete through sub-clinical tissue fatigue, triggering catastrophic non-contact injuries.
+
+#### The USI Operational Architecture
+USI operates at the micro-metric level, grounding every operational surface in validated physiological and biomechanical calculations:
+1. **Internal Exertion Modeling:**
+   $$\text{Internal Load (Arbitrary Units)} = \text{Session RPE (0--10)} \times \text{Duration (mins)}$$
+   Tracks cardiovascular and perceptual stress independently of mechanical distance.
+2. **Bilateral Neuromuscular Symmetry:**
+   $$\text{Limb Symmetry Index (LSI \%)} = \left(\frac{\text{Involved Limb Peak Force}}{\text{Uninvolved Limb Peak Force}}\right) \times 100 \quad (\text{Clinical Gate: } \ge 90\%)$$
+   Measured via bilateral isometric dual force plates to verify neuromuscular restoration before running progression.
+3. **Multi-Factor Subjective Fatigue:**
+   Quantified via the Hooper-Mackinnon survey across 4 independent dimensions (Sleep Quality, Muscle Soreness, General Fatigue, Mental Stress on 1–10 visual analogue scales), avoiding single-number subjective distortion.
+4. **Anti-Doping Security Protocol:**
+   Every supplement dispensed is verified against Informed-Sport laboratory batch testing certificates, logging batch numbers and testing timestamps directly in the athlete's nutrition ledger.
+
+#### Real-World Operational Scenarios & Evidence
+* **Pitchside Tactical Drill Adaptation:**
+  In the Morning Squad Triage Console, an athlete presenting with adductor tightness ($4/10$) and elevated fatigue is triaged into `MODIFY` status ($62\%$ readiness). The coach clicks **Modify Session**:
+  $$\text{Max Sprint Acceleration 8}\times 60\text{m} \longrightarrow \text{Technical Passing Drills + Active Recovery}$$
+  The system automatically caps the athlete's GPS High-Speed Running threshold at $<14\text{ km/h}$, preventing high-velocity eccentric adductor loading while keeping the athlete integrated into the tactical squad.
+* **Planned vs. Actual Workload Variance Auditing:**
+  In the Coach Planned vs. Actual Load Variance Console, when actual GPS mechanical load exceeds the planned envelope by $> +15\%$, the system flags the session in amber/rose. The coach is prompted to provide an operational rationale or trigger a scientific load recalculation before subsequent session envelopes can be locked.
+* **Live Anatomical Adherence Logging:**
+  On the Interactive 30-Region Body Map, the physiotherapist selects the injured anatomical structure (e.g., Left Biceps Femoris) and clicks `+5% Session`. This immediately updates cumulative tissue healing progress, recalculates days to target discharge, and appends a chronological rehabilitation record.
+
+#### Persona-Specific Operational Proof
+* **Coach:** Receives instantaneous pitchside triage classifications (`Ready` $\ge 75\%$, `Modify` $50\text{--}74\%$, `Review` $<50\%$) with actionable drill adaptation chips.
+* **Physiotherapist:** Tracks anatomical progression across 30 coordinates with quantifiable tissue compliance metrics rather than narrative notes alone.
+* **Sports Scientist:** Evaluates micro-telemetry distributions (accelerations, decelerations, sprint meters) against historical rolling baselines.
 
 ---
 
 ### 4.2 Justification 2: Enterprise Workflow Understanding
-* **Asynchronous Multi-Disciplinary Workflows:** Traditional forms assume a single user fills out an entire record. Elite sports federations rely on multi-stage handshakes across legal, tactical, and medical departments:
-  1. **Sequential 3-Tier Approval Pipeline (Athlete Operations Engine):**
-     - **Level 1 (Federation Admin):** Verifies government ID, birth certificate, and federation eligibility.
-     - **Level 2 (Head Coach):** Verifies playing position, squad categorization, and tactical role.
-     - **Level 3 (Chief Medical Officer):** Verifies 12-lead ECG cardiac screening, baseline concussion testing, and WADA TUE exemptions.
-     - *System Enactment:* An athlete remains in `PENDING` state and cannot be selected for fixtures until all 3 sequential signatures are committed.
-  2. **Coach Capacity Load Balancing (Athlete Operations Engine):**
-     - The coach assignment engine displays real-time capacity counters (e.g. `18 / 20 athletes assigned`).
-     - Prevents coaching cognitive overload by flagging overallocated staff in amber/rose.
-  3. **Decoupling Clinical Narratives from Pitch Boundaries:**
-     - Medical EHR entries are strictly firewalled from coaches.
-     - The interface synthesizes an operational **Positive Movement Prescription**:
-       - `✅ Permitted Activities:` Linear jogging $<14\text{ km/h}$, upper-body gym conditioning, static passing drills.
-       - `⛔ Prohibited Activities:` Maximal sprinting $>22\text{ km/h}$, reactive slide tackling, high-speed deceleration scrimmages.
+
+#### The Enterprise Problem Solved
+Traditional sports software assumes a single user sits down and enters an entire athlete record. In reality, elite federations operate through asynchronous, multi-departmental handshakes. Legal, tactical, medical, and scientific staff have competing priorities and strict legal boundaries. When software fails to understand these handshakes, administrative disqualifications occur, coaches override medical precautions, and confidential health records leak across departments.
+
+#### The USI Operational Architecture
+USI implements enterprise-grade asynchronous state machines and confidentiality firewalls tailored to high-performance organizations:
+1. **Sequential 3-Tier Approval Pipeline:**
+   An onboarding athlete cannot be activated or fielded through a single form submission. The dossier passes through three independent departmental gates:
+   - **Level 1: Federation Administrative Governance:** Verifies legal identification, birth certificate, nationality passport, and national federation licensing.
+   - **Level 2: Technical Coaching Appraisal:** Verifies tactical position fit, squad categorization, and development pathway eligibility.
+   - **Level 3: Chief Medical Officer Clinical Clearance:** Verifies 12-lead resting ECG cardiac clearance, baseline SCAT-5 concussion screening, and WADA Therapeutic Use Exemption (TUE) validation.
+   *System Guardrail:* The athlete remains in `PENDING` status with competitive selection blocked until all three independent cryptographic signatures are registered.
+2. **Coach Caseload Capacity Balancing:**
+   Assigning too many athletes to a single coach causes cognitive fatigue and diminished developmental oversight. The Coach Assignment Console tracks live caseload ratios (e.g., `18 / 20 athletes assigned`). Overallocated coaches are highlighted with visual threshold warnings, preserving coaching quality and welfare.
+3. **Clinical-Tactical Decoupling (The Positive Movement Prescription):**
+   Exposing raw medical records (MRI transcripts, ultrasound scans, clinical notes) to coaching staff breaches medical privacy regulations (HIPAA, GDPR) and creates clinical ambiguity. USI's decoupling engine translates complex medical diagnoses into operational, pitchside **Positive Movement Prescriptions**:
+   - `✅ Permitted Activities:` Linear jogging $<14\text{ km/h}$, upper-body resistance training, static technical passing drills.
+   - `⛔ Prohibited Activities:` Maximal sprinting $>22\text{ km/h}$, reactive slide tackling, high-speed deceleration scrimmages.
+4. **Supervisory Return-to-Play Override Governance:**
+   While physiotherapists control rehabilitation advancement through Stages 1 to 4, the critical transition to **Stage 5 (Return to Competition)** is locked behind a supervisory gate. Only the **Performance Director** or **Lead Physiotherapist** can authorize Stage 5 clearance, requiring mandatory written justification that is permanently preserved in the audit registry.
+
+#### Real-World Operational Scenarios & Evidence
+* **Cross-Departmental Handshake Scenario:**
+  A newly signed 19-year-old winger undergoes onboarding. The Federation Admin signs off on Level 1 identity; the Head Coach signs off on Level 2 tactical fit. However, the athlete's ECG reveals a minor cardiac anomaly requiring secondary cardiology review. Level 3 remains unsigned. The coach attempts to add the player to the matchday starting lineup; the roster selector displays a hard clinical lock: `BLOCKED: Pending Level 3 CMO Cardiac Clearance`. Preventable medical liability is eliminated.
 
 ---
 
 ### 4.3 Justification 3: Scalable Architecture
-* **Strict 4-Tier Multi-Tenant Hierarchy Engine:**
-  - Multi-tenant scoping from `Tier 1: Federation` $\rightarrow$ `Tier 2: Sport Discipline` $\rightarrow$ `Tier 3: Pathway Program` $\rightarrow$ `Tier 4: Squad Cohort` $\rightarrow$ `Individual Athlete`.
-  - Accommodates 5 Olympic disciplines (*Football, Athletics, Field Hockey, Swimming, Badminton*).
-* **Stateful Separation of Concerns:**
-  - **Root State Coordination:** The Central Application State Engine maintains persistent context across module switching. Changing sport dynamically updates athlete rosters, injury registries, and coach directories without stale closures or state tearing.
-  - **Type-Safe Domain Modeling:** Unified domain contracts cover over 1,100 schema specifications defining `Athlete`, `Injury`, `TrainingSession`, `WellnessProfile`, `RehabPlanRecord`, and `UserRole`.
-  - **Modular Domain Architecture:** Clean domain isolation between Command Center, Athlete Registry, Tactical Training, Sports Medicine, Sports Science, Nutrition, Talent Identification, Executive Analytics, and AI Copilot.
+
+#### The Enterprise Problem Solved
+Multi-sport national Olympic federations and large sports institutes manage hundreds of athletes across diverse sporting disciplines. Legacy systems are either hardcoded for a single sport (e.g., soccer-only AMS) or deploy isolated database instances for every team, making cross-sport talent scouting, executive reporting, and institutional benchmarking impossible.
+
+#### The USI Operational Architecture
+USI is built upon a **Two-Axis Multi-Tenant Hierarchy Grid**:
+1. **Vertical Multi-Tenant Scoping:**
+   ```
+   [Tier 1: Federation] ──► [Tier 2: Sport Discipline] ──► [Tier 3: Pathway Program] ──► [Tier 4: Squad Cohort] ──► [Athlete Profile]
+   ```
+   Enables strict hierarchical scoping from national governing bodies down to individual athletes.
+2. **Cross-Sport Polymorphic Architecture:**
+   Accommodates 5 major Olympic disciplines (*Football, Athletics, Field Hockey, Swimming, Badminton*) within a unified platform architecture. The system supports polymorphic performance metrics:
+   - *Football:* High-Speed Running ($>19.8\text{ km/h}$), sprint distance, tactical formations.
+   - *Athletics:* Split times ($30\text{m}$, $60\text{m}$), hurdle transition velocity, jump heights.
+   - *Swimming:* Stroke frequency, lap cadence, turn efficiency, blood lactate threshold.
+   - *Field Hockey:* Repeated sprint ability, change-of-direction decelerations, stick velocity.
+   - *Badminton:* Reactive agility index, smash velocity, vertical jump recovery.
+3. **Central Platform State Engine & Persistent Context Preservation:**
+   The active operational scope (`{ federation, sport, program, squad, athleteId }`) is held centrally. Switching sport discipline or squad cohort dynamically updates athlete rosters, injury registries, and training calendars without losing active search filters, pagination states, or open slide-over drawers.
+4. **Strict Domain Data Modeling:**
+   Unified enterprise domain data contracts define over 1,100 schema specifications, enforcing rigid structural typing across `AthleteProfile`, `ClinicalInjuryRecord`, `TacticalTrainingSession`, `DailyWellnessProfile`, `RehabilitationProtocol`, and `RolePermissions` without untyped escapes.
+5. **Modular Domain Isolation:**
+   Clean architectural separation between functional domains (Command Center, Athlete Registry, Tactical Periodisation, Sports Medicine, Sports Science, Nutrition, Talent Identification, Executive Analytics, and AI Copilot), ensuring changes in clinical modules cannot corrupt training session builders or financial registers.
 
 ---
 
 ### 4.4 Justification 4: Realistic SaaS Thinking
-* **Enterprise Multi-Tenancy & Data Privacy:**
-  - **HIPAA / GDPR Health Data Firewalls:** Non-medical staff cannot access diagnostic imaging files, ultrasound scans, or mental health notes.
-  - **Context-Preserving Ergonomics:** Changing active filters preserves search queries, pagination, and drawer states across module transitions.
-* **Non-Blocking Ergonomics:**
-  - **Slide-Over Drawers vs. Modal Traps:** Routine investigations (Injury Clinical File, Athlete 360, AI Copilot) open in smooth slide-over side drawers, keeping the underlying squad roster visible in the background.
-  - **Global Command Palette (`⌘K` / `Ctrl+K`):** Enables instantaneous keyboard-driven navigation across athletes, sessions, clinical files, and modules without manual menu traversal.
-  - **Visual Feedback & Reversibility:** Every state change triggers a descriptive, non-intrusive toast notification and writes an immutable record to the athlete's chronological audit trail.
-  - **Tabular Figures & Typography:** Monospace tabular numbers ensure telemetry metrics, HRV figures, and ACWR ratios align vertically across tables.
+
+#### The Enterprise Problem Solved
+Many sports technology prototypes suffer from naive software design: blinding bright-white themes that fail under outdoor pitchside glare, modal popups that block underlying squad lists, lack of audit trails for contentious decisions, and slow mouse-driven navigation that coaches refuse to use during high-tempo field sessions.
+
+#### The USI Operational Architecture
+USI is designed with the operational ergonomics and safety standards of tier-1 enterprise SaaS:
+1. **Pitchside Ergonomic Palette:**
+   Engineered with a deep slate dark-mode palette designed specifically for pitchside tablets and laptops under morning and evening outdoor lighting conditions, reducing eye fatigue and screen glare.
+2. **Accessible, Multi-Channel Color Semantics:**
+   State indicators never rely on color alone (preventing ambiguity for color-blind staff). Every visual indicator pairs calibrated HSL tones with explicit text badges, iconography, and high-contrast borders:
+   - `Emerald`: Full Training Availability ($\ge 80\%$) + Check Icon.
+   - `Amber`: Modified Workload / Moderate Risk ($50\text{--}74\%$) + Alert Triangle.
+   - `Rose`: Restricted / Active Clinical Pathology ($<50\%$) + Lock Icon.
+   - `Sky`: Active Rehabilitation / RTP Progression + Refresh Icon.
+3. **Non-Blocking Ergonomics & Slide-Over Drawers:**
+   Routine clinical files, athlete 360 profiles, and AI copilot threads open in smooth, accessible slide-over drawers. The underlying squad roster and calendar remain visible in the background, maintaining cognitive orientation.
+4. **Global Command Palette ($\text{⌘K}$ / $\text{Ctrl+K}$):**
+   Power-user keyboard navigation enables coaching and medical staff to jump between athletes, sessions, clinical files, and reports in under 2 seconds without navigating nested menus.
+5. **Tabular Numerical Precision:**
+   All biometric figures, GPS distances, and force plate telemetry are formatted with monospace tabular typography, ensuring figures align vertically across tables for rapid scanning during morning staff briefings.
+6. **Immutable Audit Logging:**
+   Every clinical diagnosis, session load modification, and Return-to-Play gate sign-off automatically writes an immutable audit record containing actor ID, timestamp, prior state, new state, and clinical rationale.
 
 ---
 
 ### 4.5 Justification 5: Sports-Tech Understanding
-* **Hardware-Native Telemetry & Metric Ingestion:**
-  - **Catapult / StatsSports GPS Telemetry:**
-    - High-Speed Running (HSR: $>19.8\text{ km/h}$)
-    - Very High-Speed Running / Sprinting ($>25.2\text{ km/h}$)
-    - Dynamic Accelerations ($>3.0\text{ m/s}^2$) and Decelerations ($<-3.0\text{ m/s}^2$)
-  - **Vald ForceDecks / NordBord Biomechanics:**
-    - Countermovement Jump (CMJ) concentric/eccentric bilateral force asymmetry.
-    - NordBord eccentric knee flexor peak torque and bilateral balance.
-  - **Autonomic Nervous System Telemetry:**
-    - Nocturnal Heart Rate Variability (HRV rMSSD in ms) and Resting Heart Rate (bpm).
-  - **Workload Modeling:**
-    - Exponentially Weighted Moving Average (EWMA) Acute-to-Chronic Workload Ratio:
-      $$\text{EWMA}_{\text{today}} = \text{Load}_{\text{today}} \cdot \lambda + \text{EWMA}_{\text{yesterday}} \cdot (1 - \lambda)$$
-      where $\lambda_a = \frac{2}{7 + 1} = 0.25$ (Acute, 7-day) and $\lambda_c = \frac{2}{28 + 1} = 0.069$ (Chronic, 28-day).
-  - **WADA Anti-Doping Regulations:** Proactive 30-day alerts for expiring Therapeutic Use Exemption (TUE) certificates.
+
+#### The Enterprise Problem Solved
+Generic software treats athlete monitoring as simple step counts or generic heart rate averages. Elite sports science demands ingestion and modeling of specialized micro-telemetry from industry-standard hardware (Catapult GPS, Vald force plates, nocturnal HRV sensors) and adherence to international governing body regulations (WADA, OSICS).
+
+#### The USI Operational Architecture
+USI natively ingests, normalizes, and models industry-standard sports science telemetry:
+1. **Catapult & StatsSports GPS Telemetry Ingestion:**
+   - High-Speed Running (HSR: $>19.8\text{ km/h}$)
+   - Very High-Speed Running / Sprinting ($>25.2\text{ km/h}$)
+   - Dynamic Accelerations ($>3.0\text{ m/s}^2$) and Decelerations ($<-3.0\text{ m/s}^2$)
+   - PlayerLoad™ / Dynamic Mechanical Stress Index
+2. **Vald ForceDecks & NordBord Biomechanical Ingestion:**
+   - Countermovement Jump (CMJ) concentric/eccentric bilateral impulse asymmetry.
+   - NordBord eccentric knee flexor peak torque (N) and bilateral balance ratio.
+   - Dynamic jump landing force attenuation and flight time to contraction time (FT:CT).
+3. **Autonomic Nervous System Biomarkers:**
+   - Nocturnal Heart Rate Variability (HRV rMSSD in ms) captured via wearable sensors during slow-wave sleep.
+   - Resting Heart Rate (bpm) tracked against 30-day rolling baselines.
+4. **Exponentially Weighted Moving Average (EWMA) Workload Modeling:**
+   Traditional rolling average ACWR suffers from mathematical distortions: when a past load spike exits the 28-day window, the ratio artificially spikes without any increase in acute training. USI implements exponential decay modeling:
+   $$\text{EWMA}_{\text{today}} = \text{Load}_{\text{today}} \cdot \lambda + \text{EWMA}_{\text{yesterday}} \cdot (1 - \lambda)$$
+   where:
+   $$\lambda_a = \frac{2}{7 + 1} = 0.25 \quad (\text{Acute Workload Envelope, 7-day decay})$$
+   $$\lambda_c = \frac{2}{28 + 1} = 0.069 \quad (\text{Chronic Workload Envelope, 28-day decay})$$
+   $$\text{ACWR}_{\text{EWMA}} = \frac{\text{EWMA}_{\text{acute}}}{\text{EWMA}_{\text{chronic}}}$$
+   Safe training zone: $0.80 \le \text{ACWR} \le 1.30$. High injury hazard zone: $\text{ACWR} > 1.45$.
+5. **WADA & Anti-Doping Regulatory Governance:**
+   Automated surveillance of Therapeutic Use Exemption (TUE) expiry dates, generating proactive 30-day alerts to federation medical officers to avoid inadvertent doping sanctions.
 
 ---
 
 ### 4.6 Justification 6: Systems Integration Thinking
-* **Closed-Loop Deterministic Event Cascade:**
-  USI eliminates manual double-entry. A single clinical event triggers an automatic, causal ripple effect across the platform:
+
+#### The Enterprise Problem Solved
+The fundamental breakdown in elite sporting clubs is departmental fragmentation: the medical unit diagnoses a tear, but the coach runs sprint intervals because information flows through informal WhatsApp messages or weekly email summaries. Data entered in one department never updates the operational models of another.
+
+#### The USI Operational Architecture
+USI operates as an **Event-Driven Closed-Loop Nervous System**. A mutation in one domain immediately propagates a deterministic causal chain across all other operational surfaces:
+
 ```
-[Physiotherapist Reports Acute Hamstring Strain on Interactive Body Map]
-  │
-  ├──► Athlete Training Status mutated from ACTIVE to RESTRICTED
-  ├──► Morning Squad Triage Console updates player status to REVIEW
-  ├──► Session Assignment engine excludes athlete from high-intensity contact drills
-  ├──► Coach Console displays Permitted vs Prohibited movement prescription
-  ├──► Sports Science ACWR model reduces 7-day planned load envelope
-  ├──► Nutritionist receives notification to adjust caloric intake for reduced expenditure
-  └──► Auto-instantiates 5-Stage Empirical Rehabilitation Plan
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        EVENT-DRIVEN CLOSED-LOOP SYSTEM CASCADE                         │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+               [Physiotherapist Logs Acute Hamstring Strain on Body Map]
+                                            │
+                    ┌───────────────────────┼───────────────────────┐
+                    ▼                       ▼                       ▼
+          [ATHLETE STATUS]         [COACH TRIAGE CONSOLE]    [TRAINING SESSION]
+       Mutates from ACTIVE to        Player auto-flagged     Excluded from High-Speed
+             RESTRICTED                  as REVIEW              Sprint Drills
+                    │                       │                       │
+                    └───────────────────────┼───────────────────────┘
+                                            │
+                    ┌───────────────────────┴───────────────────────┐
+                    ▼                                               ▼
+         [POSITIVE MOVEMENT CAP]                        [SPORTS SCIENCE LOAD]
+          Permitted: Linear <14 km/h                     ACWR 7-day envelope
+          Prohibited: Sprint >22 km/h                    automatically reduced
+                    │                                               │
+                    └───────────────────────┬───────────────────────┘
+                                            │
+                    ┌───────────────────────┴───────────────────────┐
+                    ▼                                               ▼
+          [NUTRITION WORKSPACE]                          [REHABILITATION PLAN]
+          Caloric targets reduced;                       Auto-instantiates 5-Stage
+          Glycogen replenishment plan                    Empirical RTP Protocol
 ```
+
+#### Real-World Operational Scenarios & Evidence
 * **Bidirectional Telemetry Feedback:**
-  When GPS High-Speed Running exceeds planned targets by $+20\%$, the session review triggers an automated alert to the sports science load model, which updates tomorrow's morning squad triage readiness forecast.
+  During an afternoon tactical training session, the GPS monitoring feed registers that an athlete's High-Speed Running exceeded the prescribed target by $+22\%$.
+  - *Automatic Cascade:* The session review console alerts the coach with an excess workload flag; the Sports Science workspace automatically inflates tomorrow's acute load expectation; the Morning Squad Triage Console adjusts tomorrow's readiness prediction from `READY` to `MODIFY`; and the Nutrition Workspace prompts a high-glycemic recovery fueling protocol. Zero manual double-entry required.
 
 ---
 
 ### 4.7 Justification 7: AI-First Product Strategy
-* **Not a Generic Chatbot Wrapper:** USI integrates a **Hybrid Supervisory AI Architecture** combining deterministic clinical rule engines with semantic AI reasoning:
-  1. **Autonomic-Subjective Discordance Engine:**
-     Detects fatigue under-reporting mathematically:
-     $$\Delta_{\text{Discordance}} = z\left(\text{Subjective Soreness}\right) - z\left(\text{Autonomic HRV Suppression}\right)$$
-     When reported soreness is low ($2/10$) but nocturnal HRV exhibits severe parasympathetic depression ($-22\%$ below baseline), the system flags an immediate alert: *Potential pain masking / acute fatigue under-reporting*.
-  2. **Consequential Operational AI Execution:**
-     The AI Copilot does not merely return text; it executes operational state mutations via interactive action chips:
-     - **[Apply High-Speed Running Cap]:** Directly adjusts pitchside GPS monitoring thresholds and alerts coaching staff.
-     - **[Summon Joint Review]:** Schedules an immediate multidisciplinary consultation between coach, physio, and scientist.
-     - **[Initiate Stage 2 RTP]:** Advances rehabilitation progression when exit criteria are satisfied.
-  3. **Safety Classification & Auditability:**
-     - Every recommendation is classified (`INFORMATIONAL`, `OPERATIONAL_CHANGE`, `CLINICAL_RESTRICTION`).
-     - Includes an explainable evidence bundle, model confidence %, and permanent log in the **AI Safety Audit Registry**.
 
+#### The Enterprise Problem Solved
+Generic AI applications in sports either provide useless general fitness advice ("drink more water and stretch") or act as dangerous unconstrained chat interfaces that offer hallucinations regarding medical clearance. Elite sports demand a supervisory AI model that combines empirical rule engines with explainable decision support.
+
+#### The USI Operational Architecture
+USI deploys a **Hybrid Supervisory AI Architecture** combining deterministic clinical boundaries with semantic pattern recognition:
+1. **Autonomic-Subjective Discordance Engine:**
+   Athletes frequently under-report muscle soreness or fatigue to avoid being dropped from matchday squads. Conversely, athletes undergoing psychological burnout may over-report physical symptoms. USI's discordance engine detects this divergence mathematically:
+   $$\Delta_{\text{Discordance}} = z\left(\text{Subjective Soreness}\right) - z\left(\text{Autonomic HRV Suppression}\right)$$
+   - *Case 1 (Hidden Pain / Fatigue Masking):* Reported soreness is low ($2/10$), but nocturnal HRV exhibits severe parasympathetic suppression ($-22\%$ below 30-day baseline). The AI surfaces an immediate high-priority alert: *Potential pain masking / acute autonomic exhaustion*.
+   - *Case 2 (Psychosomatic Fatigue):* Reported soreness is severe ($8/10$), but autonomic biomarkers and force-plate CMJ flight times are optimal. The AI recommends a psychological wellness consultation.
+2. **Consequential Operational Action Chips:**
+   The AI Copilot does not stop at diagnostic text; it provides 1-click execution chips that directly mutate platform state:
+   - **[Apply High-Speed Running Cap]:** Mutates the live pitchside GPS monitoring threshold to $<14\text{ km/h}$ and notifies coaching staff.
+   - **[Summon Joint Review]:** Dispatches calendar invites to the head coach, lead physiotherapist, and sports scientist for an immediate 15-minute triage consultation.
+   - **[Initiate Stage 2 RTP]:** Advances the rehabilitation protocol after verifying that Stage 1 exit criteria (VAS $\le 2/10$, zero swelling) are fulfilled.
+3. **Safety Classification & Auditability:**
+   Every AI recommendation is strictly classified:
+   - `INFORMATIONAL`: Background trend summaries and recovery advice.
+   - `OPERATIONAL_CHANGE`: Recommended drill or volume adaptations.
+   - `CLINICAL_RESTRICTION`: Recommended medical status updates.
+   Every recommendation includes an explainable evidence bundle, confidence percentage, and is permanently recorded in the **AI Safety Audit Registry**.
+
+---
 ---
 
 ## 5. Delivery Matrix: 9 Mandatory Modules & 3 Priority Workflows
