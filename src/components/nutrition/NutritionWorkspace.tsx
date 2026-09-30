@@ -436,7 +436,7 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
                       heading: `Daily Meal Prescription — ${activePlan.athleteName}`,
                       lines: activePlan.meals.map(
                         (m) =>
-                          `${m.mealName} (${m.timing}): ${m.items} | ${m.calories} kcal (P:${m.proteinG}g, C:${m.carbsG}g, F:${m.fatG}g) [${m.consumed ? 'Logged' : 'Scheduled'}]`
+                          `${m.name} (${m.time}): ${m.menuSummary} | ${m.calories} kcal (P:${m.proteinG}g, C:${m.carbsG}g, F:${m.fatG}g) [${m.consumed ? 'Logged' : 'Scheduled'}]`
                       ),
                     },
                   ],

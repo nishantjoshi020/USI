@@ -344,11 +344,11 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
                     g.totalDistanceM,
                     g.hsrDistanceM,
                     g.sprintDistanceM,
-                    g.maxVelocityKmh,
-                    g.playerLoadAu,
-                    g.mechMetabolicRatio,
-                    g.cmjPeakPowerWkg,
-                    g.rsiMod,
+                    g.topSpeedKmh,
+                    g.playerLoad,
+                    g.metabolicPowerAvgW,
+                    g.accelCount,
+                    g.decelCount,
                   ]),
                   ['USI Sports Science & GNSS Microtechnology Export (10 Hz Catapult + ForceDecks)']
                 );
@@ -387,9 +387,9 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
                     g.totalDistanceM,
                     g.hsrDistanceM,
                     g.sprintDistanceM,
-                    `${g.maxVelocityKmh} km/h`,
-                    `${g.playerLoadAu} AU`,
-                    `${g.cmjPeakPowerWkg}`,
+                    `${g.topSpeedKmh} km/h`,
+                    `${g.playerLoad} AU`,
+                    `${g.metabolicPowerAvgW}`,
                   ]),
                 });
                 onTriggerToast(`Exported Sports Science Telemetry PDF Dossier (${file}) ✓`);

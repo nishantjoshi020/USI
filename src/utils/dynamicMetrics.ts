@@ -747,7 +747,7 @@ export function computeDynamicRoleMetrics(
                 ? ('OPTIMAL' as const)
                 : ('HIGH' as const),
           badge: `${inj.bodyRegionDisplay}`,
-          detail: `${inj.clinicalSummary} Pain ${inj.painScore}/10 · LSI ${inj.gateCriteria?.limbSymmetryIndexPct || 90}%.`,
+          detail: `${inj.injuryTitle} (Stage ${inj.rtpStage}/5 — ${inj.rtpStageName}). Pain ${inj.painScore}/10 · LSI ${inj.gateCriteria?.limbSymmetryIndexPct || 90}%.`,
           timestamp: `${(idx + 1) * 20} mins ago`,
           actionText:
             inj.rtpStage >= 3 ? 'Sign-Off RTP Gate' : 'Record Clinical Note',

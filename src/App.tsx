@@ -36,6 +36,7 @@ import {
   BodyComposition,
   BodyRegionId,
   CoachProfile,
+  DailyAnalyticsPoint,
   HierarchyContext,
   HydrationLog,
   Injury,
@@ -187,6 +188,8 @@ import {
 } from './utils/exportEngine';
 import { generateContextDataset } from './utils/contextDataGenerator';
 
+const INITIAL_DATASET = generateContextDataset(INITIAL_CONTEXT);
+
 const RTP_STAGE_NAMES: Record<number, string> = {
   1: 'Pain Reduction',
   2: 'Strength Restoration',
@@ -209,10 +212,10 @@ export default function App() {
     INITIAL_COPILOT_MESSAGES
   );
   const [aiActionItems, setAiActionItems] = useState<AIActionCentreItem[]>(
-    INITIAL_AI_ACTION_CENTRE
+    INITIAL_DATASET.aiActionItems
   );
   const [aiRiskSignals, setAiRiskSignals] = useState<AIRiskSignalCard[]>(
-    INITIAL_AI_RISK_SIGNALS
+    INITIAL_DATASET.aiRiskSignals
   );
   const [aiAutomationRules, setAiAutomationRules] = useState<
     AIWorkflowAutomationRule[]
@@ -228,7 +231,7 @@ export default function App() {
   );
   const [aiTrainingModifications, setAiTrainingModifications] = useState<
     AITrainingModificationItem[]
-  >(INITIAL_TRAINING_MODIFICATIONS);
+  >(INITIAL_DATASET.aiTrainingModifications);
   const [activeEvidenceBundle, setActiveEvidenceBundle] =
     useState<AIEvidenceBundle | null>(null);
   const [isTrainingModModalOpen, setIsTrainingModModalOpen] = useState(false);
@@ -239,23 +242,23 @@ export default function App() {
   const [isCopilotThinking, setIsCopilotThinking] = useState<boolean>(false);
   const [copilotModel, setCopilotModel] = useState<string>('gemini-3.8-flash');
 
-  // Connected Data State
-  const [athletes, setAthletes] = useState<Athlete[]>(ATHLETES);
-  const [sessions, setSessions] = useState<TrainingSession[]>(TRAINING_SESSIONS);
-  const [injuries, setInjuries] = useState<Injury[]>(INITIAL_MEDICAL_INJURIES);
+  // Connected Data State (Synchronized across all 300 permutations)
+  const [athletes, setAthletes] = useState<Athlete[]>(INITIAL_DATASET.athletes);
+  const [sessions, setSessions] = useState<TrainingSession[]>(INITIAL_DATASET.sessions);
+  const [injuries, setInjuries] = useState<Injury[]>(INITIAL_DATASET.injuries);
   const [rehabPlans, setRehabPlans] =
-    useState<RehabPlanRecord[]>(INITIAL_REHAB_PLANS);
+    useState<RehabPlanRecord[]>(INITIAL_DATASET.rehabPlans);
   const [medicalRiskAlerts, setMedicalRiskAlerts] = useState<
     MedicalRiskAlertItem[]
-  >(INITIAL_MEDICAL_RISK_ALERTS);
+  >(INITIAL_DATASET.medicalRiskAlerts);
   const [medicalAlerts, setMedicalAlerts] = useState<MedicalOperationalAlert[]>(
-    INITIAL_MEDICAL_ALERTS
+    INITIAL_DATASET.medicalAlerts
   );
   const [wellnessProfile, setWellnessProfile] = useState<WellnessProfile>(
-    ARJUN_WELLNESS_PROFILE
+    INITIAL_DATASET.wellnessProfile
   );
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>(
-    INITIAL_RECOMMENDATIONS
+    INITIAL_DATASET.recommendations
   );
   const [notifications, setNotifications] = useState<AppNotification[]>(
     INITIAL_NOTIFICATIONS
@@ -263,33 +266,37 @@ export default function App() {
 
   // Iteration 4: Nutrition, Assessments & TID, and Analytics & BI Shared State
   const [nutritionPlans, setNutritionPlans] = useState<NutritionPlan[]>(
-    INITIAL_NUTRITION_PLANS
+    INITIAL_DATASET.nutritionPlans
   );
   const [hydrationLogs, setHydrationLogs] = useState<HydrationLog[]>(
-    INITIAL_HYDRATION_LOGS
+    INITIAL_DATASET.hydrationLogs
   );
   const [supplements, setSupplements] =
-    useState<Supplement[]>(INITIAL_SUPPLEMENTS);
+    useState<Supplement[]>(INITIAL_DATASET.supplements);
   const [bodyComposition, setBodyComposition] = useState<BodyComposition>(
-    INITIAL_BODY_COMPOSITION
+    INITIAL_DATASET.bodyComposition
   );
   const [assessmentPrograms, setAssessmentPrograms] = useState<
     AssessmentProgram[]
-  >(INITIAL_ASSESSMENT_PROGRAMS);
-  const [tests, setTests] = useState<Test[]>(INITIAL_TESTS_LIBRARY);
+  >(INITIAL_DATASET.assessmentPrograms);
+  const [tests, setTests] = useState<Test[]>(INITIAL_DATASET.tests);
   const [testResults, setTestResults] =
-    useState<TestResult[]>(INITIAL_TEST_RESULTS);
+    useState<TestResult[]>(INITIAL_DATASET.testResults);
   const [talentProfiles, setTalentProfiles] = useState<TalentProfile[]>(
-    INITIAL_TALENT_PROFILES
+    INITIAL_DATASET.talentProfiles
   );
   const [talentWeights, setTalentWeights] = useState<TalentScoringWeights>(
     INITIAL_TALENT_WEIGHTS
   );
-  const [reports, setReports] = useState<Report[]>(INITIAL_REPORTS);
+  const [reports, setReports] = useState<Report[]>(INITIAL_DATASET.reports);
+  const [analyticsSeries, setAnalyticsSeries] = useState<DailyAnalyticsPoint[]>(
+    INITIAL_DATASET.analyticsSeries
+  );
 
   // Active Athlete 360 Profile State
-  const [activeAthlete360Id, setActiveAthlete360Id] =
-    useState<string>('ath-arjun-mehta');
+  const [activeAthlete360Id, setActiveAthlete360Id] = useState<string>(
+    INITIAL_DATASET.athletes[0]?.id || 'ath-1042'
+  );
 
   // Command Center Interactive Filter & Selection State
   const [activeKpi, setActiveKpi] = useState<KpiFilterKey | null>(null);
@@ -875,13 +882,29 @@ export default function App() {
     setSessions(dataset.sessions);
     setNutritionPlans(dataset.nutritionPlans);
     setRehabPlans(dataset.rehabPlans);
+    setMedicalAlerts(dataset.medicalAlerts);
+    setMedicalRiskAlerts(dataset.medicalRiskAlerts);
+    setWellnessProfile(dataset.wellnessProfile);
+    setTests(dataset.tests);
+    setAssessmentPrograms(dataset.assessmentPrograms);
+    setTestResults(dataset.testResults);
+    setTalentProfiles(dataset.talentProfiles);
+    setHydrationLogs(dataset.hydrationLogs);
+    setSupplements(dataset.supplements);
+    setBodyComposition(dataset.bodyComposition);
+    setReports(dataset.reports);
+    setAnalyticsSeries(dataset.analyticsSeries);
+    setRecommendations(dataset.recommendations);
+    setAiActionItems(dataset.aiActionItems);
+    setAiRiskSignals(dataset.aiRiskSignals);
+    setAiTrainingModifications(dataset.aiTrainingModifications);
     if (dataset.athletes[0]) {
       setActiveAthlete360Id(dataset.athletes[0].id);
     }
     const changedKey = Object.keys(partial)[0];
     const changedVal = Object.values(partial)[0];
     triggerToast(
-      `Global context updated: ${changedKey?.toUpperCase()} → ${changedVal} (${dataset.athletes.length} athletes loaded)`
+      `Context updated: ${changedKey?.toUpperCase()} → ${changedVal} (${dataset.athletes.length} athletes loaded for ${dataset.athletes[0]?.sport || 'sport'})`
     );
   };
 
@@ -1847,23 +1870,36 @@ export default function App() {
   };
 
   const handleResetDemoState = () => {
-    setAthletes(ATHLETES);
-    setSessions(TRAINING_SESSIONS);
-    setInjuries(INITIAL_MEDICAL_INJURIES);
-    setRehabPlans(INITIAL_REHAB_PLANS);
-    setMedicalRiskAlerts(INITIAL_MEDICAL_RISK_ALERTS);
-    setMedicalAlerts(INITIAL_MEDICAL_ALERTS);
-    setNutritionPlans(INITIAL_NUTRITION_PLANS);
-    setHydrationLogs(INITIAL_HYDRATION_LOGS);
-    setSupplements(INITIAL_SUPPLEMENTS);
-    setTestResults(INITIAL_TEST_RESULTS);
+    const base = generateContextDataset(INITIAL_CONTEXT);
+    setAthletes(base.athletes);
+    setSessions(base.sessions);
+    setInjuries(base.injuries);
+    setRehabPlans(base.rehabPlans);
+    setMedicalRiskAlerts(base.medicalRiskAlerts);
+    setMedicalAlerts(base.medicalAlerts);
+    setWellnessProfile(base.wellnessProfile);
+    setNutritionPlans(base.nutritionPlans);
+    setHydrationLogs(base.hydrationLogs);
+    setSupplements(base.supplements);
+    setBodyComposition(base.bodyComposition);
+    setAssessmentPrograms(base.assessmentPrograms);
+    setTests(base.tests);
+    setTestResults(base.testResults);
+    setTalentProfiles(base.talentProfiles);
+    setReports(base.reports);
+    setAnalyticsSeries(base.analyticsSeries);
+    setRecommendations(base.recommendations);
     setAiMessages(INITIAL_COPILOT_MESSAGES);
-    setAiActionItems(INITIAL_AI_ACTION_CENTRE);
-    setAiRiskSignals(INITIAL_AI_RISK_SIGNALS);
+    setAiActionItems(base.aiActionItems);
+    setAiRiskSignals(base.aiRiskSignals);
+    setAiTrainingModifications(base.aiTrainingModifications);
     setAiAutomationRules(INITIAL_AUTOMATION_RULES);
     setAiAuditTrail(INITIAL_AI_AUDIT_TRAIL);
     setContext(INITIAL_CONTEXT);
     setSelectedRole('Performance Director');
+    if (base.athletes[0]) {
+      setActiveAthlete360Id(base.athletes[0].id);
+    }
     triggerToast('Reset all USI modules & telemetry to initial demo baseline ✓');
   };
 

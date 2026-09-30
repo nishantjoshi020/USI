@@ -341,7 +341,7 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
                       heading: 'Talent Identification (TID) Weighted Leaderboard',
                       lines: talentProfiles.map(
                         (tp) =>
-                          `${tp.athleteName} (${tp.squad}, Age ${tp.age}): Weighted Talent Index ${computeTalentIndex(tp)}/100 | Benchmark: ${tp.benchmarkAlignment} | Priority: ${tp.developmentPriority} | Status: ${tp.status}`
+                          `${tp.athleteName} (${tp.squad}, ${tp.ageGroup}): Weighted Talent Index ${computeTalentIndex(tp)}/100 | Benchmark: ${tp.benchmarkAlignment} | Priority: ${tp.developmentPriority} | Status: ${tp.status}`
                       ),
                     },
                   ],
