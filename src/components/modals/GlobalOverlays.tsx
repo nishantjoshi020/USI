@@ -309,25 +309,6 @@ interface NotificationPanelProps {
   onSelectNotification: (notif: AppNotification) => void;
 }
 
-const ROLE_NOTIFICATION_SUBTITLES: Record<UserRole, string> = {
-  'Performance Director':
-    'Executive AI risk alerts, RTP stage sign-offs & cross-program readiness briefs',
-  Coach:
-    'Tactical session rosters, modified load caps, attendance & matchday readiness',
-  'Sports Scientist':
-    'Force-plate asymmetry flags, Catapult GPS workload spikes & HRV telemetry',
-  Physiotherapist:
-    'Clinical escalations, rehabilitation progress & Return-to-Play gate checks',
-  Nutritionist:
-    'Hydration osmolality alerts, recovery supplementation & DEXA body composition',
-  'Federation Admin':
-    'Athlete eligibility verification, WADA whereabouts & governance audit logs',
-  Athlete:
-    'Personal pitch prescriptions, daily hydration targets & recovery schedule',
-  'Operations Team':
-    'Pitch calibration, hydrotherapy suite readiness & wearable pod logistics',
-};
-
 export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   isOpen,
   onClose,
@@ -337,8 +318,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   onMarkAllRead,
   onSelectNotification,
 }) => {
-  const [scopeMode, setScopeMode] = useState<'role' | 'all'>('role');
-
   if (!isOpen) return null;
 
   const isNotificationForRole = (notif: AppNotification, role: UserRole) => {
@@ -348,14 +327,9 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
     return notif.roles.includes(role);
   };
 
-  const roleNotifications = notifications.filter((n) =>
+  const displayedNotifications = notifications.filter((n) =>
     isNotificationForRole(n, selectedRole)
   );
-
-  const displayedNotifications =
-    selectedRole === 'Athlete' || scopeMode === 'role'
-      ? roleNotifications
-      : notifications;
 
   const unreadCount = displayedNotifications.filter((n) => !n.read).length;
 
@@ -367,7 +341,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       />
 
       <aside className="relative w-full max-w-md bg-[#0F1623] border-l border-slate-800 h-full flex flex-col justify-between z-10 shadow-2xl">
-        <div className="p-4 border-b border-slate-800 bg-[#090D16] space-y-3">
+        <div className="p-4 border-b border-slate-800 bg-[#090D16]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-sky-400" />
@@ -384,13 +358,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
-                  onClick={() =>
-                    onMarkAllRead(
-                      selectedRole === 'Athlete' || scopeMode === 'role'
-                        ? selectedRole
-                        : undefined
-                    )
-                  }
+                  onClick={() => onMarkAllRead(selectedRole)}
                   className="text-xs text-sky-400 hover:text-sky-300 font-medium"
                 >
                   Mark all read
@@ -403,46 +371,6 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
-          </div>
-
-          {/* Persona Context Subtitle & Scope Switcher */}
-          <div className="p-2.5 rounded bg-[#0B101B] border border-slate-800/90 space-y-2">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="font-mono text-sky-400 font-semibold">
-                Active Persona: {selectedRole}
-              </span>
-              <span className="font-mono text-slate-400">
-                {roleNotifications.length} role-matched alerts
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-snug">
-              {ROLE_NOTIFICATION_SUBTITLES[selectedRole]}
-            </p>
-
-            {selectedRole !== 'Athlete' && (
-              <div className="flex items-center gap-1 pt-1">
-                <button
-                  onClick={() => setScopeMode('role')}
-                  className={`flex-1 py-1 px-2 rounded text-[11px] font-semibold transition-colors ${
-                    scopeMode === 'role'
-                      ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300'
-                      : 'bg-[#090D16] border border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {selectedRole} Feed ({roleNotifications.length})
-                </button>
-                <button
-                  onClick={() => setScopeMode('all')}
-                  className={`flex-1 py-1 px-2 rounded text-[11px] font-semibold transition-colors ${
-                    scopeMode === 'all'
-                      ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300'
-                      : 'bg-[#090D16] border border-slate-800 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  All Federation ({notifications.length})
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
