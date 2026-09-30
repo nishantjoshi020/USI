@@ -305,6 +305,9 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
   };
 
   const roleGov = getRoleGovernanceMeta(selectedRole);
+  const canEditMedical =
+    selectedRole === 'Physiotherapist' ||
+    selectedRole === 'Performance Director';
 
   // AI Copilot Content Generator (Section 22)
   const getCopilotNarrative = (mode: AiMedicalCopilotMode) => {

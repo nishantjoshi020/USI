@@ -235,7 +235,7 @@ export const RoleSpecificAnalyticsView: React.FC<RoleSpecificAnalyticsViewProps>
                       onClick={() =>
                         onOpenActionItem
                           ? onOpenActionItem(item)
-                          : alert(`[${selectedRole}] Triggering: ${item.actionText} for "${item.title}"`)
+                          : onNavigateSection?.('analytics-bi')
                       }
                       className="flex items-center gap-1 px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-[11px] font-semibold text-sky-200 transition-colors"
                     >

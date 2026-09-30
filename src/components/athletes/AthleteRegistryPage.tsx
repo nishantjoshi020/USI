@@ -45,6 +45,7 @@ interface AthleteRegistryPageProps {
   ) => void;
   onTriggerToast: (msg: string) => void;
   selectedRole?: UserRole;
+  initialSummaryKpi?: string | null;
 }
 
 export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
@@ -57,6 +58,7 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
   onBulkUpdateAthletes,
   onTriggerToast,
   selectedRole = 'Performance Director',
+  initialSummaryKpi = null,
 }) => {
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,14 +68,28 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
   const [statusFilter, setStatusFilter] = useState('All');
   const [readinessFilter, setReadinessFilter] = useState('All');
   const [injuryRiskFilter, setInjuryRiskFilter] = useState('All');
-  const [verificationFilter, setVerificationFilter] = useState('All');
+  const [verificationFilter, setVerificationFilter] = useState(
+    initialSummaryKpi === 'pending-verification' ? 'Pending' : 'All'
+  );
   const [medicalFilter, setMedicalFilter] = useState('All');
   const [wadaFilter, setWadaFilter] = useState('All');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   // Active KPI Card Filter
-  const [activeSummaryKpi, setActiveSummaryKpi] = useState<string | null>(null);
+  const [activeSummaryKpi, setActiveSummaryKpi] = useState<string | null>(
+    initialSummaryKpi
+  );
+
+  React.useEffect(() => {
+    if (initialSummaryKpi === 'pending-verification') {
+      setActiveSummaryKpi('pending-verification');
+      setVerificationFilter('Pending');
+    } else if (initialSummaryKpi === null) {
+      setActiveSummaryKpi(null);
+      setVerificationFilter('All');
+    }
+  }, [initialSummaryKpi]);
 
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);

@@ -31,6 +31,8 @@ import {
 interface ConnectedModuleViewProps {
   activeNav: NavItemId;
   onReturnToCommandCenter: () => void;
+  onNavigateModule?: (nav: NavItemId) => void;
+  onOpenHelpModal?: () => void;
   athletes: Athlete[];
   sessions: TrainingSession[];
   injuries: Injury[];
@@ -162,6 +164,8 @@ const MODULE_META: Partial<
 export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
   activeNav,
   onReturnToCommandCenter,
+  onNavigateModule,
+  onOpenHelpModal,
   athletes,
   sessions,
   injuries,
@@ -393,6 +397,57 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {activeNav === 'settings' && (
+        <div className="bg-[#0F1623] border border-slate-800/90 rounded-lg p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4 text-sky-400" />
+              <h2 className="text-sm font-bold text-slate-100">
+                PLATFORM GOVERNANCE, INTEGRATIONS & SYSTEM ARCHITECTURE
+              </h2>
+            </div>
+            <span className="text-xs font-mono text-slate-400">
+              Active Persona: {selectedRole}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              onClick={() => onOpenHelpModal?.()}
+              className="p-4 rounded-md bg-[#0B101B] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors"
+            >
+              <div className="text-xs font-bold text-sky-300">
+                System Architecture & RBAC Guide →
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Inspect 8-persona access matrices, hierarchy permissions, and connected telemetry pipelines.
+              </p>
+            </button>
+            <button
+              onClick={() => onNavigateModule?.('ai-automation')}
+              className="p-4 rounded-md bg-[#0B101B] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors"
+            >
+              <div className="text-xs font-bold text-emerald-300">
+                AI Workflow Automation Rules →
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Configure threshold triggers for ACWR overload, HRV drops, and automated staff alerts.
+              </p>
+            </button>
+            <button
+              onClick={() => onNavigateModule?.('ai-audit')}
+              className="p-4 rounded-md bg-[#0B101B] hover:bg-[#151E2E] border border-slate-800 text-left transition-colors"
+            >
+              <div className="text-xs font-bold text-amber-300">
+                Governance & AI Audit Trail →
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Review immutable logs of clinical overrides, training modifications, and federation approvals.
+              </p>
+            </button>
           </div>
         </div>
       )}

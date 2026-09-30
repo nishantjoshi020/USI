@@ -1300,9 +1300,19 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
                   </span>
                 </div>
               </div>
-              <p className="text-slate-400 leading-relaxed">
-                This module connects {athlete.name}'s individual microcycle periodisation, prescribed pitch/gym sessions, velocity-based strength progression, and sRPE workload caps.
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <p className="text-slate-400 leading-relaxed">
+                  This module connects {athlete.name}'s individual microcycle periodisation, prescribed pitch/gym sessions, velocity-based strength progression, and sRPE workload caps.
+                </p>
+                {onNavigateModule && (
+                  <button
+                    onClick={() => onNavigateModule('sessions')}
+                    className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors shrink-0"
+                  >
+                    Open Full Training Workspace →
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -1497,25 +1507,37 @@ export const Athlete360Page: React.FC<Athlete360PageProps> = ({
           )}
 
           {activeTab === 'Sports Science' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
-                <span className="text-slate-400 block">Morning HRV (rMSSD)</span>
-                <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
-                  {athlete.hrvMs} ms (Baseline {athlete.hrvBaselineMs} ms)
-                </span>
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Morning HRV (rMSSD)</span>
+                  <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
+                    {athlete.hrvMs} ms (Baseline {athlete.hrvBaselineMs} ms)
+                  </span>
+                </div>
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Sleep Consistency</span>
+                  <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
+                    {athlete.sleepFormatted}
+                  </span>
+                </div>
+                <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
+                  <span className="text-slate-400 block">Subjective Wellness</span>
+                  <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
+                    {athlete.wellnessScore} / 10
+                  </span>
+                </div>
               </div>
-              <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
-                <span className="text-slate-400 block">Sleep Consistency</span>
-                <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
-                  {athlete.sleepFormatted}
-                </span>
-              </div>
-              <div className="p-4 rounded bg-[#0B101B] border border-slate-800">
-                <span className="text-slate-400 block">Subjective Wellness</span>
-                <span className="text-lg font-mono font-bold text-slate-100 mt-1 block">
-                  {athlete.wellnessScore} / 10
-                </span>
-              </div>
+              {onNavigateModule && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => onNavigateModule('readiness')}
+                    className="px-3.5 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold transition-colors"
+                  >
+                    Open Full Sports Science Workspace →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

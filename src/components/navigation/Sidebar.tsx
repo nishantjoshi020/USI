@@ -451,9 +451,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             navId: 'command-center',
           },
           {
+            id: 'operations',
+            label: 'Operations & Logistics',
+            icon: Building2,
+            navId: 'camps',
+            children: [
+              { id: 'camps', label: 'Camp & Travel Logistics' },
+              { id: 'manifests', label: 'Rooming & Flight Manifests' },
+              { id: 'cargo', label: 'Equipment & Cargo Carnets' },
+              { id: 'facilities', label: 'Facility Zone Scheduling' },
+            ],
+          },
+          {
             id: 'training',
             label: 'Facility Scheduling',
-            icon: Building2,
+            icon: Dumbbell,
             children: [
               { id: 'sessions', label: 'Pitch & Court Bookings', badge: '5 Bookings' },
             ],
@@ -581,6 +593,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ],
           },
           {
+            id: 'operations',
+            label: 'Operations & Logistics',
+            icon: Building2,
+            navId: 'camps',
+            children: [
+              { id: 'camps', label: 'Camps & Travel' },
+              { id: 'manifests', label: 'Manifests' },
+              { id: 'cargo', label: 'Equipment Cargo' },
+              { id: 'facilities', label: 'Facilities' },
+            ],
+          },
+          {
             id: 'ai-copilot',
             label: 'AI Copilot',
             icon: Bot,
@@ -604,6 +628,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ];
     }
   };
+
+  const isNavInGroup = (groupId: string, nav: NavItemId): boolean => {
+    switch (groupId) {
+      case 'athletes':
+        return ['athlete-registry', 'athlete-360', 'enrollment', 'verification'].includes(nav);
+      case 'training':
+        return ['periodisation', 'sessions', 'builder', 'attendance-rpe', 'exercises', 'workload', 'live-pitchside'].includes(nav);
+      case 'medical':
+        return ['injury-intelligence', 'injury-register', 'rehabilitation', 'return-to-play'].includes(nav);
+      case 'sports-science':
+        return ['readiness', 'fatigue', 'gps-wearables', 'recovery', 'anomaly-matrix'].includes(nav);
+      case 'nutrition':
+        return ['nutrition', 'nutrition-plans', 'nutrition-hydration', 'nutrition-supplements', 'nutrition-body-composition'].includes(nav);
+      case 'assessments-tid':
+        return ['assessments-tid', 'assessments-tests', 'assessments-benchmarks', 'assessments-talent', 'assessments-field-testing'].includes(nav);
+      case 'analytics-bi':
+        return ['analytics-bi', 'analytics-federation', 'analytics-sport', 'analytics-program', 'analytics-squad', 'analytics-athlete', 'analytics-reports'].includes(nav);
+      case 'operations':
+        return ['operations', 'camps', 'manifests', 'cargo', 'facilities'].includes(nav);
+      case 'ai-copilot':
+        return ['ai-copilot', 'ai-action-centre', 'ai-risk-centre', 'ai-automation', 'ai-audit'].includes(nav);
+      default:
+        return false;
+    }
+  };
+
+  React.useEffect(() => {
+    const groupIds = [
+      'athletes',
+      'training',
+      'medical',
+      'sports-science',
+      'nutrition',
+      'assessments-tid',
+      'analytics-bi',
+      'operations',
+      'ai-copilot',
+    ];
+    for (const gid of groupIds) {
+      if (isNavInGroup(gid, activeNav)) {
+        setCollapsedSections((prev) =>
+          prev[gid] ? { ...prev, [gid]: false } : prev
+        );
+      }
+    }
+  }, [activeNav]);
 
   const rawNavGroups = getNavGroupsForRole();
   const operationalWorkflowsGroup: NavGroup = {
