@@ -32,6 +32,11 @@ import {
   UserRole,
 } from '../../types/usi';
 import {
+  exportToCSV,
+  exportToExcel,
+  exportToPDF,
+} from '../../utils/exportEngine';
+import {
   AI_ANALYTICS_INSIGHTS,
   ARJUN_INTEGRATED_CORRELATION_TIMELINE,
 } from '../../data/intelligenceMockData';
@@ -153,11 +158,114 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
     onSelectSubTab(map[level]);
   };
 
+  const executeAnalyticsFileDownload = (
+    targetTitle: string,
+    targetScope: string,
+    targetDateRange: string,
+    targetMetrics: string[],
+    fmt: 'PDF' | 'Excel' | 'CSV'
+  ) => {
+    const headers = [
+      'Athlete ID',
+      'Athlete Name',
+      'Sport',
+      'Squad',
+      'Position',
+      'Readiness (%)',
+      'Injury Risk',
+      'Acute Load (AU)',
+      'ACWR',
+      'HRV (ms)',
+      'Medical Status',
+      'Nutrition Compliance (%)',
+    ];
+    const rows = athletes.map((a) => [
+      a.athleteId,
+      a.name,
+      a.sport,
+      a.squad,
+      a.position,
+      `${a.readiness}%`,
+      a.injuryRisk,
+      a.acuteLoadAu,
+      a.acwr.toFixed(2),
+      `${a.hrvMs} ms`,
+      a.medicalStatus,
+      `${a.nutritionCompliancePct ?? 86}%`,
+    ]);
+    const summaryPairs = [
+      { label: 'Report Name', value: targetTitle },
+      { label: 'Hierarchy Scope', value: targetScope },
+      { label: 'Date Range', value: targetDateRange },
+      { label: 'Included Modules', value: targetMetrics.join(', ') },
+      { label: 'Exported By Role', value: selectedRole },
+      { label: 'Active Injuries', value: `${injuries.length} Cases` },
+    ];
+
+    let fileName = '';
+    if (fmt === 'CSV') {
+      fileName = exportToCSV(targetTitle, headers, rows, [
+        `USI Analytics Report: ${targetTitle} (${targetScope} · ${targetDateRange})`,
+      ]);
+    } else if (fmt === 'Excel') {
+      fileName = exportToExcel(
+        targetTitle,
+        targetTitle,
+        `Scope: ${targetScope} | Range: ${targetDateRange} | Exported by ${selectedRole}`,
+        headers,
+        rows,
+        summaryPairs
+      );
+    } else {
+      fileName = exportToPDF(targetTitle, {
+        title: targetTitle.toUpperCase(),
+        subtitle: `Scope: ${targetScope} | Date Range: ${targetDateRange} | Authority: ${selectedRole}`,
+        metadataPairs: summaryPairs,
+        sections: [
+          {
+            heading: 'Cross-Module Intelligence Summary',
+            lines: AI_ANALYTICS_INSIGHTS.map(
+              (ins) => `${ins.statement} [Signals: ${ins.signals.join(', ')}]`
+            ),
+          },
+        ],
+        tableHeaders: [
+          'Athlete ID',
+          'Name',
+          'Position',
+          'Readiness',
+          'Risk',
+          'Load (AU)',
+          'ACWR',
+          'Medical',
+        ],
+        tableRows: athletes.map((a) => [
+          a.athleteId,
+          a.name,
+          a.position,
+          `${a.readiness}%`,
+          a.injuryRisk,
+          `${a.acuteLoadAu} AU`,
+          a.acwr.toFixed(2),
+          a.medicalStatus,
+        ]),
+      });
+    }
+    onTriggerToast(`Downloaded ${fileName} (${fmt}) ✓`);
+  };
+
   const handleStartGenerateReport = () => {
     setExportState('generating');
     setTimeout(() => {
       setExportState('ready');
-    }, 900);
+      executeAnalyticsFileDownload(
+        reportName,
+        reportScope,
+        reportDateRange,
+        reportMetrics,
+        exportFormat
+      );
+    }, 550);
   };
 
   // Dynamic KPIs for the shared hierarchical analytics engine (Sections 22, 24, 25, 26)
@@ -372,16 +480,35 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                 : 'Report Builder & Schedules'}
             </button>
             {!isReportsView && (
-              <button
-                onClick={() => {
-                  setExportState('idle');
-                  setIsExportModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export Report</span>
-              </button>
+              <>
+                <button
+                  onClick={() =>
+                    executeAnalyticsFileDownload(
+                      `${currentLevel} Performance Analytics`,
+                      uxGuide.where,
+                      reportDateRange,
+                      reportMetrics,
+                      'CSV'
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setReportName(`${currentLevel} Performance Analytics Report`);
+                    setReportScope(uxGuide.where);
+                    setExportState('idle');
+                    setIsExportModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export Report</span>
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -1266,13 +1393,18 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
               </button>
               <button
                 onClick={() => {
-                  setExportFormat(reportFormat);
-                  setExportState('idle');
-                  setIsExportModalOpen(true);
+                  executeAnalyticsFileDownload(
+                    reportName,
+                    reportScope,
+                    reportDateRange,
+                    reportMetrics,
+                    reportFormat
+                  );
                 }}
-                className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold"
+                className="px-4 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold inline-flex items-center gap-1.5"
               >
-                Export
+                <Download className="w-3.5 h-3.5" />
+                <span>Export ({reportFormat})</span>
               </button>
               <button
                 onClick={() => {
@@ -1337,13 +1469,18 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                   </div>
                   <button
                     onClick={() => {
-                      setExportFormat(rep.format);
-                      setExportState('idle');
-                      setIsExportModalOpen(true);
+                      executeAnalyticsFileDownload(
+                        rep.reportName,
+                        rep.scope,
+                        rep.dateRange,
+                        rep.metrics,
+                        rep.format
+                      );
                     }}
-                    className="px-3 py-1.5 rounded bg-sky-500 text-slate-950 font-semibold"
+                    className="px-3 py-1.5 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold inline-flex items-center gap-1.5 shrink-0"
                   >
-                    Export ({rep.format})
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export ({rep.format})</span>
                   </button>
                 </div>
               ))}
@@ -1417,15 +1554,19 @@ export const AnalyticsWorkspace: React.FC<AnalyticsWorkspaceProps> = ({
                   </span>
                   <button
                     onClick={() => {
-                      onTriggerToast(
-                        `Downloaded ${reportName}.${exportFormat.toLowerCase()} ✓`
+                      executeAnalyticsFileDownload(
+                        reportName,
+                        reportScope,
+                        reportDateRange,
+                        reportMetrics,
+                        exportFormat
                       );
                       setIsExportModalOpen(false);
                     }}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-emerald-500 text-slate-950 font-semibold"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
+                    <span>Download Again</span>
                   </button>
                 </div>
               )}

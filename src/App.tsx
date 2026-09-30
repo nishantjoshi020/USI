@@ -156,6 +156,7 @@ import {
 import {
   ARJUN_EVIDENCE_BUNDLE,
   buildCopilotResponse,
+  getPersonaInitialMessages,
   INITIAL_AI_ACTION_CENTRE,
   INITIAL_AI_AUDIT_TRAIL,
   INITIAL_AI_RISK_SIGNALS,
@@ -174,6 +175,11 @@ import {
   GlobalAICopilotSlideOver,
   ProposedTrainingModificationsModal,
 } from './components/ai/AICopilotOverlays';
+import {
+  exportAthletesRoster,
+  exportToJSON,
+  triggerFallbackExportForToast,
+} from './utils/exportEngine';
 
 const RTP_STAGE_NAMES: Record<number, string> = {
   1: 'Pain Reduction',
@@ -222,6 +228,8 @@ export default function App() {
   const [sessionMemoryTopic, setSessionMemoryTopic] = useState<
     'low-readiness' | 'senior-low-readiness' | null
   >(null);
+  const [isCopilotThinking, setIsCopilotThinking] = useState<boolean>(false);
+  const [copilotModel, setCopilotModel] = useState<string>('gemini-3.8-flash');
 
   // Connected Data State
   const [athletes, setAthletes] = useState<Athlete[]>(ATHLETES);
@@ -329,6 +337,46 @@ export default function App() {
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
+    triggerFallbackExportForToast(msg, {
+      role: selectedRole,
+      context,
+      activeAthlete:
+        athletes.find((a) => a.id === activeAthlete360Id) || athletes[0],
+      athletes,
+      injuries,
+      sessions,
+      nutritionPlans,
+      testResults,
+      aiAuditTrail,
+    });
+  };
+
+  const handleGlobalExport = (format: 'PDF' | 'CSV' | 'Excel' | 'JSON') => {
+    if (format === 'JSON') {
+      const file = exportToJSON(`usi_system_snapshot_${activeNav}`, {
+        exportedAt: '28 Sep 2026',
+        exportedByRole: selectedRole,
+        activeModule: activeNav,
+        hierarchyContext: context,
+        focusAthlete: activeAthlete360,
+        athletes,
+        injuries,
+        sessions,
+        nutritionPlans,
+        testResults,
+        aiAuditTrail,
+      });
+      triggerToast(`Exported complete USI telemetry JSON (${file}) ✓`);
+      return;
+    }
+
+    const file = exportAthletesRoster(
+      format,
+      athletes,
+      selectedRole,
+      `${context.federation} — ${context.squad} (${activeNav.toUpperCase()})`
+    );
+    triggerToast(`Exported ${format} Dossier (${file}) ✓`);
   };
 
   useEffect(() => {
@@ -822,25 +870,170 @@ export default function App() {
 
   const handleSelectRole = (role: UserRole) => {
     setSelectedRole(role);
+    setAiMessages(getPersonaInitialMessages(role));
+    setSessionMemoryTopic(null);
     triggerToast(`Switched operational view to ${role}`);
   };
 
   const handleSelectKpi = (kpi: KpiFilterKey) => {
     setActiveKpi((prev) => (prev === kpi ? null : kpi));
 
-    if (kpi === 'total-athletes') {
+    if (
+      kpi === 'total-athletes' ||
+      kpi === 'registered-athletes' ||
+      kpi === 'total-registered' ||
+      kpi === 'matchday-available'
+    ) {
       setActiveNav('athlete-registry');
-    } else if (kpi === 'active-athletes') {
+    } else if (kpi === 'active-athletes' || kpi === 'squad-availability') {
       setTableStatusFilter('Ready');
+      setSelectedReadinessTier('Ready');
       triggerToast('Filtered Attention Table to Ready / Active clearance athletes');
-    } else if (kpi === 'attention') {
+    } else if (
+      kpi === 'attention' ||
+      kpi === 'high-priority-flags' ||
+      kpi === 'restricted-minutes' ||
+      kpi === 'modified-load' ||
+      kpi === 'tactical-flags'
+    ) {
       setTableStatusFilter('Attention');
-      document
-        .getElementById('athlete-attention-section')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      triggerToast('Filtered to High-Priority Attention athletes');
-    } else if (kpi === 'injuries') {
+      setIsMorningTriageOpen(true);
+      triggerToast('Opened Morning Squad Triage for high-priority / load-capped athletes');
+    } else if (
+      kpi === 'injuries' ||
+      kpi === 'injury-incidence' ||
+      kpi === 'msk-screening-rate' ||
+      kpi === 'mean-pain-score' ||
+      kpi === 'medical-clearances'
+    ) {
       setActiveNav('injury-intelligence');
+    } else if (
+      kpi === 'active-clinical-cases' ||
+      kpi === 'active-injuries' ||
+      kpi === 'reinjury-rate'
+    ) {
+      setActiveNav('injury-register');
+    } else if (
+      kpi === 'rtp-progression' ||
+      kpi === 'return-to-play' ||
+      kpi === 'clearance-due' ||
+      kpi === 'mean-days-to-play'
+    ) {
+      setActiveNav('return-to-play');
+    } else if (
+      kpi === 'rehab-adherence' ||
+      kpi === 'in-rehabilitation' ||
+      kpi === 'compliance'
+    ) {
+      setActiveNav('rehabilitation');
+    } else if (kpi === 'olympic-pathway') {
+      setActiveNav('assessments-talent');
+    } else if (
+      kpi === 'acwr-stability' ||
+      kpi === 'acwr-tactical' ||
+      kpi === 'acwr-squad' ||
+      kpi === 'acwr-spikes' ||
+      kpi === 'acute-chronic-ratio' ||
+      kpi === 'training-load'
+    ) {
+      setActiveNav('workload');
+    } else if (
+      kpi === 'interdisciplinary-sync' ||
+      kpi === 'governance-compliance'
+    ) {
+      setActiveNav('analytics-federation');
+    } else if (kpi === 'session-attendance') {
+      setActiveNav('attendance-rpe');
+    } else if (
+      kpi === 'tactical-load-adherence' ||
+      kpi === 'daily-sessions' ||
+      kpi === 'my-training-rpe-target'
+    ) {
+      setActiveNav('sessions');
+    } else if (
+      kpi === 'tactical-readiness' ||
+      kpi === 'squad-mean-hrv' ||
+      kpi === 'mean-readiness' ||
+      kpi === 'hrv-recovery' ||
+      kpi === 'recovery-hrv' ||
+      kpi === 'my-readiness' ||
+      kpi === 'my-readiness-score' ||
+      kpi === 'my-hrv-baseline'
+    ) {
+      setActiveNav('readiness');
+    } else if (
+      kpi === 'force-plate-asymmetry' ||
+      kpi === 'neuromuscular-fatigue' ||
+      kpi === 'biomarker-flags'
+    ) {
+      setActiveNav('fatigue');
+    } else if (
+      kpi === 'high-speed-exposure' ||
+      kpi === 'high-speed-volume' ||
+      kpi === 'data-freshness' ||
+      kpi === 'gps-fleet-pods'
+    ) {
+      setActiveNav('gps-wearables');
+    } else if (
+      kpi === 'sleep-recovery-mean' ||
+      kpi === 'sleep-duration' ||
+      kpi === 'my-sleep-score'
+    ) {
+      setActiveNav('recovery');
+    } else if (
+      kpi === 'hydration-optimal' ||
+      kpi === 'hydration-risk' ||
+      kpi === 'dehydration-flags' ||
+      kpi === 'my-hydration-status'
+    ) {
+      setActiveNav('nutrition-hydration');
+    } else if (
+      kpi === 'caloric-target-compliance' ||
+      kpi === 'fueling-compliance' ||
+      kpi === 'active-plans' ||
+      kpi === 'protein-target-met'
+    ) {
+      setActiveNav('nutrition-plans');
+    } else if (kpi === 'body-comp-goals' || kpi === 'body-comp-stable') {
+      setActiveNav('nutrition-body-composition');
+    } else if (
+      kpi === 'supplement-audit' ||
+      kpi === 'wada-audit' ||
+      kpi === 'wada-whereabouts' ||
+      kpi === 'anti-doping-cleared'
+    ) {
+      setActiveNav('nutrition-supplements');
+    } else if (kpi === 'energy-availability') {
+      setActiveNav('nutrition');
+    } else if (
+      kpi === 'eligibility-rate' ||
+      kpi === 'pending-approvals' ||
+      kpi === 'pending-verification' ||
+      kpi === 'verified-passports'
+    ) {
+      setActiveNav('verification');
+    } else if (
+      kpi === 'international-sanctions' ||
+      kpi === 'logistics-manifests' ||
+      kpi === 'urgent-travel-flags' ||
+      kpi === 'transport-routes'
+    ) {
+      setActiveNav('manifests');
+    } else if (kpi === 'my-recovery-status' || kpi === 'medical-status') {
+      setActiveNav('athlete-360');
+    } else if (
+      kpi === 'facility-utilization' ||
+      kpi === 'facility-bookings' ||
+      kpi === 'pitch-readiness' ||
+      kpi === 'turf-quality-score' ||
+      kpi === 'maintenance-tickets' ||
+      kpi === 'active-work-orders'
+    ) {
+      setActiveNav('facilities');
+    } else if (kpi === 'equipment-calibrated') {
+      setActiveNav('cargo');
+    } else if (kpi === 'incident-safety' || kpi === 'facility-budget') {
+      setActiveNav('operations');
     } else if (kpi === 'readiness') {
       setSelectedReadinessTier('Monitor');
       setTableStatusFilter('Monitor');
@@ -1061,14 +1254,21 @@ export default function App() {
     );
     setIsNotificationsOpen(false);
 
-    if (notif.linkedAthleteId) {
-      const ath = athletes.find((a) => a.id === notif.linkedAthleteId);
-      if (ath) setDrawerAthleteId(ath.id);
-    } else if (notif.linkedSessionId) {
+    if (notif.targetNav) {
+      setActiveNav(notif.targetNav);
+    }
+    if (notif.linkedSessionId) {
       const sess = sessions.find((s) => s.id === notif.linkedSessionId);
       if (sess) setSelectedSession(sess);
-    } else if (notif.targetNav) {
-      setActiveNav(notif.targetNav);
+    } else if (notif.linkedAthleteId) {
+      const ath = athletes.find((a) => a.id === notif.linkedAthleteId);
+      if (ath) {
+        if (notif.targetNav === 'athlete-360') {
+          setActiveAthlete360Id(ath.id);
+        } else {
+          setDrawerAthleteId(ath.id);
+        }
+      }
     }
   };
 
@@ -1219,8 +1419,8 @@ export default function App() {
     triggerToast(`${actionDescription} ✓`);
   };
 
-  // Iteration 5: AI Copilot & Consequential Workflow Handlers
-  const handleSendAICopilotQuery = (query: string) => {
+  // Iteration 5: AI Copilot & Consequential Workflow Handlers (Powered by Gemini)
+  const handleSendAICopilotQuery = async (query: string) => {
     const nowTime = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
@@ -1239,36 +1439,258 @@ export default function App() {
       },
     };
 
-    const { message: aiReply, nextFilterTopic } = buildCopilotResponse(query, {
-      athlete: activeAthlete360,
-      squad: context.squad,
-      sport: context.sport,
-      role: selectedRole,
-      moduleName: activeNav,
-      lastFilterTopic: sessionMemoryTopic,
-    });
+    // Deterministic local enrichment/fallback (provides cohort tables & report previews when applicable)
+    const { message: localReply, nextFilterTopic } = buildCopilotResponse(
+      query,
+      {
+        athlete: activeAthlete360,
+        allAthletes: athletes,
+        squad: context.squad,
+        sport: context.sport,
+        role: selectedRole,
+        moduleName: activeNav,
+        lastFilterTopic: sessionMemoryTopic,
+      }
+    );
 
     setSessionMemoryTopic(nextFilterTopic);
-    setAiMessages((prev) => [...prev, userMsg, aiReply]);
-    setAiAuditTrail((prev) => [
-      {
-        id: `aiaud-${Date.now()}`,
-        query,
-        recommendation:
-          aiReply.recommendation || aiReply.answerStatement || 'Advisory response',
-        evidenceAccessed: [
-          'Connected Athlete Telemetry',
-          `${context.squad} Workload & Recovery`,
-        ],
-        reviewedBy: selectedRole,
-        reviewerRole: selectedRole,
-        decision: 'Advisory Reviewed',
-        actionTaken: 'Displayed in USI Copilot',
+    setAiMessages((prev) => [...prev, userMsg]);
+    setIsCopilotThinking(true);
+
+    // Build multi-turn conversation history for Gemini
+    const historyPayload = aiMessages.slice(-10).map((m) => ({
+      role: m.sender === 'user' ? ('user' as const) : ('model' as const),
+      content:
+        m.sender === 'user'
+          ? m.queryText || ''
+          : `${m.answerTitle ? m.answerTitle + ': ' : ''}${
+              m.answerStatement || ''
+            } ${m.interpretation || ''} ${
+              m.recommendation ? 'Recommendation: ' + m.recommendation : ''
+            }`.trim(),
+    }));
+
+    // Build comprehensive live app & data context
+    const focusAthleteDetail = `${activeAthlete360.name} (${activeAthlete360.athleteId}, ${activeAthlete360.position} #${activeAthlete360.jerseyNumber}, Squad: ${activeAthlete360.squad}, Readiness: ${activeAthlete360.readiness}% [${activeAthlete360.readinessDelta >= 0 ? '+' : ''}${activeAthlete360.readinessDelta}% vs 7d], Status: ${activeAthlete360.status}, Training Status: ${activeAthlete360.trainingStatus}, Medical: ${activeAthlete360.medicalStatus}, Injury Risk: ${activeAthlete360.injuryRisk}, ACWR: ${activeAthlete360.acwr}, Acute Load: ${activeAthlete360.acuteLoadAu} AU, Chronic Load: ${activeAthlete360.chronicLoadAu} AU, HRV: ${activeAthlete360.hrvMs}ms [Baseline ${activeAthlete360.hrvBaselineMs}ms], Sleep: ${activeAthlete360.sleepFormatted}, Wellness: ${activeAthlete360.wellnessScore}/10, Soreness: ${activeAthlete360.sorenessScore}/10, Nutrition Compliance: ${activeAthlete360.nutritionCompliancePct}%, Hydration: ${activeAthlete360.hydrationStatus}, Medical Note: ${activeAthlete360.medicalNote})`;
+
+    const athletesSummary = athletes
+      .map(
+        (a) =>
+          `${a.name} (ID: ${a.id}, ${a.squad}, ${a.position}, Readiness ${a.readiness}%, ACWR ${a.acwr}, HRV ${a.hrvMs}ms/${a.hrvBaselineMs}ms, Sleep ${a.sleepFormatted}, Risk ${a.injuryRisk}, TrainingStatus ${a.trainingStatus}, Medical ${a.medicalStatus}, Nutrition ${a.nutritionCompliancePct}%, Hydration ${a.hydrationStatus})`
+      )
+      .join(' | ');
+
+    const injuriesSummary = injuries
+      .map(
+        (inj) =>
+          `${inj.athleteName}: ${inj.diagnosis} (${inj.bodyRegionDisplay}, ${inj.severity}, Pain ${inj.painScore}/10, Stage ${inj.stage}, RTP Stage ${inj.rtpStage}/5 ${inj.rtpStageName}, Rehab Progress ${inj.rehabProgressPct}%, Restrictions: ${inj.restrictions})`
+      )
+      .join(' | ');
+
+    const sessionsSummary = sessions
+      .slice(0, 6)
+      .map(
+        (s) =>
+          `${s.title} (${s.day || 'Today'} ${s.time}, ${s.pitchOrVenue}, ${s.intensity} Intensity, Planned Load ${s.plannedLoadAu} AU, Status ${s.status}, Modified: ${
+            s.modifiedAthletes
+              .map((m) => `${m.athleteName} [${m.modification}]`)
+              .join(', ') || 'None'
+          })`
+      )
+      .join(' | ');
+
+    const nutritionSummary = nutritionPlans
+      .slice(0, 6)
+      .map(
+        (np) =>
+          `${np.athleteName} (${np.planName}, Goal: ${np.goal}, Calories ${np.currentCalories}/${np.targetCalories} kcal, Protein ${np.currentProteinG}/${np.targetProteinG}g, Carbs ${np.currentCarbsG}/${np.targetCarbsG}g, Hydration ${np.currentHydrationL}/${np.targetHydrationL}L [${np.hydrationCompliancePct}%], Compliance ${np.compliancePct}%, Status ${np.status})`
+      )
+      .join(' | ');
+
+    const assessmentsSummary = talentProfiles
+      .slice(0, 6)
+      .map(
+        (tp) =>
+          `${tp.athleteName} (${tp.squad}, Base Performance Index ${tp.basePerformanceIndex}, Alignment ${tp.benchmarkAlignment}, Priority ${tp.developmentPriority}, Status ${tp.status})`
+      )
+      .join(' | ');
+
+    const pendingActionsSummary = aiActionItems
+      .filter((i) => i.status === 'Pending Review')
+      .map(
+        (i) =>
+          `${i.affectedAthleteName}: ${i.recommendation} (${i.priority} Priority, ${i.safetyClass})`
+      )
+      .join(' | ');
+
+    try {
+      const response = await fetch('/api/gemini/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          model: copilotModel,
+          context: {
+            role: selectedRole,
+            hierarchy: context,
+            activeModule: activeNav,
+            selectedAthleteName: activeAthlete360.name,
+            focusAthleteDetail,
+            athletesSummary,
+            injuriesSummary,
+            sessionsSummary,
+            nutritionSummary,
+            assessmentsSummary,
+            pendingActionsSummary,
+          },
+          history: historyPayload,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini endpoint returned ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const validDomains = [
+        'Training',
+        'Recovery',
+        'HRV',
+        'Sleep',
+        'Medical',
+        'Nutrition',
+        'Assessments',
+      ];
+      const validTones = ['emerald', 'amber', 'rose', 'sky'];
+
+      const geminiEvidenceBundle: AIEvidenceBundle =
+        Array.isArray(data.evidenceMetrics) && data.evidenceMetrics.length > 0
+          ? {
+              id: `ev-gem-${Date.now()}`,
+              title: data.answerTitle || 'GEMINI MULTI-SIGNAL EVIDENCE BUNDLE',
+              subjectLabel: `${activeAthlete360.name} · ${context.squad} (${selectedRole})`,
+              confidence: data.confidence || 'High',
+              generatedAt: `Today · ${nowTime} (${data.model || copilotModel})`,
+              metrics: data.evidenceMetrics.map((m: any) => ({
+                domain: validDomains.includes(m.domain) ? m.domain : 'Training',
+                label: m.label || 'Telemetry Signal',
+                deltaOrValue: m.deltaOrValue || 'Evaluated',
+                detail: m.detail || 'Live USI telemetry stream',
+                tone: validTones.includes(m.tone) ? m.tone : 'sky',
+              })),
+              clinicalDisclaimer:
+                'Generated by USI Gemini Copilot using live connected athlete, medical, workload, and nutrition state. Consequential actions require human sign-off.',
+            }
+          : localReply.evidenceBundle || ARJUN_EVIDENCE_BUNDLE;
+
+      const geminiActions: AICopilotActionButton[] =
+        Array.isArray(data.suggestedActions) && data.suggestedActions.length > 0
+          ? data.suggestedActions.map((act: any, idx: number) => ({
+              id: `gem-act-${Date.now()}-${idx}`,
+              label: act.label || 'Open Operational View',
+              safetyClass:
+                act.safetyClass === 'CONSEQUENTIAL' ||
+                act.safetyClass === 'RECOMMENDATION'
+                  ? act.safetyClass
+                  : 'INFORMATIONAL',
+              actionType: act.actionType || 'open-athlete-360',
+              targetAthleteId: act.targetAthleteId || activeAthlete360.id,
+            }))
+          : localReply.actions || [];
+
+      const geminiReply: AICopilotMessage = {
+        id: `ai-gem-${Date.now()}`,
+        sender: 'ai',
         timestamp: nowTime,
-        safetyClass: aiReply.safetyClass || 'INFORMATIONAL',
-      },
-      ...prev,
-    ]);
+        answerTitle:
+          data.answerTitle ||
+          localReply.answerTitle ||
+          'GEMINI OPERATIONAL ANALYSIS',
+        answerStatement:
+          data.answerStatement ||
+          localReply.answerStatement ||
+          ' Operational telemetry evaluated.',
+        confidence: data.confidence || localReply.confidence || 'High',
+        safetyClass:
+          data.safetyClass || localReply.safetyClass || 'RECOMMENDATION',
+        evidenceSummary:
+          Array.isArray(data.evidenceSummary) && data.evidenceSummary.length > 0
+            ? data.evidenceSummary.map((es: any) => ({
+                label: es.label,
+                value: es.value,
+                tone: validTones.includes(es.tone) ? es.tone : 'sky',
+              }))
+            : localReply.evidenceSummary,
+        evidenceBundle: geminiEvidenceBundle,
+        interpretation: data.interpretation || localReply.interpretation,
+        recommendation: data.recommendation || localReply.recommendation,
+        isUncertaintyState:
+          Boolean(data.isUncertaintyState) ||
+          Boolean(localReply.isUncertaintyState),
+        uncertaintyAlternative:
+          data.uncertaintyAlternative || localReply.uncertaintyAlternative,
+        tableHeaders: localReply.tableHeaders,
+        tableRows: localReply.tableRows,
+        generatedReportPreview: localReply.generatedReportPreview,
+        actions: geminiActions,
+        followUpSuggestions:
+          Array.isArray(data.followUpSuggestions) &&
+          data.followUpSuggestions.length > 0
+            ? data.followUpSuggestions
+            : localReply.followUpSuggestions,
+      };
+
+      setAiMessages((prev) => [...prev, geminiReply]);
+      setAiAuditTrail((prev) => [
+        {
+          id: `aiaud-${Date.now()}`,
+          query,
+          recommendation:
+            geminiReply.recommendation ||
+            geminiReply.answerStatement ||
+            'Advisory response',
+          evidenceAccessed: [
+            `Gemini (${data.model || copilotModel})`,
+            'Connected Athlete Telemetry',
+            `${context.squad} Workload & Medical State`,
+          ],
+          reviewedBy: selectedRole,
+          reviewerRole: selectedRole,
+          decision: 'Advisory Reviewed',
+          actionTaken: 'Displayed in USI Copilot',
+          timestamp: nowTime,
+          safetyClass: geminiReply.safetyClass || 'INFORMATIONAL',
+        },
+        ...prev,
+      ]);
+    } catch (err) {
+      console.warn('Gemini Copilot fallback to local engine:', err);
+      setAiMessages((prev) => [...prev, localReply]);
+      setAiAuditTrail((prev) => [
+        {
+          id: `aiaud-${Date.now()}`,
+          query,
+          recommendation:
+            localReply.recommendation ||
+            localReply.answerStatement ||
+            'Advisory response',
+          evidenceAccessed: [
+            'Connected Athlete Telemetry',
+            `${context.squad} Workload & Recovery`,
+          ],
+          reviewedBy: selectedRole,
+          reviewerRole: selectedRole,
+          decision: 'Advisory Reviewed',
+          actionTaken: 'Displayed in USI Copilot',
+          timestamp: nowTime,
+          safetyClass: localReply.safetyClass || 'INFORMATIONAL',
+        },
+        ...prev,
+      ]);
+    } finally {
+      setIsCopilotThinking(false);
+    }
   };
 
   const handleExecuteCopilotAction = (action: AICopilotActionButton) => {
@@ -1285,15 +1707,35 @@ export default function App() {
     } else if (action.actionType === 'open-medical-module') {
       setActiveNav('injury-intelligence');
       setIsGlobalCopilotOpen(false);
-    } else if (action.actionType === 'open-assessments-module') {
+    } else if (action.actionType === 'open-sports-science') {
+      setActiveNav('readiness');
+      setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-nutrition') {
+      setActiveNav('nutrition');
+      setIsGlobalCopilotOpen(false);
+    } else if (
+      action.actionType === 'open-assessments-module' ||
+      action.actionType === 'open-assessments'
+    ) {
       setActiveNav('assessments-tid');
       setIsGlobalCopilotOpen(false);
-    } else if (action.actionType === 'open-analytics-module') {
+    } else if (
+      action.actionType === 'open-analytics-module' ||
+      action.actionType === 'open-analytics'
+    ) {
       setActiveNav('analytics-federation');
+      setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-action-centre') {
+      setActiveNav('ai-action-centre');
       setIsGlobalCopilotOpen(false);
     } else if (action.actionType === 'open-risk-centre') {
       setActiveNav('ai-risk-centre');
       setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-automation') {
+      setActiveNav('ai-automation');
+      setIsGlobalCopilotOpen(false);
+    } else if (action.actionType === 'open-evidence-drawer') {
+      setActiveEvidenceBundle(ARJUN_EVIDENCE_BUNDLE);
     } else if (action.actionType === 'open-coach-brief') {
       setAiAssistanceMode('coach-brief');
     } else if (action.actionType === 'open-ai-summary') {
@@ -1452,8 +1894,11 @@ export default function App() {
   const isTrainingRoute =
     activeNav === 'periodisation' ||
     activeNav === 'sessions' ||
+    activeNav === 'builder' ||
+    activeNav === 'live-pitchside' ||
     activeNav === 'exercises' ||
-    activeNav === 'workload';
+    activeNav === 'workload' ||
+    activeNav === 'attendance-rpe';
 
   const isLifecycleHubRoute = activeNav === 'athlete-lifecycle';
   const isSportsScienceRoute =
@@ -1506,6 +1951,7 @@ export default function App() {
           athletes={athletes}
           onSelectActiveAthlete={(athId) => setActiveAthlete360Id(athId)}
           onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onGlobalExport={handleGlobalExport}
         />
 
         {/* Workspace Viewport */}
@@ -1516,9 +1962,33 @@ export default function App() {
               {/* Dynamic 8-Persona Role Dashboard Banner */}
               <RoleDashboardBanner
                 selectedRole={selectedRole}
-                onTriggerQuickAction={(id, label) =>
-                  triggerToast(`[${selectedRole}] Quick action triggered: ${label}`)
-                }
+                onTriggerQuickAction={(id, label) => {
+                  if (id === 'qa-pd-1') setActiveNav('return-to-play');
+                  else if (id === 'qa-pd-2') setActiveNav('assessments-talent');
+                  else if (id === 'qa-pd-3') setActiveNav('athlete-registry');
+                  else if (id === 'qa-co-1') setIsSessionAssignmentOpen(true);
+                  else if (id === 'qa-co-2') setActiveNav('attendance-rpe');
+                  else if (id === 'qa-co-3' || id === 'qa-ss-1') setActiveNav('gps-wearables');
+                  else if (id === 'qa-ss-2') setActiveNav('fatigue');
+                  else if (id === 'qa-ss-3') setActiveNav('analytics-reports');
+                  else if (id === 'qa-pt-1') {
+                    if (injuries[0]) setSelectedInjuryDrawerId(injuries[0].id);
+                    else setActiveNav('injury-register');
+                  } else if (id === 'qa-pt-2') {
+                    if (injuries[0]) setRtpGateModalInjuryId(injuries[0].id);
+                    else setActiveNav('return-to-play');
+                  } else if (id === 'qa-pt-3') setIsReportInjuryOpen(true);
+                  else if (id === 'qa-nu-1' || id === 'qa-ath-2') setActiveNav('nutrition-hydration');
+                  else if (id === 'qa-nu-2') setActiveNav('nutrition-plans');
+                  else if (id === 'qa-nu-3' || id === 'qa-fa-2') setActiveNav('nutrition-supplements');
+                  else if (id === 'qa-fa-1') setActiveNav('verification');
+                  else if (id === 'qa-fa-3' || id === 'qa-op-3') setActiveNav('manifests');
+                  else if (id === 'qa-ath-1') setActiveNav('readiness');
+                  else if (id === 'qa-ath-3') setIsGlobalCopilotOpen(true);
+                  else if (id === 'qa-op-1') setActiveNav('facilities');
+                  else if (id === 'qa-op-2') setActiveNav('camps');
+                  triggerToast(`[${selectedRole}] Opened workflow: ${label}`);
+                }}
               />
 
               {/* Dynamic Role-Aware KPI Cards */}
@@ -1536,11 +2006,38 @@ export default function App() {
               {/* Dynamic Role-Specific Analytics & Priority Queue */}
               <RoleSpecificAnalyticsView
                 selectedRole={selectedRole}
-                onOpenActionItem={(item) =>
-                  triggerToast(`[${item.badge}] Action queue opened: ${item.title}`)
-                }
+                onOpenActionItem={(item) => {
+                  if (item.id === 'pd-1' || item.id === 'pa-01' || item.id === 'physio-pa-01' || item.id === 'pt-1' || item.id === 'physio-pa-03') {
+                    if (injuries[0]) setRtpGateModalInjuryId(injuries[0].id);
+                    else setActiveNav('return-to-play');
+                  } else if (item.id === 'pa-02' || item.id === 'pt-2' || item.id === 'physio-pa-02') {
+                    const devInj = injuries.find((i) => i.athleteId === 'ath-devansh-kulkarni') || injuries[0];
+                    if (devInj) setSelectedInjuryDrawerId(devInj.id);
+                    else setActiveNav('injury-register');
+                  } else if (item.id === 'pa-03' || item.id === 'fa-1' || item.id === 'fed-pa-02' || item.id === 'fed-pa-03') {
+                    setActiveNav('verification');
+                  } else if (item.id === 'pd-2') setActiveNav('assessments-talent');
+                  else if (item.id === 'pd-3') setIsMorningTriageOpen(true);
+                  else if (item.id === 'co-1' || item.id === 'coach-pa-01') setIsTrainingModModalOpen(true);
+                  else if (item.id === 'co-2') setActiveNav('builder');
+                  else if (item.id === 'co-3' || item.id === 'coach-pa-02' || item.id === 'coach-pa-03') setIsSessionAssignmentOpen(true);
+                  else if (item.id === 'ss-1' || item.id === 'ss-pa-01' || item.id === 'ss-pa-02') setActiveNav('fatigue');
+                  else if (item.id === 'ss-2' || item.id === 'ss-pa-03') setActiveNav('gps-wearables');
+                  else if (item.id === 'ss-3') setActiveNav('workload');
+                  else if (item.id === 'pt-3') setActiveNav('rehabilitation');
+                  else if (item.id === 'nu-1' || item.id === 'nutri-pa-01') setActiveNav('nutrition-hydration');
+                  else if (item.id === 'nu-2') setActiveNav('nutrition-body-composition');
+                  else if (item.id === 'nutri-pa-02' || item.id === 'ath-2' || item.id === 'ath-pa-02') setActiveNav('nutrition-plans');
+                  else if (item.id === 'nu-3' || item.id === 'fa-2' || item.id === 'nutri-pa-03') setActiveNav('nutrition-supplements');
+                  else if (item.id === 'fa-3' || item.id === 'op-3' || item.id === 'fed-pa-01' || item.id === 'ops-pa-03') setActiveNav('manifests');
+                  else if (item.id === 'ath-1' || item.id === 'ath-pa-01') setActiveNav('sessions');
+                  else if (item.id === 'ath-3') setActiveNav('injury-intelligence');
+                  else if (item.id === 'op-1' || item.id === 'ops-pa-01' || item.id === 'ops-pa-02') setActiveNav('facilities');
+                  else if (item.id === 'op-2') setActiveNav('cargo');
+                  triggerToast(`[${item.badge}] Opened action: ${item.title}`);
+                }}
                 onNavigateSection={(sec) => setActiveNav(sec as any)}
-                onSelectKpi={handleSelectKpi}
+                onSelectKpi={(id) => handleSelectKpi(id as KpiFilterKey)}
                 athletes={athletes}
                 injuries={injuries}
                 sessions={sessions}
@@ -2001,9 +2498,15 @@ export default function App() {
               messages={aiMessages}
               onSendQuery={handleSendAICopilotQuery}
               onClearConversation={() => {
-                setAiMessages(INITIAL_COPILOT_MESSAGES);
+                setAiMessages(getPersonaInitialMessages(selectedRole));
                 setSessionMemoryTopic(null);
                 triggerToast('Reset AI Copilot conversation session memory');
+              }}
+              isThinking={isCopilotThinking}
+              selectedModel={copilotModel}
+              onSelectModel={(m) => {
+                setCopilotModel(m);
+                triggerToast(`Switched Copilot model to ${m}`);
               }}
               actionItems={aiActionItems}
               riskSignals={aiRiskSignals}
@@ -2126,9 +2629,9 @@ export default function App() {
           ) : isOperationsRoute ? (
             <OperationsWorkspace
               activeSubTab={
-                (['camps', 'manifests', 'cargo', 'facilities'].includes(activeNav)
+                (['operations', 'camps', 'manifests', 'cargo', 'facilities'].includes(activeNav)
                   ? activeNav
-                  : 'camps') as OperationsSubTab
+                  : 'operations') as OperationsSubTab
               }
               onSelectSubTab={(tab) => setActiveNav(tab)}
               selectedRole={selectedRole}
@@ -2139,6 +2642,8 @@ export default function App() {
               activeNav={activeNav}
               selectedRole={selectedRole}
               onReturnToCommandCenter={() => setActiveNav('command-center')}
+              onNavigateModule={(nav) => handleSelectNav(nav)}
+              onOpenHelpModal={() => setIsHelpModalOpen(true)}
               athletes={athletes}
               sessions={sessions}
               injuries={injuries}
@@ -2399,6 +2904,17 @@ export default function App() {
         activeAthlete={activeAthlete360}
         messages={aiMessages}
         onSendQuery={handleSendAICopilotQuery}
+        onClearConversation={() => {
+          setAiMessages(getPersonaInitialMessages(selectedRole));
+          setSessionMemoryTopic(null);
+          triggerToast('Reset AI Copilot conversation session memory');
+        }}
+        isThinking={isCopilotThinking}
+        selectedModel={copilotModel}
+        onSelectModel={(m) => {
+          setCopilotModel(m);
+          triggerToast(`Switched Copilot model to ${m}`);
+        }}
         onExecuteAction={handleExecuteCopilotAction}
         onOpenEvidence={(bundle) => setActiveEvidenceBundle(bundle)}
         onExpandFullWorkspace={() => {

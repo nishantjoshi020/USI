@@ -513,8 +513,8 @@ export const AiAthleteAssistanceDrawer: React.FC<
         className="fixed inset-0 bg-black/65 backdrop-blur-[1px]"
       />
 
-      <aside className="relative w-full max-w-lg bg-[#0F1623] border-l border-slate-800 h-full flex flex-col justify-between z-10 shadow-2xl">
-        <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
+      <aside className="relative w-full max-w-lg bg-[#0F1623] border-l border-slate-800 h-dvh max-h-dvh overflow-hidden flex flex-col justify-between z-10 shadow-2xl">
+        <div className="shrink-0 p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Bot className="w-5 h-5 text-sky-400" />
             <div>
@@ -538,7 +538,7 @@ export const AiAthleteAssistanceDrawer: React.FC<
         </div>
 
         {/* Mode Switcher Tabs */}
-        <div className="px-5 py-2.5 bg-[#0B101B] border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs">
+        <div className="shrink-0 px-5 py-2.5 bg-[#0B101B] border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs">
           {(
             [
               { id: 'readiness', label: 'Explain Readiness' },
@@ -562,7 +562,7 @@ export const AiAthleteAssistanceDrawer: React.FC<
         </div>
 
         {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-4 text-xs">
           <div className="p-4 rounded-md bg-[#0B101B] border border-slate-800 flex items-center justify-between">
             <div>
               <div className="text-slate-400">Readiness Score</div>

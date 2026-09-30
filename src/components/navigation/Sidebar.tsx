@@ -10,7 +10,6 @@ import {
   Dumbbell,
   HeartPulse,
   LayoutDashboard,
-  Settings,
   Shield,
   User,
   Users,
@@ -425,12 +424,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ],
           },
           {
-            id: 'settings',
-            label: 'System Governance',
-            icon: Settings,
-            navId: 'settings',
-          },
-          {
             id: 'ai-copilot',
             label: 'Governance AI Audit',
             icon: Bot,
@@ -478,14 +471,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             children: [
               { id: 'analytics-federation', label: 'Facility Throughput' },
               { id: 'analytics-reports', label: 'Maintenance & Incident Reports' },
-            ],
-          },
-          {
-            id: 'settings',
-            label: 'Facility & Tech Assets',
-            icon: Settings,
-            children: [
-              { id: 'settings', label: 'GPS & Force-Plate Calibration' },
             ],
           },
           {
@@ -618,12 +603,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               { id: 'ai-automation', label: 'Workflow Automation' },
               { id: 'ai-audit', label: 'AI Audit Trail' },
             ],
-          },
-          {
-            id: 'settings',
-            label: 'Settings',
-            icon: Settings,
-            navId: 'settings',
           },
         ];
     }

@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   Clock,
+  Download,
   Dumbbell,
   Eye,
   Filter,
@@ -40,6 +41,10 @@ import {
 } from '../../data/medicalMockData';
 import { InteractiveBodyMap } from './InteractiveBodyMap';
 import { MedicalStatusBadge } from '../ui/Badges';
+import {
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type MedicalSubTab =
   | 'injury-intelligence'
@@ -305,9 +310,6 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
   };
 
   const roleGov = getRoleGovernanceMeta(selectedRole);
-  const canEditMedical =
-    selectedRole === 'Physiotherapist' ||
-    selectedRole === 'Performance Director';
 
   // AI Copilot Content Generator (Section 22)
   const getCopilotNarrative = (mode: AiMedicalCopilotMode) => {
@@ -395,7 +397,54 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              const file = exportToCSV(
+                'usi_medical_injury_register',
+                [
+                  'Athlete',
+                  'Sport',
+                  'Position',
+                  'Squad',
+                  'Diagnosis',
+                  'Body Region',
+                  'Side',
+                  'Severity',
+                  'Pain (VAS)',
+                  'Stage',
+                  'RTP Stage',
+                  'Rehab Progress',
+                  'Clearance',
+                  'Estimated RTP',
+                  'Lead Clinician',
+                ],
+                filteredInjuries.map((inj) => [
+                  inj.athleteName,
+                  inj.sport,
+                  inj.position,
+                  inj.squad,
+                  inj.diagnosis,
+                  inj.bodyRegionDisplay,
+                  inj.side,
+                  inj.severity,
+                  `${inj.painScore}/10`,
+                  inj.stage,
+                  `Stage ${inj.rtpStage}/5 (${inj.rtpStageName})`,
+                  `${inj.rehabProgressPct}%`,
+                  inj.medicalStatus,
+                  inj.estimatedRtpDate,
+                  inj.leadClinician,
+                ]),
+                [`USI Medical & Injury Register — Exported by ${selectedRole}`]
+              );
+              onTriggerToast(`Exported Injury Register CSV (${file}) ✓`);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200"
+          >
+            <Download className="w-3.5 h-3.5 text-sky-400" />
+            <span>Export CSV</span>
+          </button>
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
@@ -539,6 +588,86 @@ export const MedicalWorkspace: React.FC<MedicalWorkspaceProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_medical_injury_register',
+                  [
+                    'Athlete',
+                    'Squad',
+                    'Diagnosis',
+                    'Body Region',
+                    'Severity',
+                    'Pain Score',
+                    'Stage',
+                    'RTP Stage',
+                    'Progress',
+                    'Medical Clearance',
+                    'Est. RTP Date',
+                    'Lead Clinician',
+                  ],
+                  injuries.map((inj) => [
+                    inj.athleteName,
+                    inj.squad,
+                    inj.diagnosis,
+                    inj.bodyRegionDisplay,
+                    inj.severity,
+                    `${inj.painScore}/10`,
+                    inj.stage,
+                    `Stage ${inj.rtpStage}/5`,
+                    `${inj.rehabProgressPct}%`,
+                    inj.medicalStatus,
+                    inj.estimatedRtpDate,
+                    inj.leadClinician,
+                  ]),
+                  [`USI Clinical Injury & RTP Register — Role: ${selectedRole}`]
+                );
+                onTriggerToast(`Exported Medical Injury Register CSV (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_clinical_medical_and_rtp_dossier', {
+                  title: 'CLINICAL INJURY INTELLIGENCE, REHABILITATION & RTP DOSSIER',
+                  subtitle: `Active Clinical Caseload (${injuries.length} Cases) | Rehab Plans (${rehabPlans.length}) | Exported by ${selectedRole}`,
+                  metadataPairs: [
+                    { label: 'Exporting Clinician/Role', value: selectedRole },
+                    { label: 'Active Injuries', value: `${injuries.length} Cases` },
+                    { label: 'Active Rehab Plans', value: `${rehabPlans.length} Structured Plans` },
+                    { label: 'Governance Scope', value: roleGov.badge },
+                  ],
+                  sections: [
+                    {
+                      heading: 'Active Clinical Caseload & Return-to-Play Status',
+                      lines: injuries.map(
+                        (inj) =>
+                          `${inj.athleteName} (${inj.squad}) - ${inj.diagnosis} [${inj.bodyRegionDisplay}, ${inj.severity}]: Stage ${inj.rtpStage}/5 (${inj.rtpStageName}), Rehab ${inj.rehabProgressPct}%, Pain ${inj.painScore}/10, Clearance: ${inj.medicalStatus}. Restriction: ${inj.restrictions}`
+                      ),
+                    },
+                  ],
+                  tableHeaders: ['Athlete', 'Diagnosis', 'Region', 'Severity', 'Pain', 'RTP Stage', 'Progress', 'Clearance'],
+                  tableRows: injuries.map((inj) => [
+                    inj.athleteName,
+                    inj.diagnosis,
+                    inj.bodyRegionDisplay,
+                    inj.severity,
+                    `${inj.painScore}/10`,
+                    `Stage ${inj.rtpStage}/5`,
+                    `${inj.rehabProgressPct}%`,
+                    inj.medicalStatus,
+                  ]),
+                });
+                onTriggerToast(`Exported Clinical Medical & RTP Dossier PDF (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
             <button
               disabled={!canEditMedical}
               onClick={() => {

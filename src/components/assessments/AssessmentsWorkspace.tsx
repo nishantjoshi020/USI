@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   ClipboardCheck,
+  Download,
   Gauge,
   Play,
   Plus,
@@ -29,6 +30,10 @@ import {
   TestResult,
   UserRole,
 } from '../../types/usi';
+import {
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type AssessmentsSubTab =
   | 'assessments-tid'
@@ -282,29 +287,107 @@ export const AssessmentsWorkspace: React.FC<AssessmentsWorkspaceProps> = ({
             </p>
           </div>
 
-          {['Coach', 'Sports Scientist', 'Performance Director'].includes(selectedRole) && (
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                onClick={() => {
-                  onSelectSubTab('assessments-field-testing');
-                  onTriggerToast(
-                    'Field Testing Active — Ready to enter & validate results'
-                  );
-                }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
-              >
-                <Play className="w-3.5 h-3.5" />
-                <span>Start Testing</span>
-              </button>
-              <button
-                onClick={() => setIsCreateProgramOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Create Assessment Program</span>
-              </button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_assessments_and_tid_benchmarks',
+                  [
+                    'Athlete',
+                    'Squad',
+                    'Test Name',
+                    'Category',
+                    'Current Result',
+                    'Previous',
+                    'Personal Best',
+                    'Squad Average',
+                    'National Benchmark',
+                    'Progression',
+                  ],
+                  testResults.map((r) => [
+                    r.athleteName,
+                    r.squad,
+                    r.testName,
+                    r.category,
+                    `${r.currentResult} ${r.unit}`,
+                    `${r.previousResult} ${r.unit}`,
+                    `${r.personalBest} ${r.unit}`,
+                    `${r.squadAverage} ${r.unit}`,
+                    `${r.nationalBenchmark} ${r.unit}`,
+                    r.progressionStatus,
+                  ]),
+                  [`USI Physical Benchmarking & Talent Identification Export — Role: ${selectedRole}`]
+                );
+                onTriggerToast(`Exported Assessments & Benchmarks CSV (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_assessments_and_talent_id_dossier', {
+                  title: 'PHYSICAL ASSESSMENTS, BENCHMARKING & TALENT ID DOSSIER',
+                  subtitle: `Focus Athlete: ${activeAssessmentAthlete.name} | ${programs.length} Programs | ${talentProfiles.length} TID Profiles`,
+                  metadataPairs: [
+                    { label: 'Focus Athlete', value: `${activeAssessmentAthlete.name} (${activeAssessmentAthlete.athleteId})` },
+                    { label: 'Active Programs', value: `${programs.length} Batteries` },
+                    { label: 'TID Weights', value: `Spd ${talentWeights.speed}% / Pwr ${talentWeights.power}% / End ${talentWeights.endurance}%` },
+                    { label: 'Exported By', value: selectedRole },
+                  ],
+                  sections: [
+                    {
+                      heading: 'Talent Identification (TID) Weighted Leaderboard',
+                      lines: talentProfiles.map(
+                        (tp) =>
+                          `${tp.athleteName} (${tp.squad}, Age ${tp.age}): Weighted Talent Index ${computeTalentIndex(tp)}/100 | Benchmark: ${tp.benchmarkAlignment} | Priority: ${tp.developmentPriority} | Status: ${tp.status}`
+                      ),
+                    },
+                  ],
+                  tableHeaders: ['Athlete', 'Test', 'Category', 'Current', 'PB', 'Squad Avg', 'Benchmark', 'Status'],
+                  tableRows: testResults.map((r) => [
+                    r.athleteName,
+                    r.testName,
+                    r.category,
+                    `${r.currentResult} ${r.unit}`,
+                    `${r.personalBest} ${r.unit}`,
+                    `${r.squadAverage} ${r.unit}`,
+                    `${r.nationalBenchmark} ${r.unit}`,
+                    r.progressionStatus,
+                  ]),
+                });
+                onTriggerToast(`Exported Assessments & Talent ID PDF Dossier (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
+            {['Coach', 'Sports Scientist', 'Performance Director'].includes(selectedRole) && (
+              <>
+                <button
+                  onClick={() => {
+                    onSelectSubTab('assessments-field-testing');
+                    onTriggerToast(
+                      'Field Testing Active — Ready to enter & validate results'
+                    );
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-colors"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Start Testing</span>
+                </button>
+                <button
+                  onClick={() => setIsCreateProgramOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Create Assessment Program</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Sub-Routes Bar */}

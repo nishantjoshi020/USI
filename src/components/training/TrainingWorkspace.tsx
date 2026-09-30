@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Download,
   Dumbbell,
   Filter,
   Flame,
@@ -42,6 +43,10 @@ import {
   UserRole,
 } from '../../types/usi';
 import { AthleteAvatar, LoadBadge, StatusBadge } from '../ui/Badges';
+import {
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type TrainingSubTab =
   | 'periodisation'
@@ -405,6 +410,90 @@ export const TrainingWorkspace: React.FC<TrainingWorkspaceProps> = ({
             <p className="text-xs text-slate-400 mt-0.5">
               Multi-cycle periodisation planning, dynamic session builder, live coach attendance & sRPE collection, and ACWR load modeling.
             </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_training_sessions_and_load_export',
+                  [
+                    'Session ID',
+                    'Title',
+                    'Category',
+                    'Squad',
+                    'Time',
+                    'Duration (min)',
+                    'Venue',
+                    'Intensity',
+                    'Planned Load (AU)',
+                    'Attendance',
+                    'Status',
+                    'Lead Coach',
+                  ],
+                  sessions.map((s) => [
+                    s.id,
+                    s.title,
+                    s.category,
+                    s.squad,
+                    s.time,
+                    s.durationMin,
+                    s.pitchOrVenue,
+                    s.intensity,
+                    s.plannedLoadAu,
+                    `${s.attendedCount}/${s.scheduledCount} (${s.attendance}%)`,
+                    s.status,
+                    s.coach,
+                  ]),
+                  [`USI Training & Periodisation Sessions Export — Role: ${selectedRole}`]
+                );
+                onTriggerToast(`Exported Training Sessions & Load CSV (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_training_periodisation_dossier', {
+                  title: 'NATIONAL TRAINING PERIODISATION & WORKLOAD DOSSIER',
+                  subtitle: `Macro/Meso/Micro Cycle Plan, Session Prescriptions & Squad ACWR | Exported by ${selectedRole}`,
+                  metadataPairs: [
+                    { label: 'Exported By', value: selectedRole },
+                    { label: 'Scheduled Sessions', value: `${sessions.length} Operational Sessions` },
+                    { label: 'Monitored Athletes', value: `${athletes.length} Squad Athletes` },
+                    { label: 'Active Microcycle', value: 'Week 38 — Pre-Competition Taper' },
+                  ],
+                  sections: [
+                    {
+                      heading: 'Prescribed Training Sessions & Modifications',
+                      lines: sessions.map(
+                        (s) =>
+                          `${s.title} (${s.time}, ${s.pitchOrVenue}) - ${s.intensity} Intensity, Planned Load ${s.plannedLoadAu} AU, Status: ${s.status}. Modified Athletes: ${
+                            s.modifiedAthletes.map((m) => `${m.athleteName} (${m.modification})`).join('; ') || 'None'
+                          }`
+                      ),
+                    },
+                  ],
+                  tableHeaders: ['Session Title', 'Category', 'Time', 'Venue', 'Intensity', 'Load (AU)', 'Status'],
+                  tableRows: sessions.map((s) => [
+                    s.title,
+                    s.category,
+                    s.time,
+                    s.pitchOrVenue,
+                    s.intensity,
+                    `${s.plannedLoadAu} AU`,
+                    s.status,
+                  ]),
+                });
+                onTriggerToast(`Exported Training & Periodisation PDF Dossier (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
           </div>
         </div>
 

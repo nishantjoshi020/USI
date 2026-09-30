@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
-  Activity,
+   Activity,
   AlertTriangle,
   Bot,
   Check,
   CheckCircle2,
   Clock,
   Cpu,
+  Download,
   Eye,
   Filter,
   Layers,
@@ -34,6 +35,11 @@ import {
   NavItemId,
   UserRole,
 } from '../../types/usi';
+import {
+  exportAuditTrailReport,
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 interface AIRiskAndActionViewsProps {
   mode: 'ai-action-centre' | 'ai-risk-centre' | 'ai-automation' | 'ai-audit';
@@ -903,13 +909,35 @@ export const AIRiskAndActionViews: React.FC<AIRiskAndActionViewsProps> = ({
 
       {/* AI Audit Trail Table (Section 32) */}
       <div className="bg-[#0F1623] border border-slate-800 rounded-lg overflow-hidden">
-        <div className="p-4 border-b border-slate-800">
-          <h3 className="text-sm font-bold text-slate-100 uppercase">
-            AI AUDIT TRAIL (IMMUTABLE GOVERNANCE LOG)
-          </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            Records AI query, AI recommendation, Evidence accessed, User reviewing recommendation, User decision, Action taken, and Timestamp.
-          </p>
+        <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-100 uppercase">
+              AI AUDIT TRAIL (IMMUTABLE GOVERNANCE LOG)
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Records AI query, AI recommendation, Evidence accessed, User reviewing recommendation, User decision, Action taken, and Timestamp.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                exportAuditTrailReport('CSV', aiAuditTrail, selectedRole)
+              }
+              className="px-3 py-1.5 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 inline-flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() =>
+                exportAuditTrailReport('PDF', aiAuditTrail, selectedRole)
+              }
+              className="px-3 py-1.5 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 inline-flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">

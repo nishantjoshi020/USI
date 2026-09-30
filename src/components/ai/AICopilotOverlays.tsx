@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
   Bot,
   Check,
   CheckCircle2,
@@ -16,6 +18,7 @@ import {
   Layers,
   Lock,
   Maximize2,
+  RotateCcw,
   Send,
   ShieldAlert,
   ShieldCheck,
@@ -59,14 +62,14 @@ export const AIEvidenceDrawer: React.FC<AIEvidenceDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
       <div
         onClick={onClose}
         className="fixed inset-0 bg-black/70 backdrop-blur-[1px]"
       />
-      <aside className="relative w-full max-w-lg bg-[#0F1623] border-l border-slate-800 h-full flex flex-col justify-between z-10 shadow-2xl">
+      <aside className="relative w-full max-w-lg bg-[#0F1623] border-l border-slate-800 h-dvh max-h-dvh overflow-hidden flex flex-col justify-between z-10 shadow-2xl">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
+        <div className="shrink-0 p-5 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded bg-sky-500/15 border border-sky-500/40 flex items-center justify-center">
               <Eye className="w-4 h-4 text-sky-400" />
@@ -89,7 +92,7 @@ export const AIEvidenceDrawer: React.FC<AIEvidenceDrawerProps> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-4 text-xs">
           {/* Subject & Qualitative Confidence (Section 21) */}
           <div className="p-3.5 rounded-md bg-[#0B101B] border border-slate-800 flex items-center justify-between">
             <div>
@@ -284,7 +287,7 @@ export const ProposedTrainingModificationsModal: React.FC<
         {/* Step 1: Review Modifications OR Step 2: Explicit Confirmation */}
         {!confirmingApproval ? (
           <>
-            <div className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-3.5 text-xs">
               <div className="p-3.5 rounded-md bg-[#0B101B] border border-slate-800 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-slate-400 block text-[11px]">
@@ -404,7 +407,7 @@ export const ProposedTrainingModificationsModal: React.FC<
             </div>
 
             {/* Footer Buttons: [Approve All] [Review Individually] [Cancel] */}
-            <div className="p-4 border-t border-slate-800 bg-[#090D16] flex flex-wrap items-center justify-between gap-2">
+            <div className="shrink-0 p-4 border-t border-slate-800 bg-[#090D16] flex flex-wrap items-center justify-between gap-2">
               <button
                 onClick={() => setReviewIndividually((prev) => !prev)}
                 className="px-3.5 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200"
@@ -438,7 +441,7 @@ export const ProposedTrainingModificationsModal: React.FC<
           </>
         ) : (
           /* Step 2: Explicit Confirmation Dialog (Section 8) */
-          <div className="p-6 space-y-5 text-xs">
+          <div className="p-6 space-y-5 text-xs overflow-y-auto min-h-0 flex-1">
             <div className="p-4 rounded-md bg-amber-950/20 border border-amber-500/40 space-y-2">
               <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
                 <ShieldCheck className="w-4 h-4 text-amber-400" />
@@ -511,6 +514,10 @@ interface GlobalAICopilotSlideOverProps {
   activeAthlete: Athlete;
   messages: AICopilotMessage[];
   onSendQuery: (query: string) => void;
+  onClearConversation?: () => void;
+  isThinking?: boolean;
+  selectedModel?: string;
+  onSelectModel?: (model: string) => void;
   onExecuteAction: (action: AICopilotActionButton) => void;
   onOpenEvidence: (bundle: AIEvidenceBundle) => void;
   onExpandFullWorkspace: () => void;
@@ -527,11 +534,58 @@ export const GlobalAICopilotSlideOver: React.FC<
   activeAthlete,
   messages,
   onSendQuery,
+  onClearConversation,
+  isThinking = false,
+  selectedModel = 'gemini-3.8-flash',
+  onSelectModel,
   onExecuteAction,
   onOpenEvidence,
   onExpandFullWorkspace,
 }) => {
   const [inputVal, setInputVal] = useState('');
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const prevMsgCountRef = useRef<number>(messages.length);
+  const prevRoleRef = useRef<UserRole>(selectedRole);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTo({
+        top: chatScrollRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  const scrollToTop = (behavior: ScrollBehavior = 'smooth') => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTo({
+        top: 0,
+        behavior,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (prevRoleRef.current !== selectedRole) {
+      prevRoleRef.current = selectedRole;
+      prevMsgCountRef.current = messages.length;
+      scrollToTop('smooth');
+      return;
+    }
+
+    if (messages.length > prevMsgCountRef.current || isThinking) {
+      const timer = setTimeout(() => {
+        scrollToBottom('smooth');
+      }, 40);
+      prevMsgCountRef.current = messages.length;
+      return () => clearTimeout(timer);
+    } else if (messages.length === 1 && prevMsgCountRef.current > 1) {
+      scrollToTop('smooth');
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages.length, selectedRole, isOpen, isThinking]);
 
   if (!isOpen) return null;
 
@@ -577,34 +631,72 @@ export const GlobalAICopilotSlideOver: React.FC<
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
       <div
         onClick={onClose}
         className="fixed inset-0 bg-black/60 backdrop-blur-[1px]"
       />
-      <aside className="relative w-full max-w-xl bg-[#0F1623] border-l border-slate-800 h-full flex flex-col justify-between z-10 shadow-2xl">
+      <aside className="relative w-full max-w-xl bg-[#0F1623] border-l border-slate-800 h-dvh max-h-dvh overflow-hidden flex flex-col z-10 shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b border-slate-800 bg-[#090D16] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded bg-sky-500/15 border border-sky-500/40 flex items-center justify-center">
+        <div className="shrink-0 p-4 border-b border-slate-800 bg-[#090D16] flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded bg-sky-500/15 border border-sky-500/40 flex items-center justify-center shrink-0">
               <Bot className="w-4 h-4 text-sky-400" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold tracking-wider text-slate-100">
                   USI COPILOT
                 </span>
-                <span className="px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] text-sky-300">
+                <span className="px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] text-sky-300 truncate">
                   {selectedRole}
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-400 truncate">
                 {roleBehavior.personaTitle}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onSelectModel && (
+              <select
+                value={selectedModel}
+                onChange={(e) => onSelectModel(e.target.value)}
+                aria-label="Select Gemini Copilot Model"
+                className="px-2 py-1 rounded bg-[#0F1623] border border-sky-500/40 text-[10px] font-mono text-sky-300 focus:outline-none focus:border-sky-400 hidden sm:block"
+              >
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Lite</option>
+                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+              </select>
+            )}
+            <button
+              type="button"
+              onClick={() => scrollToTop('smooth')}
+              title="Scroll to Top of Conversation"
+              className="p-1.5 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToBottom('smooth')}
+              title="Scroll to Latest Message"
+              className="p-1.5 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white"
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+            </button>
+            {onClearConversation && (
+              <button
+                type="button"
+                onClick={onClearConversation}
+                title="Reset Persona Conversation Thread"
+                className="p-1.5 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               onClick={() => {
                 onClose();
@@ -614,7 +706,7 @@ export const GlobalAICopilotSlideOver: React.FC<
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-medium text-sky-300"
             >
               <Maximize2 className="w-3 h-3" />
-              <span>Full Workspace</span>
+              <span className="hidden sm:inline">Full Workspace</span>
             </button>
             <button
               onClick={onClose}
@@ -625,58 +717,17 @@ export const GlobalAICopilotSlideOver: React.FC<
           </div>
         </div>
 
-        {/* Context & Persona Need Indicator Bar */}
-        <div className="px-4 py-3 bg-[#0B101B] border-b border-slate-800 space-y-2.5 text-xs">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block">
-                CURRENT CONTEXT · {selectedRole.toUpperCase()} LENS
-              </span>
-              <span className="font-semibold text-slate-100">
-                {activeAthlete?.name || 'Arjun Mehta'}
-              </span>{' '}
-              <span className="text-slate-400">
-                · {context.sport} · {context.squad}
-              </span>
-            </div>
-            <button
-              onClick={() => onSendQuery(contextualPrompt)}
-              className="px-2.5 py-1 rounded bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-medium text-left"
-            >
-              Ask: "{contextualPrompt}"
-            </button>
-          </div>
-
-          <div className="p-2.5 rounded bg-[#0F1623] border border-sky-500/25 space-y-2">
-            <p className="text-[11px] text-slate-300 leading-snug">
-              {roleBehavior.activeNeedSummary}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {(roleBehavior.proactiveRecommendations || []).map((rec) => (
-                <button
-                  key={rec.id}
-                  type="button"
-                  onClick={() => onSendQuery(rec.queryPrompt)}
-                  className="px-2 py-1 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-sky-300 inline-flex items-center gap-1"
-                >
-                  <Sparkles className="w-2.5 h-2.5 text-sky-400" />
-                  <span>
-                    {rec.metricBadge}: {rec.title}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Conversation Feed */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <div
+          ref={chatScrollRef}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain scroll-smooth p-4 space-y-4 text-xs"
+        >
           {messages.map((msg) =>
             msg.sender === 'user' ? (
               <div key={msg.id} className="flex justify-end">
                 <div className="max-w-[85%] p-3 rounded-md bg-sky-500/15 border border-sky-500/30 text-slate-100">
                   <div className="text-[10px] font-mono text-sky-400 mb-1">
-                    {selectedRole} · {msg.timestamp}
+                    {msg.contextSnapshot?.role || selectedRole} · {msg.timestamp}
                   </div>
                   <div className="font-medium">{msg.queryText}</div>
                 </div>
@@ -727,12 +778,12 @@ export const GlobalAICopilotSlideOver: React.FC<
                       {msg.evidenceSummary.map((ev, i) => (
                         <div
                           key={i}
-                          className="p-2 rounded bg-[#0F1623] border border-slate-800/90 flex items-center justify-between"
+                          className="p-2 rounded bg-[#0F1623] border border-slate-800/90 flex items-center justify-between gap-1"
                         >
-                          <span className="text-slate-400 text-[11px]">
+                          <span className="text-slate-400 text-[11px] truncate">
                             {ev.label}
                           </span>
-                          <span className="font-mono font-bold text-slate-100 text-[11px]">
+                          <span className="font-mono font-bold text-slate-100 text-[11px] shrink-0">
                             {ev.value}
                           </span>
                         </div>
@@ -800,13 +851,34 @@ export const GlobalAICopilotSlideOver: React.FC<
               </div>
             )
           )}
+
+          {isThinking && (
+            <div className="p-3.5 rounded-md bg-[#0B101B] border border-sky-500/40 flex items-center justify-between gap-2.5 animate-pulse">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-spin shrink-0" />
+                <div>
+                  <div className="font-mono text-[10px] font-bold text-sky-400 uppercase">
+                    GEMINI ANALYSING LIVE CONTEXT
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Evaluating {selectedRole} view, {activeAthlete?.name || 'squad'}{' '}
+                    telemetry & RTP gates...
+                  </p>
+                </div>
+              </div>
+              <span className="px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[9px] text-sky-300 shrink-0">
+                {selectedModel}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Input Form */}
         <form
           onSubmit={handleSubmit}
-          className="p-3.5 border-t border-slate-800 bg-[#090D16] space-y-2"
+          className="shrink-0 p-3.5 border-t border-slate-800 bg-[#090D16] space-y-2"
         >
+          {/* Persona Prompt Chips & Slash Commands Strip */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {(roleBehavior.slashCommands || []).map((sc) => (
               <button
@@ -814,9 +886,20 @@ export const GlobalAICopilotSlideOver: React.FC<
                 type="button"
                 onClick={() => onSendQuery(sc.sampleQuery)}
                 title={sc.label}
-                className="px-2 py-0.5 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-800 font-mono text-[10px] text-sky-400 whitespace-nowrap"
+                className="px-2 py-0.5 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-800 font-mono text-[10px] text-sky-400 whitespace-nowrap shrink-0"
               >
                 {sc.command}
+              </button>
+            ))}
+            {(roleBehavior.promptChips || []).slice(0, 4).map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => onSendQuery(chip)}
+                title={chip}
+                className="px-2 py-0.5 rounded bg-[#0B101B] hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 whitespace-nowrap shrink-0 max-w-[220px] truncate"
+              >
+                {chip}
               </button>
             ))}
           </div>
@@ -830,10 +913,11 @@ export const GlobalAICopilotSlideOver: React.FC<
             />
             <button
               type="submit"
-              className="px-3.5 py-2 rounded bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1"
+              disabled={isThinking}
+              className="px-3.5 py-2 rounded bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-semibold text-xs inline-flex items-center gap-1 shrink-0"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Ask</span>
+              <span>{isThinking ? 'Thinking...' : 'Ask'}</span>
             </button>
           </div>
         </form>

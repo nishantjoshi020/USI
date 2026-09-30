@@ -39,31 +39,58 @@ async function startServer() {
   const httpServer = http.createServer(app);
 
   // ===========================================================================
-  // 1. POST /api/gemini/copilot — Gemini 3.8 Flash Operational Intelligence
+  // 1. POST /api/gemini/copilot — Multi-Turn Context-Aware Gemini Copilot
   // ===========================================================================
+  const ROLE_SYSTEM_INSTRUCTIONS: Record<string, string> = {
+    'Performance Director':
+      'You are advising the Performance Director. Focus on executive squad readiness, high-priority injury/workload risks, cross-department alignment (coaching, medical, sports science, nutrition), and consequential decision governance.',
+    Coach:
+      'You are advising the Head Coach. Focus on tactical session readiness, drill modifications, high-speed running caps, matchday availability, and practical pitchside adjustments.',
+    'Sports Scientist':
+      'You are advising the Lead Sports Scientist. Focus on ACWR workload ratios, HRV suppression vs baseline, CMJ neuromuscular fatigue, GPS high-speed running exposure, and physiological recovery kinetics.',
+    Physiotherapist:
+      'You are advising the Lead Physiotherapist. Focus on active injuries, 5-stage Return-to-Play (RTP) gate criteria, pain scores, limb symmetry index (LSI), rehab compliance, and clinical tissue protection.',
+    Nutritionist:
+      'You are advising the Performance Nutritionist. Focus on caloric & macronutrient targets (protein/carbs/fat), hydration deficits, pre/post-session fueling, supplement compliance, and body composition.',
+    'Federation Admin':
+      'You are advising the Federation Administrator. Focus on athlete verification status, document compliance, medical clearance expirations, WADA whereabouts filings, and institutional governance.',
+    Athlete:
+      'You are speaking directly to the Athlete (Arjun Mehta) in a supportive, clear, first-person athlete-facing tone ("you / your"). Focus on personal readiness, sleep & HRV recovery, hamstring rehab progress, and daily hydration/fueling targets. Do not expose other athletes’ private medical notes.',
+    'Operations Team':
+      'You are advising the High-Performance Operations Team. Focus on training camp logistics, travel/flight manifests, equipment & cold-chain cargo, pitch/facility readiness, and schedule coordination.',
+  };
+
   app.post('/api/gemini/copilot', async (req, res) => {
     try {
       const {
         query,
+        model: requestedModel,
         context,
         history = [],
       } = req.body as {
         query: string;
+        model?: string;
         context?: {
           role?: string;
+          scopeMode?: string;
           hierarchy?: {
             federation?: string;
             sport?: string;
             program?: string;
             squad?: string;
+            date?: string;
           };
           activeModule?: string;
           selectedAthleteName?: string;
+          focusAthleteDetail?: string;
           athletesSummary?: string;
           injuriesSummary?: string;
           sessionsSummary?: string;
+          nutritionSummary?: string;
+          assessmentsSummary?: string;
+          pendingActionsSummary?: string;
         };
-        history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+        history?: Array<{ role: 'user' | 'assistant' | 'model'; content: string }>;
       };
 
       if (!query || typeof query !== 'string') {
@@ -72,89 +99,260 @@ async function startServer() {
       }
 
       const ai = getGenAIClient();
+      const activeRole = context?.role || 'Performance Director';
+      const roleDirective =
+        ROLE_SYSTEM_INSTRUCTIONS[activeRole] ||
+        ROLE_SYSTEM_INSTRUCTIONS['Performance Director'];
 
-      const systemContextBlock = `You are USI Copilot, the enterprise AI decision-support engine inside the Unified Sports Interface (USI) Athlete Management System.
-Current Operational Context:
-- Active User Role: ${context?.role || 'Performance Director'}
-- Hierarchy: ${context?.hierarchy?.federation || 'National High Performance Program'} > ${context?.hierarchy?.sport || 'Football'} > ${context?.hierarchy?.program || "Senior Men's Program"} > ${context?.hierarchy?.squad || 'Senior Squad'}
-- Active Module: ${context?.activeModule || 'Command Center'}
-- Selected Athlete: ${context?.selectedAthleteName || 'Arjun Mehta'}
-- Squad Athletes Telemetry: ${context?.athletesSummary || 'Arjun Mehta (Readiness 62, ACWR 1.28, Restricted - Hamstring RTP Stage 3/5); Vikramaditya Nair (Readiness 59, ACWR 1.31); Kabir Rao (Readiness 71, Shoulder Stage 2/5); Rohan Deshmukh (Readiness 89, Cleared); Devansh Kulkarni (Readiness 66, Monitor).'}
-- Active Injuries & RTP: ${context?.injuriesSummary || 'Arjun Mehta: Left Biceps Femoris Grade 1 Strain (RTP Stage 3/5, Pain 3/10); Kabir Rao: Right Shoulder AC Joint Sprain (RTP Stage 2/5).'}
-- Upcoming Training Sessions: ${context?.sessionsSummary || 'High-Speed Conditioning & Transition Drills (09:30, Main Pitch A, High Load); Tactical Pressing & Set Pieces (16:00, Pitch B, Moderate Load).'}
+      const systemContextBlock = `You are USI Copilot, the AI-native operational intelligence assistant inside the Unified Sports Interface (USI) Athlete Management System.
 
-Governance Rules:
-- Provide concise, evidence-based, high-performance sports science, medical, training, and operational guidance tailored to the active role.
-- Never autonomously execute medical clearance; always frame medical/training changes as recommendations requiring human sign-off.`;
+ROLE PERSONA DIRECTIVE:
+${roleDirective}
 
-      const recentHistoryText =
-        history.length > 0
-          ? '\nRecent Conversation:\n' +
-            history
-              .slice(-6)
-              .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
-              .join('\n')
-          : '';
+LIVE APPLICATION CONTEXT & CONNECTED DATA:
+- Active Persona Role: ${activeRole}
+- Scope Mode: ${context?.scopeMode || 'Athlete Focus'}
+- Organization Hierarchy: ${context?.hierarchy?.federation || 'National High Performance Program'} > ${context?.hierarchy?.sport || 'Football'} > ${context?.hierarchy?.program || "Senior Men's Program"} > ${context?.hierarchy?.squad || 'Senior Squad'} (${context?.hierarchy?.date || 'Today'})
+- Current Active Screen / Module: ${context?.activeModule || 'command-center'}
+- Focus Athlete Detail: ${context?.focusAthleteDetail || context?.selectedAthleteName || 'Arjun Mehta (ATH-1042, Striker #9, Readiness 62%, ACWR 1.34, HRV 58ms vs 71ms baseline, Sleep 6h 10m, Restricted — Left Hamstring Grade 1 RTP Stage 3/5)'}
+- Full Squad Telemetry: ${context?.athletesSummary || 'Arjun Mehta (Readiness 62%, ACWR 1.34, Restricted); Vikram Rathore (Readiness 64%, ACWR 1.38, Monitor); Rohan Deshmukh (Readiness 68%, ACWR 1.24, Monitor); Kabir Sharma (Readiness 88%, ACWR 1.08, Ready); Devansh Nair (Readiness 85%, ACWR 1.05, Ready).'}
+- Active Medical & RTP Register: ${context?.injuriesSummary || 'Arjun Mehta: Left Biceps Femoris Grade 1 Strain (RTP Stage 3/5, Pain 2/10, LSI 88%, 85% Vmax cap); Vikram Rathore: Right Adductor Overload (RTP Stage 2/5, Pain 3/10).'}
+- Training Sessions & Prescriptions: ${context?.sessionsSummary || 'High-Intensity Tactical & Sprint Session (09:30, Main Pitch A, High Load 620 AU); Recovery & Mobility Flush (16:30, Recovery Suite, Low Load 180 AU).'}
+- Nutrition & Hydration State: ${context?.nutritionSummary || 'Arjun Mehta: 82% meal compliance, Hydration 2.4L / 3.5L target (Mild Dehydration); Rohan Deshmukh: 74% compliance, Hydration 2.1L / 3.5L.'}
+- Assessments & Talent Benchmarks: ${context?.assessmentsSummary || 'Arjun Mehta: 30m Sprint 4.08s (PB 3.98s), CMJ 42.5cm (Squad Avg 44.2cm), Yo-Yo IR2 2120m.'}
+- Pending Consequential AI Actions: ${context?.pendingActionsSummary || '2 athlete training modifications awaiting human sign-off (Arjun Mehta -25% sprint volume; Vikram Rathore non-contact conditioning).'}
 
-      // Structured USI Copilot mode with Gemini 3.8 Flash
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: `${recentHistoryText}\n\nUser Question: ${query}`,
-        config: {
-          systemInstruction: systemContextBlock,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              content: {
-                type: Type.STRING,
-                description:
-                  'Detailed, structured response addressing the user query with exact athlete names, metrics, and role-appropriate operational insights.',
+GOVERNANCE & OUTPUT RULES:
+1. Ground every answer in the exact athlete names, numbers, metrics, and module state provided above.
+2. Maintain multi-turn conversational continuity—resolve pronouns ("he", "they", "those athletes", "what about nutrition?") using the conversation history.
+3. Never autonomously execute medical clearance or diagnose pathology. If asked to predict an exact minute/second of a future injury or make a deterministic clinical diagnosis without examination, set isUncertaintyState = true and explain the safe probabilistic alternative in uncertaintyAlternative.
+4. Choose 1 to 3 relevant suggestedActions from these exact actionType values:
+   - "open-training-mod-modal" (when proposing or reviewing training load/session modifications)
+   - "open-athlete-360" (to inspect a specific athlete's 360 profile; include targetAthleteId such as "ath-arjun-mehta", "ath-vikram-rathore", "ath-rohan-deshmukh", "ath-kabir-sharma", "ath-devansh-nair")
+   - "open-training-module" (for training sessions/periodisation)
+   - "open-medical-module" (for injuries, rehab, or RTP gates)
+   - "open-sports-science" (for HRV, readiness, GPS, or neuromuscular fatigue)
+   - "open-nutrition" (for fueling, hydration, or supplements)
+   - "open-assessments" (for 30m sprint, CMJ, Yo-Yo, or talent benchmarks)
+   - "open-analytics" (for federation/squad reports and BI)
+   - "open-action-centre" (for pending human approvals)
+   - "open-risk-centre" (for multi-signal risk cards)`;
+
+      // Build multi-turn contents array for Gemini
+      const validHistory = Array.isArray(history)
+        ? history
+            .filter((m) => m && typeof m.content === 'string' && m.content.trim())
+            .slice(-10)
+        : [];
+
+      const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+      for (const turn of validHistory) {
+        const mappedRole: 'user' | 'model' =
+          turn.role === 'user' ? 'user' : 'model';
+        // Ensure alternating or valid sequence
+        if (contents.length === 0 && mappedRole === 'model') {
+          continue;
+        }
+        if (
+          contents.length > 0 &&
+          contents[contents.length - 1].role === mappedRole
+        ) {
+          contents[contents.length - 1].parts[0].text += `\n${turn.content}`;
+        } else {
+          contents.push({
+            role: mappedRole,
+            parts: [{ text: turn.content }],
+          });
+        }
+      }
+
+      if (
+        contents.length > 0 &&
+        contents[contents.length - 1].role === 'user'
+      ) {
+        contents[contents.length - 1].parts[0].text += `\n\n${query}`;
+      } else {
+        contents.push({
+          role: 'user',
+          parts: [{ text: query }],
+        });
+      }
+
+      const allowedModels = [
+        'gemini-3.8-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-3.1-pro-preview',
+      ];
+      const chosenModel =
+        requestedModel && allowedModels.includes(requestedModel)
+          ? requestedModel
+          : 'gemini-3.8-flash';
+
+      const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          answerTitle: {
+            type: Type.STRING,
+            description:
+              'Short uppercase operational header (e.g., "SQUAD READINESS & WORKLOAD TRIAGE" or "HAMSTRING RTP GATE ANALYSIS").',
+          },
+          answerStatement: {
+            type: Type.STRING,
+            description:
+              'Direct, clear 2-3 sentence executive answer citing specific athlete names and live metrics.',
+          },
+          interpretation: {
+            type: Type.STRING,
+            description:
+              '2-3 sentences of deeper cross-domain sports science, clinical, tactical, or operational interpretation explaining why these signals matter.',
+          },
+          recommendation: {
+            type: Type.STRING,
+            description:
+              '1-2 sentences of concrete, role-appropriate advisory action for human review.',
+          },
+          confidence: {
+            type: Type.STRING,
+            description: 'High, Moderate, or Low.',
+          },
+          safetyClass: {
+            type: Type.STRING,
+            description:
+              'INFORMATIONAL, RECOMMENDATION, or CONSEQUENTIAL (use CONSEQUENTIAL when recommending load caps, session modifications, or RTP gate decisions).',
+          },
+          isUncertaintyState: {
+            type: Type.BOOLEAN,
+            description:
+              'True ONLY if the user asks for impossible deterministic injury timing predictions or autonomous medical clearance.',
+          },
+          uncertaintyAlternative: {
+            type: Type.STRING,
+            description:
+              'If isUncertaintyState is true, explain the guardrail boundary and provide a safe probabilistic risk assessment.',
+          },
+          evidenceSummary: {
+            type: Type.ARRAY,
+            description: '3 to 6 concise metric badges supporting the answer.',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                label: {
+                  type: Type.STRING,
+                  description: 'Short metric label (e.g., "Arjun Readiness", "ACWR Ratio", "HRV Delta").',
+                },
+                value: {
+                  type: Type.STRING,
+                  description: 'Compact metric value (e.g., "62% (-9%)", "1.34 Elevated", "58 ms (-18%)").',
+                },
+                tone: {
+                  type: Type.STRING,
+                  description: 'One of: rose, amber, emerald, sky.',
+                },
               },
-              confidence: {
-                type: Type.STRING,
-                description: 'Confidence level: High, Moderate, or Low.',
-              },
-              dataSources: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description:
-                  '2 to 4 USI data sources used (e.g., Readiness & HRV Telemetry, GPS Workload Engine, Medical & RTP Register, Nutrition Logs).',
-              },
-              keySignals: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description:
-                  '2 to 4 concrete quantitative signals supporting the answer.',
-              },
-              historicalContext: {
-                type: Type.STRING,
-                description:
-                  '1-2 sentences comparing current signals to 7-day or 28-day baselines.',
-              },
-              confidenceRationale: {
-                type: Type.STRING,
-                description:
-                  '1 sentence explaining why confidence is High, Moderate, or Low.',
-              },
-              followUpSuggestions: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: '3 contextual follow-up questions.',
-              },
+              required: ['label', 'value', 'tone'],
             },
-            required: [
-              'content',
-              'confidence',
-              'dataSources',
-              'keySignals',
-              'historicalContext',
-              'confidenceRationale',
-              'followUpSuggestions',
-            ],
+          },
+          evidenceMetrics: {
+            type: Type.ARRAY,
+            description:
+              '3 to 4 detailed multi-domain evidence signals for the Explainability Drawer.',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                domain: {
+                  type: Type.STRING,
+                  description:
+                    'One of: Training, Recovery, HRV, Sleep, Medical, Nutrition, Assessments.',
+                },
+                label: { type: Type.STRING },
+                deltaOrValue: { type: Type.STRING },
+                detail: { type: Type.STRING },
+                tone: {
+                  type: Type.STRING,
+                  description: 'One of: rose, amber, emerald, sky.',
+                },
+              },
+              required: ['domain', 'label', 'deltaOrValue', 'detail', 'tone'],
+            },
+          },
+          suggestedActions: {
+            type: Type.ARRAY,
+            description: '1 to 3 executable USI workflow buttons.',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                label: {
+                  type: Type.STRING,
+                  description: 'Button label (e.g., "Review Training Modifications", "Open Arjun 360 Profile").',
+                },
+                safetyClass: {
+                  type: Type.STRING,
+                  description: 'INFORMATIONAL, RECOMMENDATION, or CONSEQUENTIAL.',
+                },
+                actionType: {
+                  type: Type.STRING,
+                  description:
+                    'One of: open-training-mod-modal, open-athlete-360, open-training-module, open-medical-module, open-sports-science, open-nutrition, open-assessments, open-analytics, open-action-centre, open-risk-centre.',
+                },
+                targetAthleteId: {
+                  type: Type.STRING,
+                  description:
+                    'Optional athlete ID (e.g., "ath-arjun-mehta", "ath-vikram-rathore", "ath-rohan-deshmukh").',
+                },
+              },
+              required: ['label', 'safetyClass', 'actionType'],
+            },
+          },
+          followUpSuggestions: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description:
+              '3 natural follow-up questions tailored to the active persona and current conversation turn.',
           },
         },
-      });
+        required: [
+          'answerTitle',
+          'answerStatement',
+          'interpretation',
+          'recommendation',
+          'confidence',
+          'safetyClass',
+          'isUncertaintyState',
+          'evidenceSummary',
+          'evidenceMetrics',
+          'suggestedActions',
+          'followUpSuggestions',
+        ],
+      };
+
+      let response;
+      let usedModel = chosenModel;
+      try {
+        response = await ai.models.generateContent({
+          model: chosenModel,
+          contents,
+          config: {
+            systemInstruction: systemContextBlock,
+            responseMimeType: 'application/json',
+            responseSchema,
+          },
+        });
+      } catch (modelErr: any) {
+        if (chosenModel !== 'gemini-3.8-flash') {
+          usedModel = 'gemini-3.8-flash';
+          response = await ai.models.generateContent({
+            model: 'gemini-3.8-flash',
+            contents,
+            config: {
+              systemInstruction: systemContextBlock,
+              responseMimeType: 'application/json',
+              responseSchema,
+            },
+          });
+        } else {
+          throw modelErr;
+        }
+      }
 
       const rawJson = response.text?.trim() || '{}';
       const parsed = JSON.parse(rawJson);
@@ -164,26 +362,40 @@ Governance Rules:
           ? parsed.confidence
           : 'High';
 
+      const normalizedSafetyClass =
+        parsed.safetyClass === 'CONSEQUENTIAL' ||
+        parsed.safetyClass === 'RECOMMENDATION'
+          ? parsed.safetyClass
+          : 'INFORMATIONAL';
+
       res.json({
         mode: 'structured',
-        content:
+        model: usedModel,
+        answerTitle:
+          parsed.answerTitle || 'GEMINI OPERATIONAL INTELLIGENCE',
+        answerStatement:
+          parsed.answerStatement ||
           parsed.content ||
           'Analysis complete based on current squad telemetry.',
+        interpretation:
+          parsed.interpretation ||
+          'Cross-domain telemetry evaluated against rolling 7-day and 28-day baselines.',
+        recommendation:
+          parsed.recommendation ||
+          'Review athlete readiness and workload thresholds before locking session prescriptions.',
         confidence: normalizedConfidence,
-        evidence: {
-          dataSources: Array.isArray(parsed.dataSources)
-            ? parsed.dataSources
-            : ['USI Telemetry Engine', 'Athlete 360 State'],
-          keySignals: Array.isArray(parsed.keySignals)
-            ? parsed.keySignals
-            : ['Multi-signal telemetry evaluated'],
-          historicalContext:
-            parsed.historicalContext ||
-            'Evaluated against rolling 28-day squad baseline.',
-          confidenceRationale:
-            parsed.confidenceRationale ||
-            'High sensor completeness across GPS, wellness, and medical logs.',
-        },
+        safetyClass: normalizedSafetyClass,
+        isUncertaintyState: Boolean(parsed.isUncertaintyState),
+        uncertaintyAlternative: parsed.uncertaintyAlternative || undefined,
+        evidenceSummary: Array.isArray(parsed.evidenceSummary)
+          ? parsed.evidenceSummary
+          : [],
+        evidenceMetrics: Array.isArray(parsed.evidenceMetrics)
+          ? parsed.evidenceMetrics
+          : [],
+        suggestedActions: Array.isArray(parsed.suggestedActions)
+          ? parsed.suggestedActions
+          : [],
         followUpSuggestions: Array.isArray(parsed.followUpSuggestions)
           ? parsed.followUpSuggestions.slice(0, 3)
           : [

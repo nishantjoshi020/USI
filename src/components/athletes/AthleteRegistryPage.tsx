@@ -30,6 +30,7 @@ import {
   VerificationStatusBadge,
 } from '../ui/Badges';
 import { AVAILABLE_COACHES } from '../../data/athlete360Defaults';
+import { exportAthletesRoster } from '../../utils/exportEngine';
 
 interface AthleteRegistryPageProps {
   athletes: Athlete[];
@@ -240,10 +241,16 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
     }
   };
 
-  const handleExportCsv = (subset?: Athlete[]) => {
+  const handleExportCsv = (subset?: Athlete[], format: 'CSV' | 'PDF' | 'Excel' = 'CSV') => {
     const target = subset || filteredAthletes;
+    const filename = exportAthletesRoster(
+      format,
+      target,
+      selectedRole,
+      `${selectedRole} Athlete Registry Export`
+    );
     onTriggerToast(
-      `Exported ${target.length} athlete registry records to USI_Athlete_Registry_20260928.csv`
+      `Exported ${target.length} athlete registry records to ${filename} ✓`
     );
   };
 
@@ -292,13 +299,30 @@ export const AthleteRegistryPage: React.FC<AthleteRegistryPageProps> = ({
         </div>
 
         {selectedRole !== 'Athlete' && (
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => handleExportCsv()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              onClick={() => handleExportCsv(undefined, 'CSV')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              title="Download filtered roster as CSV"
             >
-              <Download className="w-3.5 h-3.5 text-slate-400" />
-              <span>Export</span>
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => handleExportCsv(undefined, 'PDF')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              title="Download filtered roster as PDF Dossier"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
+            <button
+              onClick={() => handleExportCsv(undefined, 'Excel')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+              title="Download filtered roster as Excel (.xls)"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-400" />
+              <span>Excel</span>
             </button>
 
             {['Federation Admin', 'Performance Director'].includes(selectedRole) && (

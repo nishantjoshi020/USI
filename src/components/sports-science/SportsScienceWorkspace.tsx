@@ -32,6 +32,10 @@ import {
 } from 'lucide-react';
 import { Athlete, NavItemId, UserRole } from '../../types/usi';
 import { AthleteAvatar, ReadinessScoreIndicator, RiskBadge } from '../ui/Badges';
+import {
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type SportsScienceSubTab =
   | 'readiness'
@@ -316,6 +320,86 @@ export const SportsScienceWorkspace: React.FC<SportsScienceWorkspaceProps> = ({
                 {liveStreamActive ? 'GNSS Telemetry Live (10 Hz)' : 'Telemetry Paused'}
               </span>
             </div>
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_gnss_and_neuromuscular_telemetry',
+                  [
+                    'Athlete ID',
+                    'Athlete Name',
+                    'Position',
+                    'Total Distance (m)',
+                    'HSR >19.8km/h (m)',
+                    'Sprint >25.2km/h (m)',
+                    'Max Velocity (km/h)',
+                    'PlayerLoad (AU)',
+                    'Mech/Metabolic Ratio',
+                    'CMJ Peak Power (W/kg)',
+                    'RSI-mod',
+                  ],
+                  GPS_TELEMETRY_DATA.map((g) => [
+                    g.athleteId,
+                    g.athleteName,
+                    g.position,
+                    g.totalDistanceM,
+                    g.hsrDistanceM,
+                    g.sprintDistanceM,
+                    g.maxVelocityKmh,
+                    g.playerLoadAu,
+                    g.mechMetabolicRatio,
+                    g.cmjPeakPowerWkg,
+                    g.rsiMod,
+                  ]),
+                  ['USI Sports Science & GNSS Microtechnology Export (10 Hz Catapult + ForceDecks)']
+                );
+                onTriggerToast(`Exported GNSS & Force Plate Telemetry CSV (${file}) ✓`);
+              }}
+              className="px-3 py-1.5 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition-colors"
+              title="Export GNSS & Force Plate Telemetry as CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_sports_science_telemetry_dossier', {
+                  title: 'SPORTS SCIENCE, GNSS & NEUROMUSCULAR TELEMETRY DOSSIER',
+                  subtitle: `10 Hz GNSS Tracking, Dual Force Plate CMJ & Autonomic HRV Report | Role: ${selectedRole}`,
+                  metadataPairs: [
+                    { label: 'Workload Model', value: workloadEngineMode.toUpperCase() },
+                    { label: 'GNSS Stream', value: liveStreamActive ? '10 Hz Active' : 'Paused' },
+                    { label: 'Monitored Squad', value: `${athletes.length} Athletes` },
+                    { label: 'Focus Athlete', value: selectedGpsAthlete.athleteName },
+                  ],
+                  sections: [
+                    {
+                      heading: 'Neuromuscular & Autonomic Readiness Summary',
+                      lines: athletes.map(
+                        (a) =>
+                          `${a.name} (${a.position}): Readiness ${a.readiness}%, ACWR ${a.acwr.toFixed(2)}, HRV ${a.hrvMs}ms (Base ${a.hrvBaselineMs}ms), Sleep ${a.sleepFormatted}, Risk: ${a.injuryRisk}`
+                      ),
+                    },
+                  ],
+                  tableHeaders: ['Athlete', 'Position', 'Dist (m)', 'HSR (m)', 'Sprint (m)', 'Vmax', 'Load (AU)', 'CMJ W/kg'],
+                  tableRows: GPS_TELEMETRY_DATA.map((g) => [
+                    g.athleteName,
+                    g.position,
+                    g.totalDistanceM,
+                    g.hsrDistanceM,
+                    g.sprintDistanceM,
+                    `${g.maxVelocityKmh} km/h`,
+                    `${g.playerLoadAu} AU`,
+                    `${g.cmjPeakPowerWkg}`,
+                  ]),
+                });
+                onTriggerToast(`Exported Sports Science Telemetry PDF Dossier (${file}) ✓`);
+              }}
+              className="px-3 py-1.5 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition-colors"
+              title="Export Sports Science Dossier as PDF"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
             <button
               onClick={() => setIsIngestModalOpen(true)}
               className="px-3.5 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-cyan-500/10"

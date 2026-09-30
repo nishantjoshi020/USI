@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bot,
   ClipboardCheck,
+  Download,
   Dumbbell,
   HeartPulse,
   Settings,
@@ -27,6 +28,7 @@ import {
   RiskBadge,
   StatusBadge,
 } from '../ui/Badges';
+import { exportAthletesRoster } from '../../utils/exportEngine';
 
 interface ConnectedModuleViewProps {
   activeNav: NavItemId;
@@ -208,13 +210,43 @@ export const ConnectedModuleView: React.FC<ConnectedModuleViewProps> = ({
           <p className="text-xs text-slate-400 mt-0.5">{meta.description}</p>
         </div>
 
-        <button
-          onClick={onReturnToCommandCenter}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-xs font-semibold text-sky-300 transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Command Center</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() =>
+              exportAthletesRoster(
+                'CSV',
+                visibleAthletes,
+                selectedRole,
+                `${meta.title} Export`
+              )
+            }
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5 text-sky-400" />
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={() =>
+              exportAthletesRoster(
+                'PDF',
+                visibleAthletes,
+                selectedRole,
+                `${meta.title} Dossier`
+              )
+            }
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Export PDF</span>
+          </button>
+          <button
+            onClick={onReturnToCommandCenter}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-xs font-semibold text-sky-300 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Command Center</span>
+          </button>
+        </div>
       </div>
 
       {/* Contextual Connected Data Table based on active module */}

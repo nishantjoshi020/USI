@@ -5,6 +5,7 @@ import {
   Bot,
   Check,
   CheckCircle2,
+  Download,
   Droplets,
   Dumbbell,
   Eye,
@@ -33,6 +34,10 @@ import {
   Supplement,
   UserRole,
 } from '../../types/usi';
+import {
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type NutritionSubTab =
   | 'nutrition'
@@ -376,6 +381,84 @@ export const NutritionWorkspace: React.FC<NutritionWorkspaceProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_nutrition_and_hydration_plans',
+                  [
+                    'Athlete',
+                    'Squad',
+                    'Plan Name',
+                    'Goal',
+                    'Calories (Cur/Target)',
+                    'Protein (g)',
+                    'Carbs (g)',
+                    'Fat (g)',
+                    'Hydration (L)',
+                    'Compliance %',
+                    'Status',
+                  ],
+                  filteredPlans.map((p) => [
+                    p.athleteName,
+                    p.squad,
+                    p.planName,
+                    p.goal,
+                    `${p.currentCalories}/${p.targetCalories} kcal`,
+                    `${p.currentProteinG}/${p.targetProteinG}g`,
+                    `${p.currentCarbsG}/${p.targetCarbsG}g`,
+                    `${p.currentFatG}/${p.targetFatG}g`,
+                    `${p.currentHydrationL}/${p.targetHydrationL}L`,
+                    `${p.compliancePct}%`,
+                    p.status,
+                  ]),
+                  [`USI Performance Nutrition & Hydration Roster — Exported by ${selectedRole}`]
+                );
+                onTriggerToast(`Exported Nutrition & Hydration CSV (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_nutrition_metabolic_dossier', {
+                  title: 'PERFORMANCE NUTRITION, HYDRATION & BODY COMPOSITION DOSSIER',
+                  subtitle: `Focus Athlete: ${activePlan.athleteName} (${activePlan.planName}) | Squad Plans: ${filteredPlans.length}`,
+                  metadataPairs: [
+                    { label: 'Focus Athlete', value: activePlan.athleteName },
+                    { label: 'Caloric Target', value: `${activePlan.currentCalories} / ${activePlan.targetCalories} kcal (${activePlan.compliancePct}%)` },
+                    { label: 'Macros (P / C / F)', value: `${activePlan.targetProteinG}g / ${activePlan.targetCarbsG}g / ${activePlan.targetFatG}g` },
+                    { label: 'Hydration Status', value: `${totalHydrationL}L / ${hydrationTargetL}L (${hydrationStatusLabel})` },
+                  ],
+                  sections: [
+                    {
+                      heading: `Daily Meal Prescription — ${activePlan.athleteName}`,
+                      lines: activePlan.meals.map(
+                        (m) =>
+                          `${m.mealName} (${m.timing}): ${m.items} | ${m.calories} kcal (P:${m.proteinG}g, C:${m.carbsG}g, F:${m.fatG}g) [${m.consumed ? 'Logged' : 'Scheduled'}]`
+                      ),
+                    },
+                  ],
+                  tableHeaders: ['Athlete', 'Plan', 'Goal', 'Calories', 'Protein', 'Hydration', 'Compliance', 'Status'],
+                  tableRows: filteredPlans.map((p) => [
+                    p.athleteName,
+                    p.planName,
+                    p.goal,
+                    `${p.currentCalories}/${p.targetCalories}`,
+                    `${p.currentProteinG}/${p.targetProteinG}g`,
+                    `${p.currentHydrationL}/${p.targetHydrationL}L`,
+                    `${p.compliancePct}%`,
+                    p.status,
+                  ]),
+                });
+                onTriggerToast(`Exported Performance Nutrition Dossier PDF (${file}) ✓`);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
             <span className="px-3 py-1.5 rounded bg-[#090D16] border border-slate-800 text-xs font-mono text-slate-300">
               Role Lens: <strong className="text-sky-400">{selectedRole}</strong>
             </span>

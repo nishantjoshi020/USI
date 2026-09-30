@@ -26,6 +26,11 @@ import {
   X,
 } from 'lucide-react';
 import { UserRole } from '../../types/usi';
+import {
+  exportToCSV,
+  exportToExcel,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type OperationsSubTab =
   | 'camps'
@@ -279,21 +284,94 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
   };
 
   const handleExportManifestCsv = () => {
-    const csvContent =
-      'Flight Number,Carrier,Route,Departure,Arrival,Passengers,Excess Cargo (kg),Status\n' +
-      TRAVEL_MANIFESTS.map(
-        (f) =>
-          `"${f.flightNumber}","${f.airline}","${f.route}","${f.departure}","${f.arrival}",${f.passengersCount},${f.excessBaggageKg},"${f.status}"`
-      ).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'National_Squad_Flight_Manifest.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    onTriggerToast('Exported flight manifest CSV to downloads ✓');
+    const file = exportToCSV(
+      'usi_national_squad_flight_manifest',
+      [
+        'Flight Number',
+        'Carrier',
+        'Route',
+        'Departure',
+        'Arrival',
+        'Passengers',
+        'Excess Cargo (kg)',
+        'Status',
+      ],
+      TRAVEL_MANIFESTS.map((f) => [
+        f.flightNumber,
+        f.airline,
+        f.route,
+        f.departure,
+        f.arrival,
+        f.passengersCount,
+        f.excessBaggageKg,
+        f.status,
+      ]),
+      ['USI International Tour Group Flight Manifest — Official Export']
+    );
+    onTriggerToast(`Exported flight manifest CSV (${file}) ✓`);
+  };
+
+  const handleExportTourDossierPdf = () => {
+    const file = exportToPDF('usi_tour_camps_and_cargo_dossier', {
+      title: 'NATIONAL CAMP LOGISTICS, TRAVEL & ATA CARNET DOSSIER',
+      subtitle: `Exported by ${selectedRole} | ${campsList.length} Camps | ${TRAVEL_MANIFESTS.length} Charter Flights | ${CARGO_INVENTORY.length} Carnet Assets`,
+      metadataPairs: [
+        { label: 'Exporting Role', value: selectedRole },
+        { label: 'Active Camps', value: `${campsList.length} National / Int'l Camps` },
+        { label: 'Charter Flights', value: `${TRAVEL_MANIFESTS.length} Sectors Confirmed` },
+        { label: 'ATA Carnet Value', value: '$79,700 USD (Customs Cleared)' },
+      ],
+      sections: [
+        {
+          heading: 'National & International Training Camps',
+          lines: campsList.map(
+            (c) =>
+              `${c.name} (${c.dates}) - ${c.venue}, ${c.location} | ${c.headcount} Pax | Budget: ${c.budgetAllocated} (${c.budgetVariance}) | Status: ${c.status}`
+          ),
+        },
+        {
+          heading: 'Sleep-Optimized Hotel Rooming Allocations',
+          lines: ROOMING_ALLOCATIONS.map(
+            (r) =>
+              `${r.roomNumber} (${r.type}): ${r.occupants.join(' & ')} - ${r.pairingRationale}`
+          ),
+        },
+      ],
+      tableHeaders: ['Equipment Item', 'Category', 'Serial #', 'Value (USD)', 'Weight', 'Carnet #'],
+      tableRows: CARGO_INVENTORY.map((c) => [
+        c.name,
+        c.category,
+        c.serialNumber,
+        `$${c.valueUsd.toLocaleString()}`,
+        `${c.weightKg} kg`,
+        c.customsCarnetNumber,
+      ]),
+    });
+    onTriggerToast(`Exported complete Camp & Cargo Manifest PDF (${file}) ✓`);
+  };
+
+  const handleExportCarnetPdf = () => {
+    const file = exportToPDF('usi_ata_carnet_customs_declaration', {
+      title: 'OFFICIAL ATA CARNET CUSTOMS DECLARATION FORM',
+      subtitle: 'High-Value Sports Science, Medical & Telemetry Cargo Manifest | Duty-Exempt Passport',
+      metadataPairs: [
+        { label: 'Issuing Authority', value: 'FICCI / International Chamber of Commerce' },
+        { label: 'Total Insured Value', value: '$79,700 USD' },
+        { label: 'Total Gross Weight', value: '149.5 kg (5 Crates)' },
+        { label: 'Customs Status', value: 'Inspected & Cleared for Export/Import' },
+      ],
+      tableHeaders: ['Asset Name', 'Category', 'Serial Number', 'Insured Value', 'Weight', 'Carnet Number', 'Status'],
+      tableRows: CARGO_INVENTORY.map((c) => [
+        c.name,
+        c.category,
+        c.serialNumber,
+        `$${c.valueUsd.toLocaleString()}`,
+        `${c.weightKg} kg`,
+        c.customsCarnetNumber,
+        c.status,
+      ]),
+    });
+    onTriggerToast(`Generated & downloaded Official ATA Carnet Customs Form (${file}) ✓`);
   };
 
   return (
@@ -316,13 +394,20 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => onTriggerToast('Exported complete Camp & Cargo Manifest PDF ✓')}
+              onClick={handleExportManifestCsv}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={handleExportTourDossierPdf}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Tour Dossier</span>
+              <span>Export Tour Dossier (PDF)</span>
             </button>
           </div>
         </div>
@@ -589,12 +674,39 @@ export const OperationsWorkspace: React.FC<OperationsWorkspaceProps> = ({
                 Official international customs passport items exempt from overseas duty. Total Insured Value: $79,700 USD.
               </p>
             </div>
-            <button
-              onClick={() => onTriggerToast('Generated Official ATA Carnet Customs Declaration Form ✓')}
-              className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs"
-            >
-              Export Carnet Form
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const file = exportToExcel(
+                    'usi_ata_carnet_cargo_inventory',
+                    'ATA Carnet Sports Tech & Medical Cargo Inventory',
+                    'Total Insured Value: $79,700 USD',
+                    ['Equipment Item', 'Category', 'Serial Number', 'Insured Value (USD)', 'Weight (kg)', 'Customs Carnet #', 'Status'],
+                    CARGO_INVENTORY.map((c) => [
+                      c.name,
+                      c.category,
+                      c.serialNumber,
+                      `$${c.valueUsd.toLocaleString()}`,
+                      c.weightKg,
+                      c.customsCarnetNumber,
+                      c.status,
+                    ])
+                  );
+                  onTriggerToast(`Exported ATA Carnet Inventory Excel (${file}) ✓`);
+                }}
+                className="px-3 py-1.5 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-sky-300 font-semibold text-xs inline-flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Excel</span>
+              </button>
+              <button
+                onClick={handleExportCarnetPdf}
+                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs inline-flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Carnet Form (PDF)</span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">

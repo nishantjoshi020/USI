@@ -8,6 +8,9 @@ import {
   ClipboardList,
   Compass,
   Crown,
+  Download,
+  FileSpreadsheet,
+  FileText,
   Flame,
   HeartPulse,
   Landmark,
@@ -59,6 +62,7 @@ interface TopContextBarProps {
   athletes?: unknown[];
   onSelectActiveAthlete?: (athId: string) => void;
   onOpenOnboarding?: () => void;
+  onGlobalExport?: (format: 'PDF' | 'CSV' | 'Excel' | 'JSON') => void;
 }
 
 const ROLES: UserRole[] = [
@@ -247,6 +251,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
   onToggleMobileSidebar,
   isSidebarOpen = true,
   onOpenOnboarding,
+  onGlobalExport,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<
     | 'federation'
@@ -256,6 +261,7 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
     | 'mobile-context'
     | 'role'
     | 'viewport'
+    | 'export'
     | null
   >(null);
 
@@ -724,8 +730,93 @@ export const TopContextBar: React.FC<TopContextBarProps> = ({
         )}
       </div>
 
-      {/* Right Zone: AI Copilot Trigger, Notifications, Compact Role Selector, View Switcher */}
+      {/* Right Zone: Global Export, AI Copilot Trigger, Notifications, Compact Role Selector, View Switcher */}
       <div className="flex items-center gap-1.5 shrink-0">
+        {/* Universal Global Export Menu */}
+        {onGlobalExport && (
+          <div className="relative">
+            <button
+              onClick={() =>
+                setOpenDropdown(openDropdown === 'export' ? null : 'export')
+              }
+              title="Export Active Workspace Data (PDF, CSV, Excel, JSON)"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#0F1623] hover:bg-[#151E2E] border border-slate-700 text-[11px] font-semibold text-slate-200 transition-colors whitespace-nowrap"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              {!isIconOnly && <span>Export</span>}
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+            </button>
+
+            {openDropdown === 'export' && (
+              <div className="absolute right-0 mt-1.5 w-64 bg-[#0F1623] border border-slate-700 rounded-md shadow-2xl py-1.5 z-50 text-xs">
+                <div className="px-3.5 py-2 border-b border-slate-800">
+                  <div className="font-semibold text-slate-100 flex items-center gap-1.5">
+                    <Download className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Universal Data & Report Export</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Scope: {context.squad} · {selectedRole}
+                  </p>
+                </div>
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      onGlobalExport('PDF');
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-800/70 flex items-center justify-between text-slate-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Export Official PDF Dossier</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">.pdf</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onGlobalExport('CSV');
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-800/70 flex items-center justify-between text-slate-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Export Telemetry & Roster CSV</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">.csv</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onGlobalExport('Excel');
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-800/70 flex items-center justify-between text-slate-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Export Excel Workbook</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">.xls</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onGlobalExport('JSON');
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-800/70 flex items-center justify-between text-slate-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Download className="w-3.5 h-3.5 text-violet-400" />
+                      <span>Export Full JSON Telemetry</span>
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">.json</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Persistent AI Copilot Trigger */}
         {onOpenAICopilot && (
           <button

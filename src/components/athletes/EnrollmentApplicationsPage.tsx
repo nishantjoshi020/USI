@@ -5,6 +5,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Download,
   ExternalLink,
   Eye,
   FileCheck,
@@ -23,6 +24,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Athlete, UserRole } from '../../types/usi';
+import { exportToCSV, exportToPDF } from '../../utils/exportEngine';
 
 interface EnrollmentApplicationsPageProps {
   athletes: Athlete[];
@@ -142,7 +144,74 @@ export const EnrollmentApplicationsPage: React.FC<EnrollmentApplicationsPageProp
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_enrollment_verification_pipeline',
+                  [
+                    'Athlete ID',
+                    'Athlete Name',
+                    'Sport',
+                    'Squad',
+                    'Position',
+                    'Verification Stage',
+                    'Admin Docs',
+                    'Coach Review',
+                    'Medical Board',
+                    'Profile Completion',
+                  ],
+                  filteredCandidates.map((c) => [
+                    c.athlete.athleteId,
+                    c.athlete.name,
+                    c.athlete.sport,
+                    c.athlete.squad,
+                    c.athlete.position,
+                    c.stageLabel,
+                    c.adminStatus,
+                    c.coachStatus,
+                    c.medicalStatus,
+                    `${c.athlete.profileCompletion}%`,
+                  ]),
+                  [`USI Enrollment & Multi-Stage Verification Pipeline — Role: ${selectedRole}`]
+                );
+                onTriggerToast(`Exported Enrollment Verification CSV (${file}) ✓`);
+              }}
+              className="px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_enrollment_verification_dossier', {
+                  title: 'ATHLETE ENROLLMENT & MULTI-STAGE VERIFICATION DOSSIER',
+                  subtitle: `Admin Docs -> Coach Review -> Medical Board -> Activation (${filteredCandidates.length} Candidates)`,
+                  metadataPairs: [
+                    { label: 'Exporting Authority', value: selectedRole },
+                    { label: 'Total Candidates', value: `${filteredCandidates.length} Profiles` },
+                    { label: 'Activated Athletes', value: `${stageCounts.ACTIVATED} Cleared` },
+                    { label: 'Pending Action', value: `${stageCounts.PENDING_ADMIN + stageCounts.PENDING_COACH + stageCounts.PENDING_MEDICAL} In Pipeline` },
+                  ],
+                  tableHeaders: ['ID', 'Athlete', 'Sport', 'Squad', 'Pipeline Stage', 'Admin', 'Coach', 'Medical'],
+                  tableRows: filteredCandidates.map((c) => [
+                    c.athlete.athleteId,
+                    c.athlete.name,
+                    c.athlete.sport,
+                    c.athlete.squad,
+                    c.stageLabel,
+                    c.adminStatus,
+                    c.coachStatus,
+                    c.medicalStatus,
+                  ]),
+                });
+                onTriggerToast(`Exported Enrollment & Verification PDF Dossier (${file}) ✓`);
+              }}
+              className="px-3 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
             <button
               onClick={onOpenNewApplication}
               className="px-4 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow transition-colors"

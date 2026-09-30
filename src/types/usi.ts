@@ -432,6 +432,7 @@ export interface Athlete {
   aiSummary: string;
   keySignals: KeySignalItem[];
   performanceScore: number;
+  talentBenchmarkAlignment?: number;
   aiPerformanceInsight: string;
   performanceMetrics: {
     sprint30m: PerformanceMetricSeries;
@@ -955,12 +956,18 @@ export interface AICopilotActionButton {
     | 'open-training-module'
     | 'open-medical-module'
     | 'open-assessments-module'
+    | 'open-assessments'
     | 'open-analytics-module'
+    | 'open-analytics'
     | 'open-nutrition-module'
+    | 'open-nutrition'
+    | 'open-sports-science'
     | 'open-registry-module'
     | 'open-readiness-module'
     | 'open-risk-centre'
     | 'open-action-centre'
+    | 'open-automation'
+    | 'open-evidence-drawer'
     | 'open-report-preview'
     | 'open-coach-brief'
     | 'open-ai-summary'

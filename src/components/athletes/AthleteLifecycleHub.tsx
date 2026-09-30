@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   Clock,
+  Download,
   Dumbbell,
   FileCheck,
   FileText,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react';
 import { Athlete, Injury, TrainingSession, UserRole, BodyRegionId } from '../../types/usi';
 import { OperationalWorkflowsHub } from '../workflows/OperationalWorkflowsHub';
+import { exportToCSV, exportToPDF } from '../../utils/exportEngine';
 
 /* ==========================================================================
    LIFECYCLE EVENT BUS — Cross-Persona Notification System
@@ -593,7 +595,77 @@ export const AthleteLifecycleHub: React.FC<AthleteLifecycleHubProps> = ({
               Cross-persona orchestration: onboarding → approval → coach assignment → training → injury → RTP → clearance
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                const file = exportToCSV(
+                  'usi_athlete_lifecycle_orchestration',
+                  [
+                    'Athlete ID',
+                    'Name',
+                    'Squad',
+                    'Position',
+                    'Lifecycle Stage',
+                    'Readiness',
+                    'ACWR',
+                    'Medical Clearance',
+                    'Pending Actions',
+                  ],
+                  allLifecycleStates.map((st) => {
+                    const ath = athletes.find((a) => a.id === st.athleteId)!;
+                    return [
+                      ath.athleteId,
+                      ath.name,
+                      ath.squad,
+                      ath.position,
+                      st.stageLabel,
+                      `${ath.readiness}%`,
+                      ath.acwr.toFixed(2),
+                      ath.medicalStatus,
+                      st.pendingActions.map((p) => `${p.role}: ${p.action}`).join(' | ') || 'None',
+                    ];
+                  }),
+                  [`USI End-to-End Athlete Lifecycle Matrix — Exported by ${selectedRole}`]
+                );
+                onTriggerToast(`Exported Athlete Lifecycle Matrix CSV (${file}) ✓`);
+              }}
+              className="px-3 py-1.5 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => {
+                const file = exportToPDF('usi_athlete_lifecycle_dossier', {
+                  title: 'END-TO-END ATHLETE LIFECYCLE ORCHESTRATION DOSSIER',
+                  subtitle: `Onboarding -> Approval -> Coach Assignment -> Training -> Injury -> RTP -> Clearance (${athletes.length} Athletes)`,
+                  metadataPairs: [
+                    { label: 'Exported By', value: selectedRole },
+                    { label: 'Total Athletes', value: `${athletes.length} Profiles` },
+                    { label: 'Pending Role Actions', value: `${myPendingCount} Actions for ${selectedRole}` },
+                    { label: 'Active Injuries', value: `${injuries.length} Clinical Cases` },
+                  ],
+                  tableHeaders: ['ID', 'Athlete', 'Squad', 'Lifecycle Stage', 'Readiness', 'ACWR', 'Medical'],
+                  tableRows: allLifecycleStates.map((st) => {
+                    const ath = athletes.find((a) => a.id === st.athleteId)!;
+                    return [
+                      ath.athleteId,
+                      ath.name,
+                      ath.squad,
+                      st.stageLabel,
+                      `${ath.readiness}%`,
+                      ath.acwr.toFixed(2),
+                      ath.medicalStatus,
+                    ];
+                  }),
+                });
+                onTriggerToast(`Exported Athlete Lifecycle PDF Dossier (${file}) ✓`);
+              }}
+              className="px-3 py-1.5 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export PDF</span>
+            </button>
             {myPendingCount > 0 && (
               <div className="px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-xs font-bold text-amber-300 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />

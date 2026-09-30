@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
   Bot,
   CheckCircle2,
   ChevronRight,
@@ -48,6 +50,11 @@ import {
   AI_SLASH_COMMANDS,
 } from '../../data/aiCopilotMockData';
 import { AIRiskAndActionViews } from './AIRiskAndActionViews';
+import {
+  exportAuditTrailReport,
+  exportToCSV,
+  exportToPDF,
+} from '../../utils/exportEngine';
 
 export type AICopilotSubTab =
   | 'ai-copilot'
@@ -67,6 +74,9 @@ interface AICopilotWorkspaceProps {
   messages: AICopilotMessage[];
   onSendQuery: (query: string) => void;
   onClearConversation: () => void;
+  isThinking?: boolean;
+  selectedModel?: string;
+  onSelectModel?: (model: string) => void;
   actionItems: AIActionCentreItem[];
   riskSignals: AIRiskSignalCard[];
   automationRules: AIWorkflowAutomationRule[];
@@ -100,6 +110,9 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
   messages,
   onSendQuery,
   onClearConversation,
+  isThinking = false,
+  selectedModel = 'gemini-3.8-flash',
+  onSelectModel,
   actionItems,
   riskSignals,
   automationRules,
@@ -122,6 +135,11 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
     'Athlete Focus' | 'Squad Operations' | 'Federation Oversight'
   >('Athlete Focus');
   const [showStaleSimulation, setShowStaleSimulation] = useState(false);
+  const [showPromptChips, setShowPromptChips] = useState(true);
+
+  const chatFeedRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLenRef = useRef<number>(messages.length);
+  const prevRoleRef = useRef<UserRole>(selectedRole);
 
   const activeAthlete =
     athletes.find((a) => a.id === activeAthleteId) || athletes[0];
@@ -134,7 +152,57 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
   ).length;
   const activeRulesCount = automationRules.filter((r) => r.enabled).length;
 
-  const roleBehavior = AI_ROLE_BEHAVIOR_MATRIX[selectedRole];
+  const roleBehavior =
+    AI_ROLE_BEHAVIOR_MATRIX[selectedRole] ||
+    AI_ROLE_BEHAVIOR_MATRIX['Performance Director'];
+
+  const personaSlashCommands =
+    roleBehavior.slashCommands && roleBehavior.slashCommands.length > 0
+      ? roleBehavior.slashCommands
+      : AI_SLASH_COMMANDS;
+
+  const personaPromptChips =
+    roleBehavior.promptChips && roleBehavior.promptChips.length > 0
+      ? roleBehavior.promptChips
+      : AI_COPILOT_PROMPT_CHIPS;
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (chatFeedRef.current) {
+      chatFeedRef.current.scrollTo({
+        top: chatFeedRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  const scrollToTop = (behavior: ScrollBehavior = 'smooth') => {
+    if (chatFeedRef.current) {
+      chatFeedRef.current.scrollTo({
+        top: 0,
+        behavior,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (prevRoleRef.current !== selectedRole) {
+      prevRoleRef.current = selectedRole;
+      prevMessagesLenRef.current = messages.length;
+      scrollToTop('smooth');
+      return;
+    }
+
+    if (messages.length > prevMessagesLenRef.current || isThinking) {
+      const timer = setTimeout(() => {
+        scrollToBottom('smooth');
+      }, 40);
+      prevMessagesLenRef.current = messages.length;
+      return () => clearTimeout(timer);
+    } else if (messages.length === 1 && prevMessagesLenRef.current > 1) {
+      scrollToTop('smooth');
+    }
+    prevMessagesLenRef.current = messages.length;
+  }, [messages.length, selectedRole, isThinking]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,33 +278,38 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
             </div>
           </div>
 
-          {/* Right Quick Actions */}
+          {/* Right Quick Actions (Persona-Aware across all 8 Roles) */}
           <div className="flex flex-wrap items-center gap-2">
-            {selectedRole === 'Athlete' ? (
-              <>
+            {roleBehavior.headerQuickActions &&
+            roleBehavior.headerQuickActions.length > 0 ? (
+              roleBehavior.headerQuickActions.map((qa, idx) => (
                 <button
-                  onClick={() =>
-                    onSendQuery(
-                      'Explain my morning recovery telemetry and HRV baseline.'
-                    )
-                  }
-                  className="px-3.5 py-2 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors"
+                  key={idx}
+                  onClick={() => {
+                    if (qa.openTrainingModModal) {
+                      onOpenTrainingModModal();
+                    } else if (qa.query) {
+                      onSendQuery(qa.query);
+                    }
+                  }}
+                  className={`px-3.5 py-2 rounded-md font-semibold text-xs inline-flex items-center gap-1.5 transition-colors ${
+                    qa.tone === 'amber'
+                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                      : qa.tone === 'primary'
+                      ? 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+                      : 'bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium'
+                  }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Explain My Recovery Baseline</span>
+                  {qa.openTrainingModModal ? (
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                  ) : qa.tone === 'primary' ? (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  ) : (
+                    <FileText className="w-3.5 h-3.5 text-sky-400" />
+                  )}
+                  <span>{qa.label}</span>
                 </button>
-                <button
-                  onClick={() =>
-                    onSendQuery(
-                      'What are my hydration and fueling targets before today session?'
-                    )
-                  }
-                  className="px-3.5 py-2 rounded-md bg-[#090D16] hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <FileText className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Review Today Fueling</span>
-                </button>
-              </>
+              ))
             ) : (
               <>
                 <button
@@ -431,96 +504,127 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
          * MAIN USI COPILOT INTERACTIVE WORKSPACE (SECTIONS 2-10, 14-18, 21-24)
          * ========================================================= */
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-          {/* Left 8 Columns: Multi-Turn Operational Conversation & Prompt Console */}
-          <div className="xl:col-span-8 space-y-4">
-            {/* Prompt Input & Quick Slash Commands Card (Section 4) */}
-            <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-4 space-y-3.5">
-              <form onSubmit={handleFormSubmit} className="space-y-3">
-                <div className="flex items-center justify-between">
+          {/* Left 8 Columns: Bounded Scrollable Multi-Turn Operational Conversation & Prompt Console */}
+          <div className="xl:col-span-8 bg-[#0F1623] border border-slate-800 rounded-lg flex flex-col h-[calc(100dvh-220px)] min-h-[600px] max-h-[860px] overflow-hidden shadow-xl">
+            {/* Top Chat Console Header */}
+            <div className="shrink-0 p-3.5 border-b border-slate-800 bg-[#090D16]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <span className="text-[11px] font-mono text-sky-400 uppercase font-semibold flex items-center gap-1.5">
-                    <Terminal className="w-3.5 h-3.5" />
-                    <span>OPERATIONAL INTELLIGENCE PROMPT</span>
+                    <Terminal className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">
+                      COPILOT CONSOLE · {selectedRole.toUpperCase()}
+                    </span>
                   </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSendQuery(
-                          'Predict exact minute of next non-contact tear'
-                        )
-                      }
-                      className="text-[10px] font-mono text-amber-300 hover:underline"
-                    >
-                      Test Uncertainty Guardrail
-                    </button>
-                    <span className="text-slate-700">·</span>
-                    <button
-                      type="button"
-                      onClick={onClearConversation}
-                      className="text-[10px] font-mono text-slate-400 hover:text-slate-200"
-                    >
-                      Reset Session Thread
-                    </button>
-                  </div>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300 shrink-0">
+                    {messages.length} {messages.length === 1 ? 'Turn' : 'Turns'}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={queryInput}
-                    onChange={(e) => setQueryInput(e.target.value)}
-                    placeholder="Ask USI anything about your athletes, squads or operations..."
-                    className="flex-1 px-3.5 py-2.5 rounded-md bg-[#090D16] border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
-                  />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {onSelectModel && (
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => onSelectModel(e.target.value)}
+                      aria-label="Select Gemini Copilot Model"
+                      className="px-2 py-1 rounded bg-[#0F1623] border border-sky-500/40 text-[10px] font-mono text-sky-300 focus:outline-none focus:border-sky-400"
+                    >
+                      <option value="gemini-3.8-flash">
+                        Gemini 3.8 Flash · Balanced
+                      </option>
+                      <option value="gemini-3.1-flash-lite">
+                        Gemini 3.1 Flash Lite · Fast
+                      </option>
+                      <option value="gemini-3.1-pro-preview">
+                        Gemini 3.1 Pro · Complex
+                      </option>
+                    </select>
+                  )}
                   <button
-                    type="submit"
-                    className="px-4 py-2.5 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 transition-colors shrink-0"
+                    type="button"
+                    onClick={() => {
+                      const file = exportToPDF(
+                        `usi_copilot_transcript_${selectedRole}`,
+                        {
+                          title: `USI AI COPILOT OPERATIONAL TRANSCRIPT (${selectedRole.toUpperCase()})`,
+                          subtitle: `${context.federation} | ${context.sport} | ${context.squad} | Focus: ${activeAthlete.name}`,
+                          metadataPairs: [
+                            { label: 'Active Persona', value: selectedRole },
+                            { label: 'Focus Athlete', value: `${activeAthlete.name} (${activeAthlete.athleteId})` },
+                            { label: 'Active Squad', value: context.squad },
+                            { label: 'Conversation Turns', value: `${messages.length} Turns` },
+                          ],
+                          sections: messages.map((m, idx) => ({
+                            heading:
+                              m.sender === 'user'
+                                ? `Turn ${idx + 1} - User Query (${m.timestamp})`
+                                : `Turn ${idx + 1} - AI Copilot Synthesis: ${m.answerTitle || 'Operational Analysis'}`,
+                            lines:
+                              m.sender === 'user'
+                                ? [m.queryText || '']
+                                : [
+                                    m.answerStatement || '',
+                                    m.interpretation ? `Interpretation: ${m.interpretation}` : '',
+                                    m.recommendation ? `Recommendation: ${m.recommendation}` : '',
+                                  ].filter(Boolean),
+                          })),
+                        }
+                      );
+                      onShowToast(`Exported AI Copilot Transcript (${file}) ✓`);
+                    }}
+                    title="Export full Copilot conversation transcript as PDF"
+                    className="px-2 py-1 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-700 text-[10px] font-mono text-emerald-300 hover:text-white inline-flex items-center gap-1"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Analyse & Explain</span>
+                    <Download className="w-3 h-3" />
+                    <span>Export Chat PDF</span>
                   </button>
-                </div>
-
-                {/* Quick Slash Commands */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] font-mono text-slate-400 mr-1">
-                    Slash Commands:
-                  </span>
-                  {AI_SLASH_COMMANDS.map((sc) => (
-                    <button
-                      key={sc.command}
-                      type="button"
-                      onClick={() => onSendQuery(sc.sampleQuery)}
-                      title={`${sc.label}: ${sc.sampleQuery}`}
-                      className="px-2 py-0.5 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-800 font-mono text-[11px] text-sky-400 transition-colors"
-                    >
-                      {sc.command}
-                    </button>
-                  ))}
-                </div>
-              </form>
-
-              {/* Prompt Suggestion Chips */}
-              <div className="pt-2.5 border-t border-slate-800/80">
-                <div className="text-[10px] font-mono text-slate-400 uppercase mb-2">
-                  CONTEXTUAL OPERATIONAL QUERIES (CLICK TO RUN)
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {AI_COPILOT_PROMPT_CHIPS.map((chip) => (
-                    <button
-                      key={chip}
-                      onClick={() => onSendQuery(chip)}
-                      className="px-2.5 py-1.5 rounded bg-[#090D16] hover:bg-[#141D2E] border border-slate-800 hover:border-sky-500/40 text-xs text-slate-200 transition-colors text-left"
-                    >
-                      {chip}
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    onClick={() => scrollToTop('smooth')}
+                    title="Scroll to Top of Conversation"
+                    className="px-2 py-1 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300 hover:text-white inline-flex items-center gap-1"
+                  >
+                    <ArrowUp className="w-3 h-3" />
+                    <span>Top</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToBottom('smooth')}
+                    title="Scroll to Latest Message"
+                    className="px-2 py-1 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-700 text-[10px] font-mono text-sky-300 hover:text-white inline-flex items-center gap-1"
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                    <span>Latest</span>
+                  </button>
+                  <span className="text-slate-700">·</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onSendQuery(
+                        'Predict exact minute of next non-contact tear'
+                      )
+                    }
+                    className="text-[10px] font-mono text-amber-300 hover:underline px-1"
+                  >
+                    Test Uncertainty Guardrail
+                  </button>
+                  <span className="text-slate-700">·</span>
+                  <button
+                    type="button"
+                    onClick={onClearConversation}
+                    className="text-[10px] font-mono text-slate-400 hover:text-slate-200 px-1"
+                  >
+                    Reset Session Thread
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Multi-Turn Conversation Feed (Sections 5, 6, 15, 21, 22, 24) */}
-            <div className="space-y-4">
+            {/* Scrollable Multi-Turn Conversation Feed (Sections 5, 6, 15, 21, 22, 24) */}
+            <div
+              ref={chatFeedRef}
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain scroll-smooth p-4 lg:p-5 space-y-4 bg-[#0B101B]/60"
+            >
               {messages.map((msg) =>
                 msg.sender === 'user' ? (
                   <div key={msg.id} className="flex justify-end">
@@ -778,15 +882,74 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                             <span>Open Report in Analytics</span>
                           </button>
                           <button
-                            onClick={() =>
+                            onClick={() => {
+                              const preview = msg.generatedReportPreview!;
+                              const file = exportToPDF(preview.title, {
+                                title: preview.title.toUpperCase(),
+                                subtitle: `Scope: ${preview.scope} | Generated for ${selectedRole}`,
+                                metadataPairs: [
+                                  { label: 'Report Scope', value: preview.scope },
+                                  { label: 'Generated By', value: `USI AI Copilot (${selectedRole})` },
+                                  { label: 'Focus Athlete', value: activeAthlete.name },
+                                  { label: 'Date', value: '28 Sep 2026' },
+                                ],
+                                sections: [
+                                  {
+                                    heading: 'Executive Summary',
+                                    lines: [preview.executiveSummary],
+                                  },
+                                  ...preview.sections.map((s) => ({
+                                    heading: s.heading,
+                                    lines: [s.summary],
+                                  })),
+                                  ...(preview.keyRisks && preview.keyRisks.length > 0
+                                    ? [
+                                        {
+                                          heading: 'Key Operational Risks',
+                                          lines: preview.keyRisks,
+                                        },
+                                      ]
+                                    : []),
+                                  ...(preview.recommendedActions &&
+                                  preview.recommendedActions.length > 0
+                                    ? [
+                                        {
+                                          heading: 'Recommended Actions',
+                                          lines: preview.recommendedActions,
+                                        },
+                                      ]
+                                    : []),
+                                ],
+                              });
                               onShowToast(
-                                'Exported Weekly Senior Squad Performance Report (PDF)'
-                              )
-                            }
+                                `Exported ${preview.title} (${file}) ✓`
+                              );
+                            }}
                             className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1"
                           >
-                            <Download className="w-3.5 h-3.5" />
+                            <Download className="w-3.5 h-3.5 text-emerald-400" />
                             <span>Export PDF</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const preview = msg.generatedReportPreview!;
+                              const file = exportToCSV(
+                                preview.title,
+                                ['Section', 'Summary / Detail'],
+                                [
+                                  ['Executive Summary', preview.executiveSummary],
+                                  ...preview.sections.map((s) => [s.heading, s.summary]),
+                                ],
+                                [`${preview.title} — Scope: ${preview.scope}`]
+                              );
+                              onShowToast(
+                                `Exported ${preview.title} data table (${file}) ✓`
+                              );
+                            }}
+                            className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium text-xs inline-flex items-center gap-1"
+                          >
+                            <Download className="w-3.5 h-3.5 text-sky-400" />
+                            <span>Export CSV</span>
                           </button>
                           <button
                             onClick={() =>
@@ -876,7 +1039,7 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                             <button
                               key={i}
                               onClick={() => onSendQuery(followUp)}
-                              className="px-2.5 py-1 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-800 text-[11px] text-sky-300 transition-colors"
+                              className="px-2.5 py-1 rounded bg-[#090D16] hover:bg-slate-800 border border-slate-800 text-[11px] text-sky-300 transition-colors text-left"
                             >
                               "{followUp}"
                             </button>
@@ -886,11 +1049,104 @@ export const AICopilotWorkspace: React.FC<AICopilotWorkspaceProps> = ({
                   </div>
                 )
               )}
+
+              {isThinking && (
+                <div className="bg-[#0F1623] border border-sky-500/40 rounded-lg p-4 flex items-center justify-between gap-3 text-xs animate-pulse">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded bg-sky-500/20 border border-sky-400/50 flex items-center justify-center">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-spin" />
+                    </div>
+                    <div>
+                      <div className="font-mono text-[10px] font-bold text-sky-400 uppercase">
+                        GEMINI LIVE CONTEXT ENGINE · ANALYSING TELEMETRY
+                      </div>
+                      <p className="text-slate-300 text-[11px] mt-0.5">
+                        Synthesizing {selectedRole} context, {activeAthlete.name}{' '}
+                        telemetry, medical RTP gates, and {context.squad} workload...
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 font-mono text-[10px] text-sky-300 shrink-0">
+                    {selectedModel}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Sticky Prompt Input, Slash Commands & Persona Query Chips (Section 4) */}
+            <div className="shrink-0 p-4 border-t border-slate-800 bg-[#090D16] space-y-2.5">
+              {/* Persona Prompt Suggestion Chips */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase">
+                    {selectedRole.toUpperCase()} QUERIES (CLICK TO RUN)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPromptChips((prev) => !prev)}
+                    className="text-[10px] font-mono text-sky-400 hover:underline"
+                  >
+                    {showPromptChips ? 'Hide Suggestions' : 'Show Suggestions'}
+                  </button>
+                </div>
+                {showPromptChips && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    {personaPromptChips.map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => onSendQuery(chip)}
+                        className="px-2.5 py-1 rounded bg-[#0F1623] hover:bg-[#141D2E] border border-slate-800 hover:border-sky-500/40 text-[11px] text-slate-200 transition-colors text-left whitespace-nowrap shrink-0"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="space-y-2">
+                {/* Quick Slash Commands (Persona-Aware) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                  <span className="text-[10px] font-mono text-slate-400 mr-1 shrink-0">
+                    Slash Commands:
+                  </span>
+                  {personaSlashCommands.map((sc) => (
+                    <button
+                      key={sc.command}
+                      type="button"
+                      onClick={() => onSendQuery(sc.sampleQuery)}
+                      title={`${sc.label}: ${sc.sampleQuery}`}
+                      className="px-2 py-0.5 rounded bg-[#0F1623] hover:bg-slate-800 border border-slate-800 font-mono text-[11px] text-sky-400 transition-colors whitespace-nowrap shrink-0"
+                    >
+                      {sc.command}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={queryInput}
+                    onChange={(e) => setQueryInput(e.target.value)}
+                    placeholder={`Ask USI Copilot as ${selectedRole}...`}
+                    className="flex-1 px-3.5 py-2.5 rounded-md bg-[#0F1623] border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isThinking}
+                    className="px-4 py-2.5 rounded-md bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 transition-colors shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isThinking ? 'Analysing...' : 'Analyse & Explain'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
 
           {/* Right 4 Columns: Role-Aware AI Lens, Medical Safety Boundaries & Live Pending Approvals */}
-          <div className="xl:col-span-4 space-y-4">
+          <div className="xl:col-span-4 xl:max-h-[calc(100dvh-220px)] xl:overflow-y-auto overscroll-contain space-y-4">
             {/* Role-Aware AI Behavior Card (Section 16) */}
             <div className="bg-[#0F1623] border border-slate-800 rounded-lg p-4 space-y-3 text-xs">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
